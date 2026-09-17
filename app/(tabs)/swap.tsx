@@ -4,6 +4,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
+import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { colors } from '@/theme/tokens';
 
 export default function SwapScreen() {
@@ -16,6 +17,11 @@ export default function SwapScreen() {
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <PageHeader subtitle="Vista previa sin operación real" title="Cambiar dinero" />
       <ScrollView contentContainerStyle={styles.content}>
+        <MovyaContextHelp
+          actionPrompt="Ayúdame a preparar un cambio de activos"
+          explainPrompt="Explícame cómo funciona el cambio de activos"
+          question="¿Necesitas ayuda para cambiar tus activos?"
+        />
         <Text style={styles.label}>Tú entregas</Text>
         <View style={styles.assetBox}>
           <View style={[styles.assetDot, from === 'USDC' ? styles.usdc : styles.xlm]} /><Text style={styles.assetName}>{from === 'USDC' ? 'USD digital' : 'Stellar'}</Text><Text style={styles.code}>{from}</Text>

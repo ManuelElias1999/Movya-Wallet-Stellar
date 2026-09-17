@@ -42,7 +42,7 @@ export default function HomeScreen() {
         <View style={styles.totalCard}>
           <View>
             <Text style={styles.totalLabel}>Balance total en USD</Text>
-            <Text style={styles.totalAmount}>{privateValue('$1,516.84')}</Text>
+            <Text style={styles.totalAmount}>{privateValue('$1,629.24')}</Text>
             <Text style={styles.totalCaption}>Entre todas tus cuentas</Text>
           </View>
           <Pressable accessibilityLabel={amountsVisible ? 'Ocultar montos' : 'Mostrar montos'} onPress={() => setAmountsVisible((visible) => !visible)} style={styles.eyeButton}>
@@ -82,13 +82,11 @@ export default function HomeScreen() {
         {account.error ? <Text style={styles.syncError}>No pudimos sincronizar Testnet: {account.error}</Text> : null}
       </ScrollView>
 
-      <Pressable onPress={() => setChatOpen(true)} style={styles.movyaDock}>
-        <AnimatedMovyaLogo size={48} />
-        <View style={styles.dockCopy}>
-          <View style={styles.dockTitleRow}><Ionicons name="chatbubble-ellipses-outline" size={15} color={colors.brand} /><Text style={styles.dockPlaceholder}>Habla con Movya</Text><View style={styles.onlineDot} /></View>
-          <Text style={styles.dockHint}>Tu asistente para mover y entender tu dinero</Text>
-        </View>
-        <View style={styles.dockAction}><Ionicons name="chevron-up" size={20} color={colors.brand} /></View>
+      <Pressable accessibilityLabel="Abrir el chat de Movya" onPress={() => setChatOpen(true)} style={styles.movyaButton}>
+        <View style={styles.buttonHalo} />
+        <AnimatedMovyaLogo size={58} />
+        <View style={styles.onlineDot} />
+        <View style={styles.chatBadge}><Ionicons name="chatbubble-ellipses" size={14} color="#FFFFFF" /></View>
       </Pressable>
 
       <MovyaChatSheet onClose={() => setChatOpen(false)} open={chatOpen} />
@@ -98,12 +96,12 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
-  fixedHeader: { minHeight: 78, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, backgroundColor: colors.background, borderBottomWidth: 1, borderBottomColor: 'rgba(227,234,244,0.7)', zIndex: 10 },
-  content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 126 },
+  fixedHeader: { minHeight: 78, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, backgroundColor: 'rgba(236,243,251,0.97)', borderBottomWidth: 1, borderBottomColor: 'rgba(207,226,255,0.9)', zIndex: 10 },
+  content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 106 },
   greeting: { color: colors.ink, fontSize: 27, fontWeight: '800', letterSpacing: -0.8 },
   subtitle: { color: colors.muted, fontSize: 13, marginTop: 4 },
-  settingsButton: { width: 46, height: 46, borderRadius: 17, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
-  totalCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, marginTop: 22, padding: 20, borderWidth: 1, borderColor: colors.border },
+  settingsButton: { width: 46, height: 46, borderRadius: 17, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, shadowColor: colors.navy, shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  totalCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FBFF', borderRadius: radius.lg, marginTop: 22, padding: 20, borderWidth: 1, borderColor: '#CFE2FF', shadowColor: colors.brandDark, shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
   totalLabel: { color: colors.muted, fontSize: 12, fontWeight: '600' },
   totalAmount: { color: colors.ink, fontSize: 28, fontWeight: '800', letterSpacing: -0.8, marginTop: 5 },
   totalCaption: { color: colors.muted, fontSize: 11, marginTop: 4 },
@@ -118,7 +116,7 @@ const styles = StyleSheet.create({
   amber: { backgroundColor: '#FFF3DE', borderColor: '#FFE3B2' },
   rose: { backgroundColor: '#FCEAF0', borderColor: '#F6D4E0' },
   quickLabel: { color: colors.text, fontSize: 10, fontWeight: '700', marginTop: 7 },
-  card: { backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: 15, borderWidth: 1, borderColor: colors.border },
+  card: { backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: 15, borderWidth: 1, borderColor: colors.border, shadowColor: colors.navy, shadowOpacity: 0.07, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
   assetRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15 },
   divider: { borderTopWidth: 1, borderTopColor: colors.border },
   assetIcon: { width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
@@ -130,11 +128,8 @@ const styles = StyleSheet.create({
   assetAmount: { color: colors.ink, fontSize: 14, fontWeight: '700' },
   assetValue: { color: colors.muted, fontSize: 12, marginTop: 3 },
   syncError: { color: colors.warning, fontSize: 11, lineHeight: 16, marginTop: 16 },
-  movyaDock: { position: 'absolute', left: 18, right: 18, bottom: 16, minHeight: 70, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1.5, borderColor: colors.brandIce, paddingHorizontal: 11, shadowColor: colors.navy, shadowOpacity: 0.16, shadowRadius: 22, shadowOffset: { width: 0, height: 9 }, elevation: 8 },
-  dockCopy: { flex: 1, marginLeft: 11 },
-  dockTitleRow: { flexDirection: 'row', alignItems: 'center' },
-  dockPlaceholder: { color: colors.ink, fontSize: 14, fontWeight: '700', marginLeft: 6 },
-  onlineDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.positive, marginLeft: 7 },
-  dockHint: { color: colors.muted, fontSize: 10, marginTop: 4 },
-  dockAction: { width: 38, height: 38, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brandSoft },
+  movyaButton: { position: 'absolute', right: 20, bottom: 18, width: 68, height: 68, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.brandIce, shadowColor: colors.brandDark, shadowOpacity: 0.28, shadowRadius: 20, shadowOffset: { width: 0, height: 9 }, elevation: 10 },
+  buttonHalo: { position: 'absolute', width: 62, height: 62, borderRadius: 23, backgroundColor: colors.brandSoft },
+  onlineDot: { position: 'absolute', right: 4, top: 5, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.positive, borderWidth: 2, borderColor: colors.surface },
+  chatBadge: { position: 'absolute', left: -5, bottom: -3, width: 27, height: 27, borderRadius: 10, backgroundColor: colors.brand, borderWidth: 2, borderColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
 });

@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
@@ -8,12 +9,19 @@ import { colors, radius } from '@/theme/tokens';
 const prompts = ['Envía $20 a Camila', 'Muéstrame mi balance', 'Cambia XLM a dólares'];
 
 export default function MovyaScreen() {
+  const router = useRouter();
+  const { prompt } = useLocalSearchParams<{ prompt?: string }>();
   const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (prompt) setMessage(prompt);
+  }, [prompt]);
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
       <Screen scroll={false}>
         <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.back}><Ionicons name="chevron-down" size={23} color={colors.ink} /></Pressable>
           <View style={styles.logo}><Image source={require('../../assets/movya-logo.png')} style={styles.logoImage} /></View>
           <View>
             <Text style={styles.title}>Habla con Movya</Text>
@@ -52,6 +60,7 @@ export default function MovyaScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   header: { flexDirection: 'row', alignItems: 'center' },
+  back: { width: 42, height: 42, borderRadius: 15, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
   logo: { width: 44, height: 44, borderRadius: 16, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   logoImage: { width: 42, height: 42, resizeMode: 'contain' },
   title: { color: colors.ink, fontSize: 20, fontWeight: '800' },

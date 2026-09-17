@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, Image, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors } from '@/theme/tokens';
@@ -10,6 +10,8 @@ type AnimatedAccountCardProps = {
 
 export function AnimatedAccountCard({ amountsVisible }: AnimatedAccountCardProps) {
   const movement = useRef(new Animated.Value(0)).current;
+  const shake = useRef(new Animated.Value(0)).current;
+  const wink = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -22,8 +24,27 @@ export function AnimatedAccountCard({ amountsVisible }: AnimatedAccountCardProps
     return () => animation.stop();
   }, [movement]);
 
+  const playReaction = () => {
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(shake, { toValue: 1, duration: 55, useNativeDriver: true }),
+        Animated.timing(shake, { toValue: -1, duration: 55, useNativeDriver: true }),
+        Animated.timing(shake, { toValue: 0.7, duration: 55, useNativeDriver: true }),
+        Animated.timing(shake, { toValue: 0, duration: 90, useNativeDriver: true }),
+      ]),
+      Animated.sequence([
+        Animated.delay(60),
+        Animated.timing(wink, { toValue: 1, duration: 80, useNativeDriver: true }),
+        Animated.delay(170),
+        Animated.timing(wink, { toValue: 0, duration: 100, useNativeDriver: true }),
+      ]),
+    ]).start();
+  };
+
   return (
-    <LinearGradient colors={['#081D3D', '#0B4FB8', '#176BFF']} end={{ x: 1, y: 1 }} start={{ x: 0, y: 0 }} style={styles.card}>
+    <Pressable accessibilityHint="Movya reaccionará al tocar la tarjeta" accessibilityRole="button" onPress={playReaction}>
+    <Animated.View style={{ transform: [{ translateX: shake.interpolate({ inputRange: [-1, 0, 1], outputRange: [-3, 0, 3] }) }, { rotate: shake.interpolate({ inputRange: [-1, 0, 1], outputRange: ['-0.4deg', '0deg', '0.4deg'] }) }] }}>
+    <LinearGradient colors={['#061A38', '#0B4FB8', '#2578FF']} end={{ x: 1, y: 1 }} start={{ x: 0, y: 0 }} style={styles.card}>
       <Animated.View
         style={[
           styles.glowLarge,
@@ -51,7 +72,10 @@ export function AnimatedAccountCard({ amountsVisible }: AnimatedAccountCardProps
       <View style={styles.top}>
         <View>
           <View style={styles.brandRow}>
-            <Image source={require('../../assets/movya-logo.png')} style={styles.brandLogo} />
+            <View style={styles.brandLogoWrap}>
+              <Image source={require('../../assets/movya-logo.png')} style={styles.brandLogo} />
+              <Animated.View style={[styles.wink, { opacity: wink, transform: [{ scaleX: wink.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) }] }]} />
+            </View>
             <Text style={styles.brand}>Movya</Text>
           </View>
           <Text style={styles.type}>Cuenta personal</Text>
@@ -67,6 +91,8 @@ export function AnimatedAccountCard({ amountsVisible }: AnimatedAccountCardProps
         <View style={styles.currencyPill}><Text style={styles.currencyText}>USD</Text></View>
       </View>
     </LinearGradient>
+    </Animated.View>
+    </Pressable>
   );
 }
 
@@ -76,7 +102,9 @@ const styles = StyleSheet.create({
   glowSmall: { position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.09)', left: -60, bottom: -70 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   brandRow: { flexDirection: 'row', alignItems: 'center' },
-  brandLogo: { width: 34, height: 34, resizeMode: 'contain', marginRight: 7 },
+  brandLogoWrap: { width: 34, height: 34, marginRight: 7 },
+  brandLogo: { width: 34, height: 34, resizeMode: 'contain' },
+  wink: { position: 'absolute', width: 5, height: 2, borderRadius: 2, backgroundColor: '#172638', top: 16, left: 22 },
   brand: { color: '#FFFFFF', fontSize: 25, fontWeight: '800', letterSpacing: -0.8 },
   type: { color: 'rgba(255,255,255,0.68)', fontSize: 11, marginTop: 2 },
   statusPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },

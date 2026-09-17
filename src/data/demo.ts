@@ -1,6 +1,8 @@
 export const demoAssets = [
   { code: 'USDC', name: 'Dólares digitales', amount: '1,240.00', value: '$1,240.00', color: '#2775CA' },
   { code: 'XLM', name: 'Stellar', amount: '862.41', value: '$276.84', color: '#0B2348' },
+  { code: 'EURC', name: 'Euros digitales', amount: '92.00', value: '$107.50', color: '#6857E5' },
+  { code: 'AQUA', name: 'Aquarius', amount: '4,800.00', value: '$4.90', color: '#00A6A6' },
 ];
 
 export const demoActivity = [
@@ -10,7 +12,7 @@ export const demoActivity = [
 ];
 
 export const demoContacts = [
-  { id: '1', name: 'Camila Rojas', handle: '@cami', initials: 'CR', color: '#EEE9FF' },
-  { id: '2', name: 'Mateo Silva', handle: '@mateo', initials: 'MS', color: '#E8F8F2' },
-  { id: '3', name: 'Sofía Vargas', handle: '@sofi', initials: 'SV', color: '#FFF2E3' },
+  { id: '1', name: 'Camila Rojas', handle: 'camila@movya.app', email: 'camila@movya.app', initials: 'CR', color: '#EEE9FF' },
+  { id: '2', name: 'Mateo Silva', handle: 'mateo@movya.app', email: 'mateo@movya.app', initials: 'MS', color: '#E8F8F2' },
+  { id: '3', name: 'Sofía Vargas', handle: 'Wallet externa · GDK3…P9Q', address: 'GDK3EXTERNALADDRESSP9Q', initials: 'SV', color: '#FFF2E3' },
 ];

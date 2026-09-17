@@ -6,6 +6,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
+import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { colors, radius } from '@/theme/tokens';
 
 const demoAddress = 'GAJIBAJ3YTJLXHVROCHO374P3LM4YLQFGT6WLWS2NOWO2PLHH3CWMDDQ';
@@ -29,6 +30,13 @@ export default function ReceiveScreen() {
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <PageHeader subtitle="Tu cuenta personal" title="Recibir dinero" />
       <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.helper}>
+          <MovyaContextHelp
+            actionPrompt="Ayúdame a compartir mis datos para recibir dinero"
+            explainPrompt="Explícame cómo recibir dinero en Movya"
+            question="¿Necesitas ayuda para recibir dinero?"
+          />
+        </View>
         <Text style={styles.title}>Tu código para recibir</Text>
         <Text style={styles.subtitle}>La otra persona puede escanearlo o copiar tu dirección.</Text>
         <View style={styles.qrCard}>
@@ -60,6 +68,7 @@ export default function ReceiveScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background }, content: { padding: 20, paddingBottom: 40, alignItems: 'center' },
+  helper: { width: '100%', marginBottom: 12 },
   title: { color: colors.ink, fontSize: 23, fontWeight: '800', marginTop: 10, textAlign: 'center' }, subtitle: { color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: 7, paddingHorizontal: 20 },
   qrCard: { width: '100%', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 28, borderWidth: 1, borderColor: colors.border, padding: 24, marginTop: 24 },
   qrWrap: { padding: 14, borderRadius: 22, backgroundColor: '#FFFFFF' }, badge: { flexDirection: 'row', alignItems: 'center', marginTop: 17, backgroundColor: colors.positiveSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.positive, marginRight: 6 }, badgeText: { color: colors.positive, fontSize: 11, fontWeight: '700' },

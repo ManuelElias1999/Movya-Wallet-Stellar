@@ -5,6 +5,7 @@ import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, St
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
+import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { TokenSelector } from '@/components/TokenSelector';
 import { demoContacts } from '@/data/demo';
 import { colors, radius } from '@/theme/tokens';
@@ -20,6 +21,8 @@ export default function SendScreen() {
   const [tokensOpen, setTokensOpen] = useState(false);
   const selected = demoContacts.find((item) => item.id === selectedContactId);
   const ready = Boolean(amount && (selected || address.trim()));
+  const balances: Record<string, string> = { USDC: '$1,240.00', XLM: '862.41 XLM', EURC: '92.00 EURC', AQUA: '4,800 AQUA' };
+  const tokenColors: Record<string, string> = { USDC: '#2775CA', XLM: colors.navy, EURC: '#6857E5', AQUA: '#00A6A6' };
 
   const pickContact = (id: string) => {
     setSelectedContactId(id);
@@ -32,17 +35,22 @@ export default function SendScreen() {
       <PageHeader subtitle="Revisarás todo antes de confirmar" title="Enviar" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <MovyaContextHelp
+            actionPrompt="Ayúdame a preparar un envío paso a paso"
+            explainPrompt="Explícame cómo enviar dinero de forma segura"
+            question="¿Necesitas ayuda para enviar dinero?"
+          />
           <Text style={styles.label}>Monto</Text>
           <View style={styles.amountCard}>
             <Text style={styles.currency}>{token === 'USDC' ? '$' : ''}</Text>
             <TextInput autoFocus keyboardType="decimal-pad" onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#A7B2C5" style={styles.amountInput} value={amount} />
             <Pressable onPress={() => setTokensOpen(true)} style={styles.tokenPill}>
-              <View style={[styles.tokenDot, token === 'USDC' ? styles.usdc : styles.xlm]} />
+              <View style={[styles.tokenDot, { backgroundColor: tokenColors[token] }]} />
               <Text style={styles.tokenText}>{token}</Text>
               <Ionicons name="chevron-down" size={15} color={colors.brand} />
             </Pressable>
           </View>
-          <View style={styles.balanceRow}><Text style={styles.balance}>Disponible: {token === 'USDC' ? '$1,240.00' : '862.41 XLM'}</Text><Pressable onPress={() => setAmount(token === 'USDC' ? '1240.00' : '862.41')}><Text style={styles.max}>Usar máximo</Text></Pressable></View>
+          <View style={styles.balanceRow}><Text style={styles.balance}>Disponible: {balances[token]}</Text><Pressable onPress={() => setAmount(token === 'USDC' ? '1240.00' : token === 'XLM' ? '862.41' : token === 'EURC' ? '92.00' : '4800')}><Text style={styles.max}>Usar máximo</Text></Pressable></View>
 
           <Text style={styles.label}>Destinatario</Text>
           {selected ? (
@@ -100,7 +108,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background }, flex: { flex: 1 }, content: { padding: 20, paddingBottom: 40 },
   label: { color: colors.ink, fontSize: 15, fontWeight: '800', marginTop: 20, marginBottom: 10 },
   amountCard: { height: 104, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 18 }, currency: { color: colors.muted, fontSize: 31, fontWeight: '700' }, amountInput: { flex: 1, color: colors.ink, fontSize: 40, fontWeight: '800', marginLeft: 3 },
-  tokenPill: { height: 42, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.brandSoft, borderRadius: 15, paddingHorizontal: 10 }, tokenDot: { width: 22, height: 22, borderRadius: 8, marginRight: 7 }, usdc: { backgroundColor: '#2775CA' }, xlm: { backgroundColor: colors.navy }, tokenText: { color: colors.brandDark, fontSize: 12, fontWeight: '800', marginRight: 4 },
+  tokenPill: { height: 42, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.brandSoft, borderRadius: 15, paddingHorizontal: 10 }, tokenDot: { width: 22, height: 22, borderRadius: 8, marginRight: 7 }, tokenText: { color: colors.brandDark, fontSize: 12, fontWeight: '800', marginRight: 4 },
   balanceRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }, balance: { color: colors.muted, fontSize: 11 }, max: { color: colors.brand, fontSize: 11, fontWeight: '800' },
   recipientRow: { flexDirection: 'row', gap: 9 }, addressBox: { flex: 1, height: 58, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 13 }, addressInput: { flex: 1, color: colors.ink, fontSize: 13, marginLeft: 8 },
   contactsButton: { width: 88, height: 58, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brandSoft, borderRadius: 18, borderWidth: 1, borderColor: colors.brandIce }, contactsText: { color: colors.brand, fontSize: 9, fontWeight: '800', marginTop: 3 }, help: { color: colors.muted, fontSize: 10, lineHeight: 15, marginTop: 8 }, changeContact: { color: colors.brand, fontSize: 11, fontWeight: '800', marginTop: 9 },

@@ -5,18 +5,32 @@ import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
+import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { demoContacts } from '@/data/demo';
 import { colors, radius } from '@/theme/tokens';
 
-type Contact = (typeof demoContacts)[number] & { favorite: boolean };
+type Contact = {
+  id: string;
+  name: string;
+  handle: string;
+  initials: string;
+  color: string;
+  favorite: boolean;
+  email?: string;
+  address?: string;
+};
 
 export default function ContactsScreen() {
   const router = useRouter();
   const [contacts, setContacts] = useState<Contact[]>(demoContacts.map((contact, index) => ({ ...contact, favorite: index === 0 })));
   const [selected, setSelected] = useState<Contact | null>(null);
   const [editing, setEditing] = useState(false);
+  const [adding, setAdding] = useState(false);
   const [editName, setEditName] = useState('');
   const [editHandle, setEditHandle] = useState('');
+  const [newName, setNewName] = useState('');
+  const [identifier, setIdentifier] = useState('');
+  const [identifierType, setIdentifierType] = useState<'email' | 'address'>('email');
   const ordered = useMemo(() => [...contacts].sort((a, b) => Number(b.favorite) - Number(a.favorite)), [contacts]);
 
   const openContact = (contact: Contact) => {
@@ -50,15 +64,50 @@ export default function ContactsScreen() {
     ]);
   };
 
+  const addContact = () => {
+    const cleanName = newName.trim();
+    const cleanIdentifier = identifier.trim();
+    const validEmail = identifierType === 'email' && /^\S+@\S+\.\S+$/.test(cleanIdentifier);
+    const validAddress = identifierType === 'address' && cleanIdentifier.toUpperCase().startsWith('G') && cleanIdentifier.length >= 20;
+
+    if (!cleanName || (!validEmail && !validAddress)) {
+      Alert.alert('Revisa los datos', identifierType === 'email' ? 'Ingresa un nombre y un correo válido.' : 'Ingresa un nombre y una dirección Stellar válida.');
+      return;
+    }
+
+    const initials = cleanName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
+    const shortAddress = `${cleanIdentifier.slice(0, 5)}…${cleanIdentifier.slice(-4)}`;
+    const next: Contact = {
+      id: String(Date.now()),
+      name: cleanName,
+      handle: identifierType === 'email' ? cleanIdentifier : `Wallet externa · ${shortAddress}`,
+      initials,
+      color: identifierType === 'email' ? '#E4F3FF' : '#F0EBFF',
+      favorite: false,
+      ...(identifierType === 'email' ? { email: cleanIdentifier } : { address: cleanIdentifier }),
+    };
+
+    setContacts((current) => [...current, next]);
+    setAdding(false);
+    setNewName('');
+    setIdentifier('');
+    Alert.alert('Contacto agregado', identifierType === 'email' ? 'Cuando el correo tenga una cuenta Movya, usaremos automáticamente su dirección asociada.' : 'La wallet externa quedó guardada.');
+  };
+
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <PageHeader subtitle="Envía dinero sin copiar direcciones" title="Contactos" />
       <ScrollView contentContainerStyle={styles.content}>
+        <MovyaContextHelp
+          actionPrompt="Ayúdame a agregar un contacto nuevo"
+          explainPrompt="Explícame cómo funcionan los contactos por correo y dirección"
+          question="¿Necesitas ayuda para agregar un contacto?"
+        />
         <View style={styles.search}>
           <Ionicons name="search" size={18} color={colors.muted} />
           <TextInput placeholder="Buscar personas" placeholderTextColor={colors.muted} style={styles.input} />
         </View>
-        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Tus contactos</Text><Pressable style={styles.add}><Ionicons name="person-add-outline" size={18} color={colors.brand} /></Pressable></View>
+        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Tus contactos</Text><Pressable onPress={() => setAdding(true)} style={styles.add}><Ionicons name="person-add-outline" size={18} color={colors.brand} /></Pressable></View>
         <View style={styles.card}>
           {ordered.map((contact, index) => (
             <Pressable key={contact.id} onPress={() => openContact(contact)} style={[styles.contact, index > 0 && styles.divider]}>
@@ -105,13 +154,33 @@ export default function ContactsScreen() {
           ) : null}
         </View>
       </Modal>
+
+      <Modal animationType="slide" onRequestClose={() => setAdding(false)} transparent visible={adding}>
+        <Pressable onPress={() => setAdding(false)} style={styles.backdrop} />
+        <View style={styles.sheet}>
+          <View style={styles.handleBar} />
+          <Text style={styles.sheetTitle}>Nuevo contacto</Text>
+          <Text style={styles.addDescription}>Guarda a alguien por su cuenta Movya o por una wallet externa.</Text>
+          <View style={styles.segmented}>
+            <Pressable onPress={() => { setIdentifierType('email'); setIdentifier(''); }} style={[styles.segment, identifierType === 'email' && styles.segmentActive]}><Ionicons name="mail-outline" size={17} color={identifierType === 'email' ? colors.brand : colors.muted} /><Text style={[styles.segmentText, identifierType === 'email' && styles.segmentTextActive]}>Correo Movya</Text></Pressable>
+            <Pressable onPress={() => { setIdentifierType('address'); setIdentifier(''); }} style={[styles.segment, identifierType === 'address' && styles.segmentActive]}><Ionicons name="wallet-outline" size={17} color={identifierType === 'address' ? colors.brand : colors.muted} /><Text style={[styles.segmentText, identifierType === 'address' && styles.segmentTextActive]}>Dirección</Text></Pressable>
+          </View>
+          <Text style={styles.editLabel}>Nombre</Text>
+          <TextInput onChangeText={setNewName} placeholder="Ej. Andrea López" placeholderTextColor={colors.muted} style={styles.editInput} value={newName} />
+          <Text style={styles.editLabel}>{identifierType === 'email' ? 'Correo electrónico' : 'Dirección Stellar'}</Text>
+          <TextInput autoCapitalize={identifierType === 'email' ? 'none' : 'characters'} keyboardType={identifierType === 'email' ? 'email-address' : 'default'} onChangeText={setIdentifier} placeholder={identifierType === 'email' ? 'andrea@correo.com' : 'G...'} placeholderTextColor={colors.muted} style={styles.editInput} value={identifier} />
+          <View style={styles.lookupInfo}><Ionicons name={identifierType === 'email' ? 'link-outline' : 'shield-checkmark-outline'} size={18} color={colors.brand} /><Text style={styles.lookupText}>{identifierType === 'email' ? 'Si ya usa Movya, vincularemos la dirección asociada a ese correo.' : 'Las wallets externas se guardan directamente por su dirección pública.'}</Text></View>
+          <Pressable onPress={addContact} style={styles.sendButton}><Text style={styles.sendText}>Agregar contacto</Text></Pressable>
+          <Pressable onPress={() => setAdding(false)} style={styles.cancelButton}><Text style={styles.cancelText}>Cancelar</Text></Pressable>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background }, content: { padding: 20, paddingBottom: 40 },
-  search: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, paddingHorizontal: 15, height: 52 }, input: { flex: 1, marginLeft: 10, color: colors.ink, fontSize: 15 },
+  search: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, paddingHorizontal: 15, height: 52, marginTop: 18 }, input: { flex: 1, marginLeft: 10, color: colors.ink, fontSize: 15 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 26, marginBottom: 11 }, sectionTitle: { color: colors.ink, fontSize: 17, fontWeight: '800' }, add: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
   card: { backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 15 }, contact: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }, divider: { borderTopWidth: 1, borderTopColor: colors.border },
   avatar: { width: 46, height: 46, borderRadius: 17, alignItems: 'center', justifyContent: 'center' }, avatarText: { color: colors.ink, fontSize: 13, fontWeight: '800' }, contactCopy: { flex: 1, marginLeft: 12 }, nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 }, name: { color: colors.ink, fontSize: 15, fontWeight: '700' }, handle: { color: colors.muted, fontSize: 12, marginTop: 3 },
@@ -120,4 +189,11 @@ const styles = StyleSheet.create({
   sendButton: { height: 54, borderRadius: 18, backgroundColor: colors.brand, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 24 }, sendText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800', marginLeft: 7 },
   secondaryActions: { flexDirection: 'row', gap: 10, marginTop: 11 }, secondaryButton: { flex: 1, height: 50, borderRadius: 16, backgroundColor: colors.background, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }, secondaryText: { color: colors.ink, fontSize: 13, fontWeight: '700', marginLeft: 7 }, deleteText: { color: '#D04444', fontSize: 13, fontWeight: '700', marginLeft: 7 }, favoriteHint: { color: colors.muted, fontSize: 10, textAlign: 'center', marginTop: 15 },
   editLabel: { color: colors.muted, fontSize: 11, fontWeight: '700', marginTop: 15, marginBottom: 7 }, editInput: { height: 52, borderRadius: 16, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background, paddingHorizontal: 14, color: colors.ink }, cancelButton: { height: 48, alignItems: 'center', justifyContent: 'center', marginTop: 6 }, cancelText: { color: colors.muted, fontSize: 13, fontWeight: '700' },
+  addDescription: { color: colors.muted, fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 6 },
+  segmented: { flexDirection: 'row', gap: 8, backgroundColor: colors.background, borderRadius: 17, padding: 5, marginTop: 20 },
+  segment: { flex: 1, height: 43, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderRadius: 13 },
+  segmentActive: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.brandIce },
+  segmentText: { color: colors.muted, fontSize: 11, fontWeight: '700' }, segmentTextActive: { color: colors.brand },
+  lookupInfo: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: colors.brandSoft, borderRadius: 15, padding: 12, marginTop: 14 },
+  lookupText: { flex: 1, color: colors.brandDark, fontSize: 10, lineHeight: 15, marginLeft: 8 },
 });
