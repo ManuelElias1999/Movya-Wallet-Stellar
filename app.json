@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "Movya Wallet",
+    "slug": "movya-wallet-stellar",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "movya",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.movya.wallet.stellar"
+    },
+    "android": {
+      "package": "com.movya.wallet.stellar",
+      "adaptiveIcon": {
+        "backgroundColor": "#0461F0"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
