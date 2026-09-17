@@ -15,6 +15,7 @@ export default function AppLayout() {
       <Stack.Screen name="send" />
       <Stack.Screen name="receive" />
       <Stack.Screen name="swap" />
+      <Stack.Screen name="settings" />
       <Stack.Screen name="movya" />
     </Stack>
   );

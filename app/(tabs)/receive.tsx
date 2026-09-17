@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,6 +18,13 @@ export default function ReceiveScreen() {
     setTimeout(() => setCopied(false), 1800);
   };
 
+  const shareAddress = async () => {
+    await Share.share({
+      message: `Recibe dinero en mi cuenta Movya:\n${demoAddress}`,
+      title: 'Mi cuenta Movya',
+    });
+  };
+
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <PageHeader subtitle="Tu cuenta personal" title="Recibir dinero" />
@@ -31,10 +38,16 @@ export default function ReceiveScreen() {
         <View style={styles.addressCard}>
           <Text style={styles.addressLabel}>Tu dirección</Text>
           <Text numberOfLines={2} style={styles.address}>{demoAddress}</Text>
-          <Pressable onPress={copyAddress} style={styles.copyButton}>
-            <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={colors.brand} />
-            <Text style={styles.copyText}>{copied ? 'Copiada' : 'Copiar dirección'}</Text>
-          </Pressable>
+          <View style={styles.actions}>
+            <Pressable onPress={copyAddress} style={styles.actionButton}>
+              <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={colors.brand} />
+              <Text style={styles.actionText}>{copied ? 'Copiada' : 'Copiar'}</Text>
+            </Pressable>
+            <Pressable onPress={shareAddress} style={[styles.actionButton, styles.shareButton]}>
+              <Ionicons name="share-social-outline" size={19} color="#FFFFFF" />
+              <Text style={styles.shareText}>Compartir</Text>
+            </Pressable>
+          </View>
         </View>
         <View style={styles.info}>
           <Ionicons name="information-circle-outline" size={21} color={colors.brand} />
@@ -51,6 +64,10 @@ const styles = StyleSheet.create({
   qrCard: { width: '100%', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 28, borderWidth: 1, borderColor: colors.border, padding: 24, marginTop: 24 },
   qrWrap: { padding: 14, borderRadius: 22, backgroundColor: '#FFFFFF' }, badge: { flexDirection: 'row', alignItems: 'center', marginTop: 17, backgroundColor: colors.positiveSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.positive, marginRight: 6 }, badgeText: { color: colors.positive, fontSize: 11, fontWeight: '700' },
   addressCard: { width: '100%', backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: 17, marginTop: 16 }, addressLabel: { color: colors.muted, fontSize: 11, fontWeight: '700' }, address: { color: colors.ink, fontSize: 13, lineHeight: 19, fontWeight: '600', marginTop: 8 },
-  copyButton: { height: 45, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brandSoft, borderRadius: 15, marginTop: 14 }, copyText: { color: colors.brand, fontSize: 13, fontWeight: '800', marginLeft: 7 },
+  actions: { flexDirection: 'row', gap: 9, marginTop: 14 },
+  actionButton: { flex: 1, height: 45, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brandSoft, borderRadius: 15 },
+  actionText: { color: colors.brand, fontSize: 13, fontWeight: '800', marginLeft: 7 },
+  shareButton: { backgroundColor: colors.brand },
+  shareText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', marginLeft: 7 },
   info: { width: '100%', flexDirection: 'row', alignItems: 'flex-start', padding: 15, marginTop: 18 }, infoText: { flex: 1, color: colors.muted, fontSize: 11, lineHeight: 17, marginLeft: 9 },
 });

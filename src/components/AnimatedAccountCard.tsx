@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors } from '@/theme/tokens';
@@ -50,7 +50,10 @@ export function AnimatedAccountCard({ amountsVisible }: AnimatedAccountCardProps
 
       <View style={styles.top}>
         <View>
-          <Text style={styles.brand}>movya</Text>
+          <View style={styles.brandRow}>
+            <Image source={require('../../assets/movya-logo.png')} style={styles.brandLogo} />
+            <Text style={styles.brand}>Movya</Text>
+          </View>
           <Text style={styles.type}>Cuenta personal</Text>
         </View>
         <View style={styles.statusPill}><View style={styles.statusDot} /><Text style={styles.statusText}>Activa</Text></View>
@@ -72,6 +75,8 @@ const styles = StyleSheet.create({
   glowLarge: { position: 'absolute', width: 250, height: 250, borderRadius: 125, backgroundColor: 'rgba(129,190,255,0.18)', right: -90, top: -98 },
   glowSmall: { position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.09)', left: -60, bottom: -70 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  brandRow: { flexDirection: 'row', alignItems: 'center' },
+  brandLogo: { width: 34, height: 34, resizeMode: 'contain', marginRight: 7 },
   brand: { color: '#FFFFFF', fontSize: 25, fontWeight: '800', letterSpacing: -0.8 },
   type: { color: 'rgba(255,255,255,0.68)', fontSize: 11, marginTop: 2 },
   statusPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
