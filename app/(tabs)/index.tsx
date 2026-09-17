@@ -27,15 +27,15 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Hola, Manuel!</Text>
-            <Text style={styles.subtitle}>Qué gusto verte de nuevo.</Text>
-          </View>
-          <View style={styles.logoButton}><Image source={require('../../assets/movya-logo.png')} style={styles.logo} /></View>
+      <View style={styles.fixedHeader}>
+        <View>
+          <Text style={styles.greeting}>Hola, Manuel!</Text>
+          <Text style={styles.subtitle}>Qué gusto verte de nuevo.</Text>
         </View>
+        <View style={styles.logoButton}><Image source={require('../../assets/movya-logo.png')} style={styles.logo} /></View>
+      </View>
 
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AnimatedAccountCard amountsVisible={amountsVisible} />
 
         <View style={styles.totalCard}>
@@ -50,19 +50,35 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.section}>
+          <SectionHeader title="Operaciones" />
+          <View style={styles.operations}>
+            <Pressable onPress={() => router.push('/send')} style={styles.operation}>
+              <View style={styles.operationIcon}><Ionicons name="paper-plane-outline" size={22} color={colors.brand} /></View>
+              <Text style={styles.operationTitle}>Enviar</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/receive')} style={styles.operation}>
+              <View style={styles.operationIcon}><Ionicons name="qr-code-outline" size={22} color={colors.brand} /></View>
+              <Text style={styles.operationTitle}>Recibir</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/swap')} style={styles.operation}>
+              <View style={styles.operationIcon}><Ionicons name="repeat-outline" size={22} color={colors.brand} /></View>
+              <Text style={styles.operationTitle}>Cambiar</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.section}>
           <SectionHeader title="Tu cuenta" />
           <View style={styles.shortcuts}>
             <Pressable onPress={() => router.push('/contacts')} style={styles.shortcut}>
-              <View style={styles.shortcutIcon}><Ionicons name="people-outline" size={22} color={colors.brand} /></View>
-              <Text style={styles.shortcutTitle}>Contactos</Text>
-              <Text style={styles.shortcutText}>Personas guardadas</Text>
-              <Ionicons name="arrow-forward" size={17} color={colors.muted} style={styles.shortcutArrow} />
+              <View style={styles.shortcutIcon}><Ionicons name="people-outline" size={20} color={colors.brand} /></View>
+              <View style={styles.shortcutCopy}><Text style={styles.shortcutTitle}>Contactos</Text><Text style={styles.shortcutText}>Personas guardadas</Text></View>
+              <Ionicons name="chevron-forward" size={17} color={colors.muted} />
             </Pressable>
             <Pressable onPress={() => router.push('/activity')} style={styles.shortcut}>
-              <View style={styles.shortcutIcon}><Ionicons name="time-outline" size={22} color={colors.brand} /></View>
-              <Text style={styles.shortcutTitle}>Historial</Text>
-              <Text style={styles.shortcutText}>Todos tus movimientos</Text>
-              <Ionicons name="arrow-forward" size={17} color={colors.muted} style={styles.shortcutArrow} />
+              <View style={styles.shortcutIcon}><Ionicons name="time-outline" size={20} color={colors.brand} /></View>
+              <View style={styles.shortcutCopy}><Text style={styles.shortcutTitle}>Historial</Text><Text style={styles.shortcutText}>Tus movimientos</Text></View>
+              <Ionicons name="chevron-forward" size={17} color={colors.muted} />
             </Pressable>
           </View>
         </View>
@@ -89,12 +105,12 @@ export default function HomeScreen() {
       </ScrollView>
 
       <Pressable onPress={() => setChatOpen(true)} style={styles.movyaDock}>
-        <Image source={require('../../assets/movya-logo.png')} style={styles.dockLogo} />
+        <View style={styles.chatIcon}><Ionicons name="chatbubble-ellipses" size={22} color="#FFFFFF" /></View>
         <View style={styles.dockCopy}>
-          <Text style={styles.dockPlaceholder}>Escríbele a Movya…</Text>
-          <Text style={styles.dockHint}>Transferencias, consultas y ayuda</Text>
+          <View style={styles.dockTitleRow}><Text style={styles.dockPlaceholder}>Chat con Movya</Text><View style={styles.onlineDot} /></View>
+          <Text style={styles.dockHint}>Escribe un mensaje para comenzar</Text>
         </View>
-        <View style={styles.dockAction}><Ionicons name="arrow-up" size={20} color="#FFFFFF" /></View>
+        <View style={styles.dockAction}><Ionicons name="chevron-up" size={20} color={colors.brand} /></View>
       </Pressable>
 
       <MovyaChatSheet onClose={() => setChatOpen(false)} open={chatOpen} />
@@ -104,8 +120,8 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
-  content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 126 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 },
+  fixedHeader: { minHeight: 78, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, backgroundColor: colors.background, borderBottomWidth: 1, borderBottomColor: 'rgba(227,234,244,0.7)', zIndex: 10 },
+  content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 126 },
   greeting: { color: colors.ink, fontSize: 27, fontWeight: '800', letterSpacing: -0.8 },
   subtitle: { color: colors.muted, fontSize: 13, marginTop: 4 },
   logoButton: { width: 54, height: 54, borderRadius: 20, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
@@ -116,12 +132,16 @@ const styles = StyleSheet.create({
   totalCaption: { color: colors.muted, fontSize: 11, marginTop: 4 },
   eyeButton: { width: 44, height: 44, borderRadius: 16, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
   section: { marginTop: 30, gap: 12 },
-  shortcuts: { flexDirection: 'row', gap: 12 },
-  shortcut: { flex: 1, minHeight: 148, backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: 15 },
-  shortcutIcon: { width: 42, height: 42, borderRadius: 15, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  operations: { flexDirection: 'row', gap: 10 },
+  operation: { flex: 1, height: 92, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
+  operationIcon: { width: 42, height: 42, borderRadius: 15, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
+  operationTitle: { color: colors.ink, fontSize: 12, fontWeight: '800', marginTop: 8 },
+  shortcuts: { gap: 9 },
+  shortcut: { minHeight: 70, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 13 },
+  shortcutIcon: { width: 42, height: 42, borderRadius: 15, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
+  shortcutCopy: { flex: 1, marginLeft: 11 },
   shortcutTitle: { color: colors.ink, fontSize: 15, fontWeight: '800' },
-  shortcutText: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: 4, paddingRight: 18 },
-  shortcutArrow: { position: 'absolute', right: 14, bottom: 16 },
+  shortcutText: { color: colors.muted, fontSize: 11, marginTop: 3 },
   card: { backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: 15, borderWidth: 1, borderColor: colors.border },
   assetRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15 },
   divider: { borderTopWidth: 1, borderTopColor: colors.border },
@@ -134,10 +154,12 @@ const styles = StyleSheet.create({
   assetAmount: { color: colors.ink, fontSize: 14, fontWeight: '700' },
   assetValue: { color: colors.muted, fontSize: 12, marginTop: 3 },
   syncError: { color: colors.warning, fontSize: 11, lineHeight: 16, marginTop: 16 },
-  movyaDock: { position: 'absolute', left: 18, right: 18, bottom: 16, minHeight: 68, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 10, shadowColor: colors.navy, shadowOpacity: 0.14, shadowRadius: 20, shadowOffset: { width: 0, height: 8 }, elevation: 8 },
-  dockLogo: { width: 48, height: 48, resizeMode: 'contain' },
-  dockCopy: { flex: 1, marginLeft: 8 },
+  movyaDock: { position: 'absolute', left: 18, right: 18, bottom: 16, minHeight: 70, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1.5, borderColor: colors.brandIce, paddingHorizontal: 11, shadowColor: colors.navy, shadowOpacity: 0.16, shadowRadius: 22, shadowOffset: { width: 0, height: 9 }, elevation: 8 },
+  chatIcon: { width: 46, height: 46, borderRadius: 17, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
+  dockCopy: { flex: 1, marginLeft: 11 },
+  dockTitleRow: { flexDirection: 'row', alignItems: 'center' },
   dockPlaceholder: { color: colors.ink, fontSize: 14, fontWeight: '700' },
-  dockHint: { color: colors.muted, fontSize: 10, marginTop: 3 },
-  dockAction: { width: 42, height: 42, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brand },
+  onlineDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.positive, marginLeft: 7 },
+  dockHint: { color: colors.muted, fontSize: 10, marginTop: 4 },
+  dockAction: { width: 38, height: 38, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brandSoft },
 });

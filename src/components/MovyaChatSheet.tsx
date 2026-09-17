@@ -51,7 +51,7 @@ export function MovyaChatSheet({ open, onClose }: MovyaChatSheetProps) {
             <Image source={require('../../assets/movya-logo.png')} style={styles.logo} />
             <View>
               <Text style={styles.title}>Movya</Text>
-              <Text style={styles.status}>En línea</Text>
+              <View style={styles.statusRow}><View style={styles.statusDot} /><Text style={styles.status}>Asistente personal · En línea</Text></View>
             </View>
           </View>
           <View style={styles.headerSpacer} />
@@ -59,10 +59,13 @@ export function MovyaChatSheet({ open, onClose }: MovyaChatSheetProps) {
 
         <ScrollView contentContainerStyle={styles.messages} keyboardShouldPersistTaps="handled">
           <Text style={styles.today}>HOY</Text>
-          {messages.map((message) => (
-            <View key={message.id} style={[styles.bubble, message.role === 'user' ? styles.userBubble : styles.movyaBubble]}>
-              <Text style={[styles.messageText, message.role === 'user' && styles.userText]}>{message.text}</Text>
+          {messages.map((message) => message.role === 'movya' ? (
+            <View key={message.id} style={styles.movyaRow}>
+              <Image source={require('../../assets/movya-logo.png')} style={styles.messageAvatar} />
+              <View style={[styles.bubble, styles.movyaBubble]}><Text style={styles.messageText}>{message.text}</Text><Text style={styles.messageTime}>Ahora</Text></View>
             </View>
+          ) : (
+            <View key={message.id} style={[styles.bubble, styles.userBubble]}><Text style={[styles.messageText, styles.userText]}>{message.text}</Text><Text style={styles.userTime}>Ahora</Text></View>
           ))}
           <View style={styles.suggestions}>
             {suggestions.map((suggestion) => (
@@ -75,9 +78,10 @@ export function MovyaChatSheet({ open, onClose }: MovyaChatSheetProps) {
 
         <View style={styles.composerArea}>
           <View style={styles.composer}>
+            <Pressable style={styles.attachButton}><Ionicons name="add" size={21} color={colors.brand} /></Pressable>
             <TextInput ref={inputRef} multiline onChangeText={setText} onSubmitEditing={send} placeholder="Escríbele a Movya…" placeholderTextColor={colors.muted} style={styles.input} value={text} />
-            <Pressable disabled={!text.trim()} onPress={send} style={[styles.sendButton, !text.trim() && styles.sendDisabled]}>
-              <Ionicons name="arrow-up" size={20} color="#FFFFFF" />
+            <Pressable onPress={text.trim() ? send : undefined} style={[styles.sendButton, !text.trim() && styles.micButton]}>
+              <Ionicons name={text.trim() ? 'arrow-up' : 'mic-outline'} size={20} color={text.trim() ? '#FFFFFF' : colors.brand} />
             </Pressable>
           </View>
           <Text style={styles.security}>Movya te pedirá confirmación antes de mover dinero.</Text>
@@ -95,22 +99,29 @@ const styles = StyleSheet.create({
   identity: { flexDirection: 'row', alignItems: 'center' },
   logo: { width: 42, height: 42, resizeMode: 'contain', marginRight: 9 },
   title: { color: colors.ink, fontSize: 16, fontWeight: '800' },
-  status: { color: colors.positive, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  statusRow: { flexDirection: 'row', alignItems: 'center', marginTop: 3 },
+  statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.positive, marginRight: 5 },
+  status: { color: colors.muted, fontSize: 10, fontWeight: '600' },
   headerSpacer: { width: 42 },
   messages: { padding: 18, paddingBottom: 28 },
   today: { alignSelf: 'center', color: colors.muted, fontSize: 10, fontWeight: '700', letterSpacing: 1.2, marginBottom: 20 },
-  bubble: { maxWidth: '82%', borderRadius: 20, paddingHorizontal: 15, paddingVertical: 12, marginBottom: 10 },
-  movyaBubble: { alignSelf: 'flex-start', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderTopLeftRadius: 7 },
+  movyaRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 10 },
+  messageAvatar: { width: 32, height: 32, resizeMode: 'contain', marginRight: 7 },
+  bubble: { maxWidth: '82%', borderRadius: 20, paddingHorizontal: 15, paddingTop: 11, paddingBottom: 8, marginBottom: 10 },
+  movyaBubble: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderBottomLeftRadius: 7, marginBottom: 0 },
   userBubble: { alignSelf: 'flex-end', backgroundColor: colors.brand, borderTopRightRadius: 7 },
   messageText: { color: colors.text, fontSize: 14, lineHeight: 20 },
   userText: { color: '#FFFFFF' },
+  messageTime: { color: colors.muted, fontSize: 9, alignSelf: 'flex-end', marginTop: 4 },
+  userTime: { color: 'rgba(255,255,255,0.7)', fontSize: 9, alignSelf: 'flex-end', marginTop: 4 },
   suggestions: { gap: 9, marginTop: 10, alignItems: 'flex-start' },
   suggestion: { backgroundColor: colors.brandSoft, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 10 },
   suggestionText: { color: colors.brandDark, fontSize: 12, fontWeight: '700' },
   composerArea: { backgroundColor: colors.surface, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 12, borderTopWidth: 1, borderTopColor: colors.border },
-  composer: { flexDirection: 'row', alignItems: 'flex-end', backgroundColor: colors.background, borderRadius: 24, borderWidth: 1, borderColor: colors.border, padding: 7, paddingLeft: 15, minHeight: 56 },
-  input: { flex: 1, color: colors.ink, fontSize: 15, maxHeight: 100, paddingVertical: 9 },
+  composer: { flexDirection: 'row', alignItems: 'flex-end', backgroundColor: colors.background, borderRadius: 24, borderWidth: 1, borderColor: colors.border, padding: 7, minHeight: 56 },
+  attachButton: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  input: { flex: 1, color: colors.ink, fontSize: 15, maxHeight: 100, paddingVertical: 9, paddingHorizontal: 9 },
   sendButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
-  sendDisabled: { backgroundColor: '#B9C4D5' },
+  micButton: { backgroundColor: colors.brandSoft },
   security: { color: colors.muted, fontSize: 10, textAlign: 'center', marginTop: 8 },
 });

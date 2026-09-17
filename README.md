@@ -5,7 +5,9 @@ Movya is a mobile wallet designed to make stablecoin payments feel as simple as 
 ## Current scope
 
 - React Native + Expo Router
-- Redesigned Home, Activity, Contacts, and Ask Movya screens
+- Premium banking-style Home with fixed header and animated account card
+- Send, receive (QR), exchange, contact management, and history prototypes
+- Full-screen animated Movya chat experience
 - Stellar Testnet configuration
 - Horizon read service for account balances and recent payments
 - Demo data when no public testnet account is configured

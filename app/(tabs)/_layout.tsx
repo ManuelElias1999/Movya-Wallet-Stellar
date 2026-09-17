@@ -12,6 +12,9 @@ export default function AppLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="activity" />
       <Stack.Screen name="contacts" />
+      <Stack.Screen name="send" />
+      <Stack.Screen name="receive" />
+      <Stack.Screen name="swap" />
       <Stack.Screen name="movya" />
     </Stack>
   );
