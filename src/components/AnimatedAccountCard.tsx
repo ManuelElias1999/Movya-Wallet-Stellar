@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 
 import { colors } from '@/theme/tokens';
 
@@ -25,6 +26,7 @@ export function AnimatedAccountCard({ amountsVisible }: AnimatedAccountCardProps
   }, [movement]);
 
   const playReaction = () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     Animated.parallel([
       Animated.sequence([
         Animated.timing(shake, { toValue: 1, duration: 55, useNativeDriver: true }),

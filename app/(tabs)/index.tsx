@@ -1,13 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 
+import { AssetDetail, AssetDetailSheet } from '@/components/AssetDetailSheet';
 import { AnimatedAccountCard } from '@/components/AnimatedAccountCard';
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
 import { MovyaChatSheet } from '@/components/MovyaChatSheet';
 import { SectionHeader } from '@/components/SectionHeader';
+import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
 import { demoAssets } from '@/data/demo';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { colors, radius } from '@/theme/tokens';
@@ -16,6 +20,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const [amountsVisible, setAmountsVisible] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<AssetDetail | null>(null);
   const account = useStellarAccount();
   const assets = account.data?.balances.map((item) => ({
     code: item.assetCode,
@@ -28,14 +33,17 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <View style={styles.fixedHeader}>
+      <StatusBar style="light" />
+      <LinearGradient colors={['rgba(6,32,72,0.98)', 'rgba(16,89,194,0.95)', 'rgba(62,145,255,0.9)']} end={{ x: 1, y: 1 }} start={{ x: 0, y: 0 }} style={styles.fixedHeader}>
         <View>
           <Text style={styles.greeting}>Hola, Manuel!</Text>
           <Text style={styles.subtitle}>Qué gusto verte de nuevo.</Text>
+          <View style={styles.stellarHeader}><StellarNetworkBadge dark /></View>
         </View>
         <Pressable onPress={() => router.push('/settings')} style={styles.settingsButton}><Ionicons name="settings-outline" size={22} color={colors.ink} /></Pressable>
-      </View>
+      </LinearGradient>
 
+      <LinearGradient colors={['#E5F1FF', '#F3EDFF', '#E7F7F5', '#EDF4FC']} locations={[0, 0.34, 0.68, 1]} style={styles.body}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AnimatedAccountCard amountsVisible={amountsVisible} />
 
@@ -65,7 +73,7 @@ export default function HomeScreen() {
           <SectionHeader title="Mis cuentas" action="Ver todas" />
           <View style={styles.card}>
             {assets.map((asset, index) => (
-              <View key={`${asset.code}-${index}`} style={[styles.assetRow, index > 0 && styles.divider]}>
+              <Pressable key={`${asset.code}-${index}`} onPress={() => setSelectedAsset(asset)} style={[styles.assetRow, index > 0 && styles.divider]}>
                 <View style={[styles.assetIcon, { backgroundColor: asset.color }]}><Text style={styles.assetCode}>{asset.code.slice(0, 1)}</Text></View>
                 <View style={styles.assetCopy}>
                   <Text style={styles.assetName}>{asset.name}</Text>
@@ -75,12 +83,14 @@ export default function HomeScreen() {
                   <Text style={styles.assetAmount}>{privateValue(asset.amount)}</Text>
                   <Text style={styles.assetValue}>{amountsVisible ? asset.value : '••••'}</Text>
                 </View>
-              </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.muted} style={styles.assetChevron} />
+              </Pressable>
             ))}
           </View>
         </View>
         {account.error ? <Text style={styles.syncError}>No pudimos sincronizar Testnet: {account.error}</Text> : null}
       </ScrollView>
+      </LinearGradient>
 
       <Pressable accessibilityLabel="Abrir el chat de Movya" onPress={() => setChatOpen(true)} style={styles.movyaButton}>
         <View style={styles.buttonHalo} />
@@ -90,17 +100,18 @@ export default function HomeScreen() {
       </Pressable>
 
       <MovyaChatSheet onClose={() => setChatOpen(false)} open={chatOpen} />
+      <AssetDetailSheet asset={selectedAsset} onClose={() => setSelectedAsset(null)} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
-  fixedHeader: { minHeight: 78, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, backgroundColor: 'rgba(236,243,251,0.97)', borderBottomWidth: 1, borderBottomColor: 'rgba(207,226,255,0.9)', zIndex: 10 },
+  safeArea: { flex: 1, backgroundColor: '#062048' }, body: { flex: 1 },
+  fixedHeader: { minHeight: 108, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.18)', zIndex: 10 },
   content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 106 },
-  greeting: { color: colors.ink, fontSize: 27, fontWeight: '800', letterSpacing: -0.8 },
-  subtitle: { color: colors.muted, fontSize: 13, marginTop: 4 },
-  settingsButton: { width: 46, height: 46, borderRadius: 17, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border, shadowColor: colors.navy, shadowOpacity: 0.07, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  greeting: { color: '#FFFFFF', fontSize: 27, fontWeight: '800', letterSpacing: -0.8 },
+  subtitle: { color: 'rgba(255,255,255,0.74)', fontSize: 13, marginTop: 4 }, stellarHeader: { marginTop: 9 },
+  settingsButton: { width: 46, height: 46, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.88)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.9)', shadowColor: colors.navy, shadowOpacity: 0.14, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
   totalCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FBFF', borderRadius: radius.lg, marginTop: 22, padding: 20, borderWidth: 1, borderColor: '#CFE2FF', shadowColor: colors.brandDark, shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
   totalLabel: { color: colors.muted, fontSize: 12, fontWeight: '600' },
   totalAmount: { color: colors.ink, fontSize: 28, fontWeight: '800', letterSpacing: -0.8, marginTop: 5 },
@@ -125,6 +136,7 @@ const styles = StyleSheet.create({
   assetName: { color: colors.ink, fontSize: 15, fontWeight: '700' },
   assetSymbol: { color: colors.muted, fontSize: 12, marginTop: 3 },
   assetNumbers: { alignItems: 'flex-end' },
+  assetChevron: { marginLeft: 8 },
   assetAmount: { color: colors.ink, fontSize: 14, fontWeight: '700' },
   assetValue: { color: colors.muted, fontSize: 12, marginTop: 3 },
   syncError: { color: colors.warning, fontSize: 11, lineHeight: 16, marginTop: 16 },

@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
 import { MovyaContextHelp } from '@/components/MovyaContextHelp';
+import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
 import { colors, radius } from '@/theme/tokens';
 
 const demoAddress = 'GAJIBAJ3YTJLXHVROCHO374P3LM4YLQFGT6WLWS2NOWO2PLHH3CWMDDQ';
@@ -37,6 +38,7 @@ export default function ReceiveScreen() {
             question="¿Necesitas ayuda para recibir dinero?"
           />
         </View>
+        <StellarNetworkBadge label="Recibe únicamente por la red Stellar" />
         <Text style={styles.title}>Tu código para recibir</Text>
         <Text style={styles.subtitle}>La otra persona puede escanearlo o copiar tu dirección.</Text>
         <View style={styles.qrCard}>
@@ -59,7 +61,7 @@ export default function ReceiveScreen() {
         </View>
         <View style={styles.info}>
           <Ionicons name="information-circle-outline" size={21} color={colors.brand} />
-          <Text style={styles.infoText}>Este QR es de demostración. Cuando conectemos tu cuenta real, se generará automáticamente con tu dirección.</Text>
+          <Text style={styles.infoText}>Este QR corresponde a una dirección de Stellar de demostración. Cuando conectemos tu cuenta real, se generará automáticamente con tu dirección.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

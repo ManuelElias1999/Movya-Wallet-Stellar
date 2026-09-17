@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
 import { MovyaContextHelp } from '@/components/MovyaContextHelp';
+import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
 import { TokenSelector } from '@/components/TokenSelector';
 import { demoContacts } from '@/data/demo';
 import { colors, radius } from '@/theme/tokens';
@@ -40,7 +41,8 @@ export default function SendScreen() {
             explainPrompt="Explícame cómo enviar dinero de forma segura"
             question="¿Necesitas ayuda para enviar dinero?"
           />
-          <Text style={styles.label}>Monto</Text>
+          <View style={styles.networkBadge}><StellarNetworkBadge label="Envío por Stellar · Testnet" /></View>
+          <Text style={styles.label}>Monto y activo</Text>
           <View style={styles.amountCard}>
             <Text style={styles.currency}>{token === 'USDC' ? '$' : ''}</Text>
             <TextInput autoFocus keyboardType="decimal-pad" onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#A7B2C5" style={styles.amountInput} value={amount} />
@@ -72,7 +74,7 @@ export default function SendScreen() {
 
           <View style={styles.summary}>
             <View style={[styles.summaryIcon, { backgroundColor: token === 'USDC' ? '#E8F1FF' : '#EEF0F4' }]}><Ionicons name="shield-checkmark-outline" size={21} color={token === 'USDC' ? colors.brand : colors.navy} /></View>
-            <View style={styles.summaryCopy}><Text style={styles.summaryTitle}>Envío protegido</Text><Text style={styles.summaryText}>Verificarás destinatario, monto y activo antes de continuar.</Text></View>
+            <View style={styles.summaryCopy}><Text style={styles.summaryTitle}>Envío protegido en Stellar</Text><Text style={styles.summaryText}>Verificarás destinatario, monto, activo y red antes de continuar.</Text></View>
           </View>
 
           <Pressable disabled={!ready} onPress={() => Alert.alert('Vista previa', 'En la siguiente fase aparecerá la confirmación antes de firmar la operación.')} style={[styles.primaryButton, !ready && styles.disabled]}><Text style={styles.primaryText}>Revisar envío</Text></Pressable>
@@ -106,6 +108,7 @@ export default function SendScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background }, flex: { flex: 1 }, content: { padding: 20, paddingBottom: 40 },
+  networkBadge: { marginTop: 14 },
   label: { color: colors.ink, fontSize: 15, fontWeight: '800', marginTop: 20, marginBottom: 10 },
   amountCard: { height: 104, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 18 }, currency: { color: colors.muted, fontSize: 31, fontWeight: '700' }, amountInput: { flex: 1, color: colors.ink, fontSize: 40, fontWeight: '800', marginLeft: 3 },
   tokenPill: { height: 42, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.brandSoft, borderRadius: 15, paddingHorizontal: 10 }, tokenDot: { width: 22, height: 22, borderRadius: 8, marginRight: 7 }, tokenText: { color: colors.brandDark, fontSize: 12, fontWeight: '800', marginRight: 4 },
