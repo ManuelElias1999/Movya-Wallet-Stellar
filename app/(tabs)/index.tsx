@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import { AssetDetail, AssetDetailSheet } from '@/components/AssetDetailSheet';
 import { AnimatedAccountCard } from '@/components/AnimatedAccountCard';
+import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackground';
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
 import { MovyaChatSheet } from '@/components/MovyaChatSheet';
 import { SectionHeader } from '@/components/SectionHeader';
@@ -34,16 +35,16 @@ export default function HomeScreen() {
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <StatusBar style="light" />
-      <LinearGradient colors={['rgba(6,32,72,0.98)', 'rgba(16,89,194,0.95)', 'rgba(62,145,255,0.9)']} end={{ x: 1, y: 1 }} start={{ x: 0, y: 0 }} style={styles.fixedHeader}>
+      <AnimatedDashboardBackground />
+      <BlurView intensity={72} tint="dark" style={styles.fixedHeader}>
         <View>
           <Text style={styles.greeting}>Hola, Manuel!</Text>
           <Text style={styles.subtitle}>Qué gusto verte de nuevo.</Text>
-          <View style={styles.stellarHeader}><StellarNetworkBadge dark /></View>
         </View>
         <Pressable onPress={() => router.push('/settings')} style={styles.settingsButton}><Ionicons name="settings-outline" size={22} color={colors.ink} /></Pressable>
-      </LinearGradient>
+      </BlurView>
 
-      <LinearGradient colors={['#E5F1FF', '#F3EDFF', '#E7F7F5', '#EDF4FC']} locations={[0, 0.34, 0.68, 1]} style={styles.body}>
+      <View style={styles.body}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AnimatedAccountCard amountsVisible={amountsVisible} />
 
@@ -73,7 +74,7 @@ export default function HomeScreen() {
           <SectionHeader title="Mis cuentas" action="Ver todas" />
           <View style={styles.card}>
             {assets.map((asset, index) => (
-              <Pressable key={`${asset.code}-${index}`} onPress={() => setSelectedAsset(asset)} style={[styles.assetRow, index > 0 && styles.divider]}>
+              <Pressable key={`${asset.code}-${index}`} onPress={() => setSelectedAsset(asset)} style={styles.assetRow}>
                 <View style={[styles.assetIcon, { backgroundColor: asset.color }]}><Text style={styles.assetCode}>{asset.code.slice(0, 1)}</Text></View>
                 <View style={styles.assetCopy}>
                   <Text style={styles.assetName}>{asset.name}</Text>
@@ -87,10 +88,11 @@ export default function HomeScreen() {
               </Pressable>
             ))}
           </View>
+          <View style={styles.stellarFooter}><StellarNetworkBadge label="Powered by Stellar · Testnet" /></View>
         </View>
         {account.error ? <Text style={styles.syncError}>No pudimos sincronizar Testnet: {account.error}</Text> : null}
       </ScrollView>
-      </LinearGradient>
+      </View>
 
       <Pressable accessibilityLabel="Abrir el chat de Movya" onPress={() => setChatOpen(true)} style={styles.movyaButton}>
         <View style={styles.buttonHalo} />
@@ -106,12 +108,12 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#062048' }, body: { flex: 1 },
-  fixedHeader: { minHeight: 108, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.18)', zIndex: 10 },
-  content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 106 },
-  greeting: { color: '#FFFFFF', fontSize: 27, fontWeight: '800', letterSpacing: -0.8 },
-  subtitle: { color: 'rgba(255,255,255,0.74)', fontSize: 13, marginTop: 4 }, stellarHeader: { marginTop: 9 },
-  settingsButton: { width: 46, height: 46, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.88)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.9)', shadowColor: colors.navy, shadowOpacity: 0.14, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
+  safeArea: { flex: 1, backgroundColor: '#9FC9FF' }, body: { flex: 1, backgroundColor: 'transparent' },
+  fixedHeader: { minHeight: 72, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(8,52,113,0.34)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.3)', zIndex: 10, overflow: 'hidden' },
+  content: { paddingHorizontal: 20, paddingTop: 17, paddingBottom: 106 },
+  greeting: { color: '#FFFFFF', fontSize: 23, fontWeight: '800', letterSpacing: -0.6 },
+  subtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 11, marginTop: 2 },
+  settingsButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.74)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.88)', shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
   totalCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FBFF', borderRadius: radius.lg, marginTop: 22, padding: 20, borderWidth: 1, borderColor: '#CFE2FF', shadowColor: colors.brandDark, shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
   totalLabel: { color: colors.muted, fontSize: 12, fontWeight: '600' },
   totalAmount: { color: colors.ink, fontSize: 28, fontWeight: '800', letterSpacing: -0.8, marginTop: 5 },
@@ -127,9 +129,8 @@ const styles = StyleSheet.create({
   amber: { backgroundColor: '#FFF3DE', borderColor: '#FFE3B2' },
   rose: { backgroundColor: '#FCEAF0', borderColor: '#F6D4E0' },
   quickLabel: { color: colors.text, fontSize: 10, fontWeight: '700', marginTop: 7 },
-  card: { backgroundColor: colors.surface, borderRadius: radius.md, paddingHorizontal: 15, borderWidth: 1, borderColor: colors.border, shadowColor: colors.navy, shadowOpacity: 0.07, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
-  assetRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15 },
-  divider: { borderTopWidth: 1, borderTopColor: colors.border },
+  card: { gap: 11 },
+  assetRow: { minHeight: 74, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 20, backgroundColor: 'rgba(252,253,255,0.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.85)', shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
   assetIcon: { width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   assetCode: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
   assetCopy: { flex: 1, marginLeft: 12 },
@@ -139,6 +140,7 @@ const styles = StyleSheet.create({
   assetChevron: { marginLeft: 8 },
   assetAmount: { color: colors.ink, fontSize: 14, fontWeight: '700' },
   assetValue: { color: colors.muted, fontSize: 12, marginTop: 3 },
+  stellarFooter: { alignItems: 'center', marginTop: 5 },
   syncError: { color: colors.warning, fontSize: 11, lineHeight: 16, marginTop: 16 },
   movyaButton: { position: 'absolute', right: 20, bottom: 18, width: 68, height: 68, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.brandIce, shadowColor: colors.brandDark, shadowOpacity: 0.28, shadowRadius: 20, shadowOffset: { width: 0, height: 9 }, elevation: 10 },
   buttonHalo: { position: 'absolute', width: 62, height: 62, borderRadius: 23, backgroundColor: colors.brandSoft },

@@ -100,7 +100,13 @@ export default function ContactsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <MovyaContextHelp
           actionPrompt="Ayúdame a agregar un contacto nuevo"
-          explainPrompt="Explícame cómo funcionan los contactos por correo y dirección"
+          explanationSteps={[
+            'Puedes guardar a una persona usando el correo con el que creó su cuenta Movya.',
+            'Si el correo existe en Movya, vincularemos automáticamente su dirección Stellar.',
+            'Para una wallet externa, pega directamente su dirección pública, que empieza con G.',
+            'Luego podrás elegir ese contacto al enviar dinero sin volver a copiar la dirección.',
+          ]}
+          explanationTitle="Cómo agregar un contacto"
           question="¿Necesitas ayuda para agregar un contacto?"
         />
         <View style={styles.search}>

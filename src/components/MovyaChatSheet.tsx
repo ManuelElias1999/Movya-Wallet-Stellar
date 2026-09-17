@@ -20,6 +20,7 @@ const formatDuration = (seconds: number) => `0:${String(seconds).padStart(2, '0'
 
 export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetProps) {
   const translateY = useRef(new Animated.Value(screenHeight)).current;
+  const consumedPrompt = useRef('');
   const [text, setText] = useState(initialPrompt ?? '');
   const [recording, setRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -32,7 +33,12 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     Animated.timing(translateY, { toValue: open ? 0 : screenHeight, duration: open ? 440 : 350, easing: open ? Easing.out(Easing.cubic) : Easing.inOut(Easing.cubic), useNativeDriver: true }).start();
   }, [open, translateY]);
 
-  useEffect(() => { if (initialPrompt) setText(initialPrompt); }, [initialPrompt]);
+  useEffect(() => {
+    if (!open || !initialPrompt || consumedPrompt.current === initialPrompt) return;
+    consumedPrompt.current = initialPrompt;
+    const id = Date.now();
+    setMessages((current) => [...current, { id, role: 'user', kind: 'text', text: initialPrompt }, createMovyaReply(initialPrompt, id + 1)]);
+  }, [initialPrompt, open]);
 
   useEffect(() => {
     if (!recording) return;
@@ -40,21 +46,36 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     return () => clearInterval(interval);
   }, [recording]);
 
-  const addMovyaReply = (): TextMessage => ({ id: Date.now() + 1, role: 'movya', kind: 'text', text: 'Perfecto. Prepararé la operación y te mostraré un resumen para confirmar antes de mover dinero.' });
+  const createMovyaReply = (message: string, id: number): TextMessage => {
+    const normalized = message.toLowerCase();
+    if (normalized.includes('balance') || normalized.includes('cuánto dinero')) return { id, role: 'movya', kind: 'text', text: 'Tu balance total de demostración es $1,629.24. Puedo mostrarte el detalle de cada activo si quieres.' };
+    if (normalized.includes('cambia') || normalized.includes('cambio')) return { id, role: 'movya', kind: 'text', text: 'Claro. Dime qué activo quieres entregar, cuál quieres recibir y el monto. Después te mostraré la cotización antes de confirmar.' };
+    if (normalized.includes('contacto')) return { id, role: 'movya', kind: 'text', text: 'Puedo ayudarte. Dime el nombre y luego comparte su correo de Movya o su dirección Stellar pública.' };
+    if (normalized.includes('recibir') || normalized.includes('compartir')) return { id, role: 'movya', kind: 'text', text: 'Puedes recibir por Stellar usando tu QR o tu dirección pública. Puedo ayudarte a copiarla o compartirla.' };
+    return { id, role: 'movya', kind: 'text', text: 'Perfecto. Dime el token, el monto y el destinatario. Prepararé el envío y te mostraré un resumen antes de confirmar.' };
+  };
+
+  const sendDirect = (message: string) => {
+    const clean = message.trim();
+    if (!clean) return;
+    const id = Date.now();
+    setMessages((current) => [...current, { id, role: 'user', kind: 'text', text: clean }, createMovyaReply(clean, id + 1)]);
+    setText('');
+    void Haptics.selectionAsync();
+  };
 
   const send = () => {
     const clean = text.trim();
     if (!clean) return;
-    setMessages((current) => [...current, { id: Date.now(), role: 'user', kind: 'text', text: clean }, addMovyaReply()]);
-    setText('');
-    void Haptics.selectionAsync();
+    sendDirect(clean);
   };
 
   const startRecording = () => { setRecordingSeconds(0); setRecording(true); void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); };
   const cancelRecording = () => { setRecording(false); setRecordingSeconds(0); };
   const sendVoice = () => {
     const duration = Math.max(recordingSeconds, 1);
-    setMessages((current) => [...current, { id: Date.now(), role: 'user', kind: 'voice', duration }, addMovyaReply()]);
+    const id = Date.now();
+    setMessages((current) => [...current, { id, role: 'user', kind: 'voice', duration }, createMovyaReply('Quiero hacer una operación', id + 1)]);
     setRecording(false); setRecordingSeconds(0);
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
@@ -96,7 +117,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
               <LinearGradient colors={['#176BFF', '#6857E5']} end={{ x: 1, y: 1 }} style={[styles.bubble, styles.userBubble]}><Text style={[styles.messageText, styles.userText]}>{message.text}</Text><Text style={styles.userTime}>Ahora</Text></LinearGradient>
             </View>
           ))}
-          <View style={styles.suggestions}>{suggestions.map((suggestion) => <Pressable key={suggestion} onPress={() => setText(suggestion)} style={styles.suggestion}><Ionicons name="sparkles-outline" size={14} color={colors.brand} /><Text style={styles.suggestionText}>{suggestion}</Text></Pressable>)}</View>
+          <View style={styles.suggestions}>{suggestions.map((suggestion) => <Pressable key={suggestion} onPress={() => sendDirect(suggestion)} style={styles.suggestion}><Ionicons name="sparkles-outline" size={14} color={colors.brand} /><Text style={styles.suggestionText}>{suggestion}</Text><Ionicons name="arrow-up-circle" size={15} color={colors.brand} /></Pressable>)}</View>
         </ScrollView>
 
         <BlurView intensity={88} tint="light" style={styles.composerArea}>

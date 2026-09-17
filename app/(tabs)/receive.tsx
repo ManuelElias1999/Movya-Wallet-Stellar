@@ -34,7 +34,13 @@ export default function ReceiveScreen() {
         <View style={styles.helper}>
           <MovyaContextHelp
             actionPrompt="Ayúdame a compartir mis datos para recibir dinero"
-            explainPrompt="Explícame cómo recibir dinero en Movya"
+            explanationSteps={[
+              'Confirma que la otra persona enviará el dinero por la red Stellar.',
+              'Puede escanear tu código QR o copiar tu dirección, que empieza con la letra G.',
+              'Pulsa Compartir para enviarla por WhatsApp, Instagram u otra aplicación.',
+              'El activo recibido aparecerá en tu balance cuando la operación se confirme.',
+            ]}
+            explanationTitle="Cómo recibir dinero"
             question="¿Necesitas ayuda para recibir dinero?"
           />
         </View>

@@ -24,6 +24,7 @@ export default function SendScreen() {
   const ready = Boolean(amount && (selected || address.trim()));
   const balances: Record<string, string> = { USDC: '$1,240.00', XLM: '862.41 XLM', EURC: '92.00 EURC', AQUA: '4,800 AQUA' };
   const tokenColors: Record<string, string> = { USDC: '#2775CA', XLM: colors.navy, EURC: '#6857E5', AQUA: '#00A6A6' };
+  const tokenOptions = ['USDC', 'XLM', 'EURC', 'AQUA'];
 
   const pickContact = (id: string) => {
     setSelectedContactId(id);
@@ -36,16 +37,15 @@ export default function SendScreen() {
       <PageHeader subtitle="Revisarás todo antes de confirmar" title="Enviar" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <MovyaContextHelp
-            actionPrompt="Ayúdame a preparar un envío paso a paso"
-            explainPrompt="Explícame cómo enviar dinero de forma segura"
-            question="¿Necesitas ayuda para enviar dinero?"
-          />
           <View style={styles.networkBadge}><StellarNetworkBadge label="Envío por Stellar · Testnet" /></View>
-          <Text style={styles.label}>Monto y activo</Text>
+          <Text style={styles.label}>¿Qué token quieres enviar?</Text>
+          <ScrollView contentContainerStyle={styles.tokenChoices} horizontal showsHorizontalScrollIndicator={false}>
+            {tokenOptions.map((option) => <Pressable key={option} onPress={() => setToken(option)} style={[styles.tokenChoice, token === option && styles.tokenChoiceActive]}><View style={[styles.choiceDot, { backgroundColor: tokenColors[option] }]} /><Text style={[styles.choiceText, token === option && styles.choiceTextActive]}>{option}</Text>{token === option ? <Ionicons name="checkmark-circle" size={17} color={colors.brand} /> : null}</Pressable>)}
+          </ScrollView>
+          <Text style={styles.label}>¿Cuánto quieres enviar?</Text>
           <View style={styles.amountCard}>
             <Text style={styles.currency}>{token === 'USDC' ? '$' : ''}</Text>
-            <TextInput autoFocus keyboardType="decimal-pad" onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#A7B2C5" style={styles.amountInput} value={amount} />
+            <TextInput keyboardType="decimal-pad" onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#A7B2C5" style={styles.amountInput} value={amount} />
             <Pressable onPress={() => setTokensOpen(true)} style={styles.tokenPill}>
               <View style={[styles.tokenDot, { backgroundColor: tokenColors[token] }]} />
               <Text style={styles.tokenText}>{token}</Text>
@@ -53,6 +53,20 @@ export default function SendScreen() {
             </Pressable>
           </View>
           <View style={styles.balanceRow}><Text style={styles.balance}>Disponible: {balances[token]}</Text><Pressable onPress={() => setAmount(token === 'USDC' ? '1240.00' : token === 'XLM' ? '862.41' : token === 'EURC' ? '92.00' : '4800')}><Text style={styles.max}>Usar máximo</Text></Pressable></View>
+
+          <View style={styles.contextHelp}>
+            <MovyaContextHelp
+              actionPrompt={`Quiero enviar ${amount || 'un monto'} de ${token}. Ayúdame a elegir el destinatario y preparar el envío.`}
+              explanationSteps={[
+                'Escoge el token que quieres enviar: USDC, XLM, EURC o AQUA.',
+                'Escribe el monto y revisa que tengas balance suficiente.',
+                'Pega la dirección Stellar del destinatario. Empieza con la letra G; por ejemplo: GABCD…9XYZ.',
+                'También puedes pulsar Contactos y elegir una persona guardada. Antes de enviar verás una confirmación final.',
+              ]}
+              explanationTitle="Cómo enviar dinero"
+              question="¿Necesitas ayuda para completar el envío?"
+            />
+          </View>
 
           <Text style={styles.label}>Destinatario</Text>
           {selected ? (
@@ -109,6 +123,7 @@ export default function SendScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background }, flex: { flex: 1 }, content: { padding: 20, paddingBottom: 40 },
   networkBadge: { marginTop: 14 },
+  tokenChoices: { gap: 9, paddingRight: 4 }, tokenChoice: { height: 48, minWidth: 91, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 12, backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.border }, tokenChoiceActive: { backgroundColor: colors.brandSoft, borderColor: colors.brand }, choiceDot: { width: 23, height: 23, borderRadius: 8 }, choiceText: { color: colors.text, fontSize: 11, fontWeight: '800' }, choiceTextActive: { color: colors.brandDark }, contextHelp: { marginTop: 20 },
   label: { color: colors.ink, fontSize: 15, fontWeight: '800', marginTop: 20, marginBottom: 10 },
   amountCard: { height: 104, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 18 }, currency: { color: colors.muted, fontSize: 31, fontWeight: '700' }, amountInput: { flex: 1, color: colors.ink, fontSize: 40, fontWeight: '800', marginLeft: 3 },
   tokenPill: { height: 42, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.brandSoft, borderRadius: 15, paddingHorizontal: 10 }, tokenDot: { width: 22, height: 22, borderRadius: 8, marginRight: 7 }, tokenText: { color: colors.brandDark, fontSize: 12, fontWeight: '800', marginRight: 4 },

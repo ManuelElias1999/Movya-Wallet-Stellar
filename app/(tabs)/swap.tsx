@@ -19,7 +19,13 @@ export default function SwapScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <MovyaContextHelp
           actionPrompt="Ayúdame a preparar un cambio de activos"
-          explainPrompt="Explícame cómo funciona el cambio de activos"
+          explanationSteps={[
+            'Selecciona el activo que quieres entregar y escribe el monto.',
+            'Elige el activo que quieres recibir.',
+            'Movya mostrará la cotización, el mínimo recibido y cualquier comisión antes de confirmar.',
+            'Nada se cambiará hasta que revises y apruebes el resumen final.',
+          ]}
+          explanationTitle="Cómo cambiar activos"
           question="¿Necesitas ayuda para cambiar tus activos?"
         />
         <Text style={styles.label}>Tú entregas</Text>
