@@ -3,32 +3,32 @@ import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet, View } from 'react-native';
 
 export function AnimatedDashboardBackground() {
-  const movement = useRef(new Animated.Value(0)).current;
+  const transition = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(movement, { toValue: 1, duration: 9000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(movement, { toValue: 0, duration: 9000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(transition, { toValue: 1, duration: 8000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(transition, { toValue: 0, duration: 8000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
       ]),
     );
     animation.start();
     return () => animation.stop();
-  }, [movement]);
+  }, [transition]);
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <LinearGradient colors={['#BBD8FF', '#D6E7FF', '#C9DEFF', '#E1E9FF']} locations={[0, 0.32, 0.68, 1]} style={StyleSheet.absoluteFill} />
-      <Animated.View style={[styles.orb, styles.orbBlue, { transform: [{ translateX: movement.interpolate({ inputRange: [0, 1], outputRange: [-25, 70] }) }, { translateY: movement.interpolate({ inputRange: [0, 1], outputRange: [0, 90] }) }, { scale: movement.interpolate({ inputRange: [0, 1], outputRange: [1, 1.18] }) }] }]} />
-      <Animated.View style={[styles.orb, styles.orbViolet, { transform: [{ translateX: movement.interpolate({ inputRange: [0, 1], outputRange: [45, -45] }) }, { translateY: movement.interpolate({ inputRange: [0, 1], outputRange: [80, -15] }) }] }]} />
-      <Animated.View style={[styles.orb, styles.orbCyan, { transform: [{ translateX: movement.interpolate({ inputRange: [0, 1], outputRange: [-15, 65] }) }, { translateY: movement.interpolate({ inputRange: [0, 1], outputRange: [-30, 45] }) }] }]} />
+      <LinearGradient colors={['#92BFFF', '#C7D8FF', '#D8C9FF', '#AEE8E3']} end={{ x: 1, y: 1 }} locations={[0, 0.34, 0.68, 1]} start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: transition }]}>
+        <LinearGradient colors={['#B7E3F3', '#91BAFF', '#B7A9F4', '#D9E8FF']} end={{ x: 0.08, y: 1 }} locations={[0, 0.31, 0.67, 1]} start={{ x: 0.92, y: 0 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
+      <Animated.View style={[styles.lightWash, { opacity: transition.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.18, 0.04, 0.2] }) }]}>
+        <LinearGradient colors={['rgba(255,255,255,0.72)', 'rgba(255,255,255,0)', 'rgba(112,171,255,0.3)']} end={{ x: 1, y: 1 }} start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  orb: { position: 'absolute', borderRadius: 999 },
-  orbBlue: { width: 280, height: 280, left: -110, top: 120, backgroundColor: 'rgba(38,117,255,0.22)' },
-  orbViolet: { width: 250, height: 250, right: -90, top: 370, backgroundColor: 'rgba(111,79,224,0.16)' },
-  orbCyan: { width: 230, height: 230, left: 35, bottom: -80, backgroundColor: 'rgba(0,173,185,0.13)' },
+  lightWash: { position: 'absolute', left: '-12%', right: '-12%', top: '-8%', bottom: '-8%', transform: [{ rotate: '-8deg' }] },
 });

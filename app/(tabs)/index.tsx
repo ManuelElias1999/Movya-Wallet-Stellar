@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
@@ -40,8 +40,7 @@ export default function HomeScreen() {
       <StatusBar style="dark" />
       <AnimatedDashboardBackground />
       <View style={styles.headerShell}>
-        <View style={styles.headerBlueGlow} /><View style={styles.headerCyanGlow} />
-        <BlurView intensity={78} tint="light" style={styles.fixedHeader}>
+        <BlurView intensity={48} tint="light" style={[styles.fixedHeader, Platform.OS === 'web' ? webGlass : null]}>
           <View>
             <Text style={styles.greeting}>Hola, Manuel!</Text>
             <Text style={styles.subtitle}>Qué gusto verte de nuevo.</Text>
@@ -114,13 +113,13 @@ export default function HomeScreen() {
   );
 }
 
+const webGlass = { backdropFilter: 'blur(24px) saturate(155%)', WebkitBackdropFilter: 'blur(24px) saturate(155%)' } as const;
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#BBD8FF' }, body: { flex: 1, backgroundColor: 'transparent' },
   headerShell: { minHeight: 78, width: '100%', overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.66)', shadowColor: colors.navy, shadowOpacity: 0.16, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 7, zIndex: 10 },
-  headerBlueGlow: { position: 'absolute', width: 250, height: 120, borderRadius: 999, backgroundColor: '#609EFF', opacity: 0.56, left: -55, top: -52 },
-  headerCyanGlow: { position: 'absolute', width: 210, height: 120, borderRadius: 999, backgroundColor: '#72E4D4', opacity: 0.47, right: -45, bottom: -60 },
-  fixedHeader: { minHeight: 78, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(225,240,255,0.28)', overflow: 'hidden' },
-  content: { paddingHorizontal: 20, paddingTop: 17, paddingBottom: 106 },
+  fixedHeader: { minHeight: 78, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.1)', overflow: 'hidden' },
+  content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 17, paddingBottom: 106 },
   greeting: { color: colors.navy, fontSize: 23, fontWeight: '800', letterSpacing: -0.6 },
   subtitle: { color: '#486887', fontSize: 11, marginTop: 1 },
   settingsButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.66)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.9)', shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },

@@ -103,7 +103,7 @@ export default function SwapScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#E8F1FF' },
-  content: { padding: 20, paddingBottom: 44 },
+  content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 44 },
   label: { color: colors.text, fontSize: 13, fontWeight: '800', marginTop: 18, marginBottom: 9 },
   assetBox: { minHeight: 64, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.88)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.96)', borderRadius: 20, paddingHorizontal: 13, shadowColor: colors.navy, shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   assetDot: { width: 37, height: 37, borderRadius: 13, marginRight: 11, alignItems: 'center', justifyContent: 'center' },
