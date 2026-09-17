@@ -6,8 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { PageHeader } from '@/components/PageHeader';
+import { PoweredByStellarFooter } from '@/components/PoweredByStellarFooter';
 import { PressableScale } from '@/components/PressableScale';
-import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
 import { TokenSelector } from '@/components/TokenSelector';
 import { colors } from '@/theme/tokens';
 
@@ -56,7 +56,6 @@ export default function SwapScreen() {
       <InternalScreenBackground />
       <PageHeader subtitle="Revisarás la cotización antes de confirmar" title="Cambiar dinero" />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <View style={styles.powered}><StellarNetworkBadge /></View>
         <MovyaContextHelp
           actionPrompt={`Quiero cambiar ${amount || 'un monto'} de ${from} a ${to}. Ayúdame a prepararlo.`}
           explanationSteps={[
@@ -87,6 +86,7 @@ export default function SwapScreen() {
 
         <View style={styles.rate}><Text style={styles.rateLabel}>Tipo de cambio estimado</Text><Text style={styles.rateValue}>Disponible al conectar Stellar DEX</Text></View>
         <PressableScale disabled={!amount} onPress={() => Alert.alert('Vista previa', 'La cotización y confirmación se conectarán en una fase posterior.')} style={[styles.button, !amount && styles.disabled]}><Text style={styles.buttonText}>Revisar cambio</Text></PressableScale>
+        <PoweredByStellarFooter />
       </ScrollView>
 
       <Modal animationType="slide" onRequestClose={() => setFromOpen(false)} transparent visible={fromOpen}>
@@ -104,7 +104,6 @@ export default function SwapScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#E8F1FF' },
   content: { padding: 20, paddingBottom: 44 },
-  powered: { marginBottom: 14 },
   label: { color: colors.text, fontSize: 13, fontWeight: '800', marginTop: 18, marginBottom: 9 },
   assetBox: { minHeight: 64, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.88)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.96)', borderRadius: 20, paddingHorizontal: 13, shadowColor: colors.navy, shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   assetDot: { width: 37, height: 37, borderRadius: 13, marginRight: 11, alignItems: 'center', justifyContent: 'center' },

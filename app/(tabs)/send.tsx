@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PageHeader } from '@/components/PageHeader';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { MovyaContextHelp } from '@/components/MovyaContextHelp';
+import { PoweredByStellarFooter } from '@/components/PoweredByStellarFooter';
 import { PressableScale } from '@/components/PressableScale';
 import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
 import { TokenSelector } from '@/components/TokenSelector';
@@ -39,7 +40,7 @@ export default function SendScreen() {
       <PageHeader subtitle="Revisarás todo antes de confirmar" title="Enviar" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.networkBadge}><StellarNetworkBadge label="Powered by Stellar · Testnet" /></View>
+          <View style={styles.networkBadge}><StellarNetworkBadge label="Todos los envíos se realizan en Stellar · Testnet" /></View>
           <View style={styles.contextHelp}>
             <MovyaContextHelp
               actionPrompt={`Quiero enviar ${amount || 'un monto'} de ${token}. Ayúdame a elegir el destinatario y preparar el envío.`}
@@ -89,6 +90,7 @@ export default function SendScreen() {
           </View>
 
           <PressableScale disabled={!ready} onPress={() => Alert.alert('Vista previa', 'En la siguiente fase aparecerá la confirmación antes de firmar la operación.')} style={[styles.primaryButton, !ready && styles.disabled]}><Text style={styles.primaryText}>Revisar envío</Text></PressableScale>
+          <PoweredByStellarFooter />
         </ScrollView>
       </KeyboardAvoidingView>
 
