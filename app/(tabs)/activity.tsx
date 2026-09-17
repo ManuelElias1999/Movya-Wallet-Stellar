@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ActivityRow } from '@/components/ActivityRow';
 import { Screen } from '@/components/Screen';
@@ -7,12 +8,19 @@ import { demoActivity } from '@/data/demo';
 import { colors, radius } from '@/theme/tokens';
 
 export default function ActivityScreen() {
+  const router = useRouter();
+
   return (
     <Screen>
       <View style={styles.header}>
-        <View>
+        <View style={styles.titleRow}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={20} color={colors.ink} />
+          </Pressable>
+          <View>
           <Text style={styles.eyebrow}>TU DINERO</Text>
           <Text style={styles.title}>Movimientos</Text>
+          </View>
         </View>
         <View style={styles.filter}><Ionicons name="options-outline" size={20} color={colors.ink} /></View>
       </View>
@@ -33,6 +41,8 @@ export default function ActivityScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 },
+  titleRow: { flexDirection: 'row', alignItems: 'center' },
+  backButton: { width: 42, height: 42, borderRadius: 15, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   eyebrow: { color: colors.brand, fontSize: 11, fontWeight: '800', letterSpacing: 1.4 },
   title: { color: colors.ink, fontSize: 32, fontWeight: '800', letterSpacing: -1, marginTop: 3 },
   filter: { width: 42, height: 42, borderRadius: 15, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },

@@ -1,40 +1,18 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Stack } from 'expo-router';
 
-import { colors } from '@/theme/tokens';
-
-const icons = {
-  index: ['home-outline', 'home'] as const,
-  activity: ['receipt-outline', 'receipt'] as const,
-  contacts: ['people-outline', 'people'] as const,
-  movya: ['sparkles-outline', 'sparkles'] as const,
-};
-
-export default function TabsLayout() {
+export default function AppLayout() {
   return (
-    <Tabs
-      screenOptions={({ route }) => ({
+    <Stack
+      screenOptions={{
+        animation: 'slide_from_right',
+        contentStyle: { backgroundColor: '#F3F7FC' },
         headerShown: false,
-        tabBarActiveTintColor: colors.brand,
-        tabBarInactiveTintColor: '#8B94A8',
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '700', marginTop: 2 },
-        tabBarStyle: {
-          height: 72,
-          paddingTop: 8,
-          paddingBottom: 10,
-          borderTopColor: colors.border,
-          backgroundColor: colors.surface,
-        },
-        tabBarIcon: ({ color, focused, size }) => {
-          const pair = icons[route.name as keyof typeof icons] ?? icons.index;
-          return <Ionicons color={color} name={focused ? pair[1] : pair[0]} size={size} />;
-        },
-      })}
+      }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Inicio' }} />
-      <Tabs.Screen name="activity" options={{ title: 'Movimientos' }} />
-      <Tabs.Screen name="contacts" options={{ title: 'Contactos' }} />
-      <Tabs.Screen name="movya" options={{ title: 'Movya' }} />
-    </Tabs>
+      <Stack.Screen name="index" />
+      <Stack.Screen name="activity" />
+      <Stack.Screen name="contacts" />
+      <Stack.Screen name="movya" />
+    </Stack>
   );
 }

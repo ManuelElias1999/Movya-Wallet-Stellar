@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Screen } from '@/components/Screen';
@@ -6,12 +7,19 @@ import { demoContacts } from '@/data/demo';
 import { colors, radius } from '@/theme/tokens';
 
 export default function ContactsScreen() {
+  const router = useRouter();
+
   return (
     <Screen>
       <View style={styles.header}>
-        <View>
+        <View style={styles.titleRow}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={20} color={colors.ink} />
+          </Pressable>
+          <View>
           <Text style={styles.eyebrow}>ENVÍA POR NOMBRE</Text>
           <Text style={styles.title}>Contactos</Text>
+          </View>
         </View>
         <Pressable style={styles.addButton}><Ionicons name="add" size={22} color="#FFFFFF" /></Pressable>
       </View>
@@ -44,6 +52,8 @@ export default function ContactsScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 },
+  titleRow: { flexDirection: 'row', alignItems: 'center' },
+  backButton: { width: 42, height: 42, borderRadius: 15, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   eyebrow: { color: colors.brand, fontSize: 11, fontWeight: '800', letterSpacing: 1.4 },
   title: { color: colors.ink, fontSize: 32, fontWeight: '800', letterSpacing: -1, marginTop: 3 },
   addButton: { width: 44, height: 44, borderRadius: 16, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
