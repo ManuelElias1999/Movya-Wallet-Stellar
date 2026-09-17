@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
+import { PressableScale } from '@/components/PressableScale';
 import { colors } from '@/theme/tokens';
 
 type MovyaContextHelpProps = {
@@ -29,8 +30,8 @@ export function MovyaContextHelp({ question, actionPrompt, explanationTitle, exp
           <Text style={styles.eyebrow}>MOVYA · ASISTENTE</Text>
           <Text style={styles.question}>{question}</Text>
           <View style={styles.actions}>
-            <Pressable onPress={() => setExplaining(true)} style={styles.secondaryAction}><Text style={styles.secondaryText}>Explícame</Text></Pressable>
-            <Pressable onPress={() => router.push({ pathname: '/movya', params: { prompt: actionPrompt } })} style={styles.primaryAction}><Text style={styles.primaryText}>Hacerlo con Movya</Text><Ionicons name="arrow-forward" size={13} color="#FFFFFF" /></Pressable>
+            <PressableScale onPress={() => setExplaining(true)} style={styles.secondaryAction}><Text style={styles.secondaryText}>Explícame</Text></PressableScale>
+            <PressableScale onPress={() => router.push({ pathname: '/movya', params: { prompt: actionPrompt } })} style={styles.primaryAction}><Text style={styles.primaryText}>Hacerlo con Movya</Text><Ionicons name="arrow-forward" size={13} color="#FFFFFF" /></PressableScale>
           </View>
         </View>
         <Pressable accessibilityLabel="Ocultar ayuda" hitSlop={10} onPress={() => setVisible(false)} style={styles.close}><Ionicons name="close" size={16} color={colors.muted} /></Pressable>
@@ -48,7 +49,7 @@ export function MovyaContextHelp({ question, actionPrompt, explanationTitle, exp
             <View style={styles.steps}>
               {explanationSteps.map((step, index) => <View key={step} style={styles.step}><View style={styles.stepNumber}><Text style={styles.stepNumberText}>{index + 1}</Text></View><Text style={styles.stepText}>{step}</Text></View>)}
             </View>
-            <Pressable onPress={() => { setExplaining(false); router.push({ pathname: '/movya', params: { prompt: actionPrompt } }); }} style={styles.chatAction}><Ionicons name="sparkles" size={16} color="#FFFFFF" /><Text style={styles.chatActionText}>Prefiero hacerlo con Movya</Text></Pressable>
+            <PressableScale onPress={() => { setExplaining(false); router.push({ pathname: '/movya', params: { prompt: actionPrompt } }); }} style={styles.chatAction}><Ionicons name="sparkles" size={16} color="#FFFFFF" /><Text style={styles.chatActionText}>Prefiero hacerlo con Movya</Text></PressableScale>
           </BlurView>
         </View>
       </Modal>

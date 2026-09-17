@@ -5,7 +5,9 @@ import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, St
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
+import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { MovyaContextHelp } from '@/components/MovyaContextHelp';
+import { PressableScale } from '@/components/PressableScale';
 import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
 import { TokenSelector } from '@/components/TokenSelector';
 import { demoContacts } from '@/data/demo';
@@ -33,10 +35,11 @@ export default function SendScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
+      <InternalScreenBackground />
       <PageHeader subtitle="Revisarás todo antes de confirmar" title="Enviar" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.networkBadge}><StellarNetworkBadge label="Envío por Stellar · Testnet" /></View>
+          <View style={styles.networkBadge}><StellarNetworkBadge label="Powered by Stellar · Testnet" /></View>
           <View style={styles.contextHelp}>
             <MovyaContextHelp
               actionPrompt={`Quiero enviar ${amount || 'un monto'} de ${token}. Ayúdame a elegir el destinatario y preparar el envío.`}
@@ -54,11 +57,11 @@ export default function SendScreen() {
           <View style={styles.amountCard}>
             <Text style={styles.currency}>{token === 'USDC' ? '$' : ''}</Text>
             <TextInput keyboardType="decimal-pad" onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#A7B2C5" style={styles.amountInput} value={amount} />
-            <Pressable onPress={() => setTokensOpen(true)} style={styles.tokenPill}>
+            <PressableScale onPress={() => setTokensOpen(true)} pressedScale={0.94} style={styles.tokenPill}>
               <View style={[styles.tokenDot, { backgroundColor: tokenColors[token] }]} />
               <View style={styles.tokenPillCopy}><Text style={styles.tokenPillLabel}>TOKEN</Text><Text style={styles.tokenText}>{token}</Text></View>
               <Ionicons name="chevron-down" size={15} color={colors.brand} />
-            </Pressable>
+            </PressableScale>
           </View>
           <View style={styles.balanceRow}><Text style={styles.balance}>Disponible: {balances[token]}</Text><Pressable onPress={() => setAmount(token === 'USDC' ? '1240.00' : token === 'XLM' ? '862.41' : token === 'EURC' ? '92.00' : '4800')}><Text style={styles.max}>Usar máximo</Text></Pressable></View>
 
@@ -75,7 +78,7 @@ export default function SendScreen() {
                 <Ionicons name="wallet-outline" size={19} color={colors.muted} />
                 <TextInput autoCapitalize="characters" onChangeText={setAddress} placeholder="Pegar dirección G..." placeholderTextColor={colors.muted} style={styles.addressInput} value={address} />
               </View>
-              <Pressable onPress={() => setContactsOpen(true)} style={styles.contactsButton}><Ionicons name="people" size={21} color={colors.brand} /><Text style={styles.contactsText}>Contactos</Text></Pressable>
+              <PressableScale onPress={() => setContactsOpen(true)} pressedScale={0.94} style={styles.contactsButton}><Ionicons name="people" size={21} color={colors.brand} /><Text style={styles.contactsText}>Contactos</Text></PressableScale>
             </View>
           )}
           {selected ? <Pressable onPress={() => setContactsOpen(true)}><Text style={styles.changeContact}>Cambiar contacto</Text></Pressable> : <Text style={styles.help}>Puedes pegar una dirección o elegir una persona guardada.</Text>}
@@ -85,7 +88,7 @@ export default function SendScreen() {
             <View style={styles.summaryCopy}><Text style={styles.summaryTitle}>Envío protegido en Stellar</Text><Text style={styles.summaryText}>Verificarás destinatario, monto, activo y red antes de continuar.</Text></View>
           </View>
 
-          <Pressable disabled={!ready} onPress={() => Alert.alert('Vista previa', 'En la siguiente fase aparecerá la confirmación antes de firmar la operación.')} style={[styles.primaryButton, !ready && styles.disabled]}><Text style={styles.primaryText}>Revisar envío</Text></Pressable>
+          <PressableScale disabled={!ready} onPress={() => Alert.alert('Vista previa', 'En la siguiente fase aparecerá la confirmación antes de firmar la operación.')} style={[styles.primaryButton, !ready && styles.disabled]}><Text style={styles.primaryText}>Revisar envío</Text></PressableScale>
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -115,17 +118,17 @@ export default function SendScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.pageBackground }, flex: { flex: 1 }, content: { padding: 20, paddingBottom: 40 },
+  safeArea: { flex: 1, backgroundColor: '#E8F1FF' }, flex: { flex: 1 }, content: { padding: 20, paddingBottom: 40 },
   networkBadge: { marginTop: 14 },
   contextHelp: { marginTop: 15 },
   label: { color: colors.ink, fontSize: 15, fontWeight: '800', marginTop: 20, marginBottom: 10 },
-  amountCard: { height: 104, flexDirection: 'row', alignItems: 'center', backgroundColor: '#EAF3FF', borderRadius: 24, borderWidth: 1.5, borderColor: '#BFD5F3', paddingHorizontal: 18, shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 3 }, currency: { color: colors.muted, fontSize: 30, fontWeight: '700' }, amountInput: { flex: 1, color: colors.ink, fontSize: 38, fontWeight: '800', marginLeft: 3 },
-  tokenPill: { minWidth: 105, height: 52, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.84)', borderWidth: 1, borderColor: '#D5E2F2', borderRadius: 17, paddingHorizontal: 10 }, tokenDot: { width: 25, height: 25, borderRadius: 9, marginRight: 7 }, tokenPillCopy: { flex: 1 }, tokenPillLabel: { color: colors.muted, fontSize: 8, fontWeight: '800' }, tokenText: { color: colors.brandDark, fontSize: 12, fontWeight: '800', marginTop: 1 },
+  amountCard: { height: 78, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(247,251,255,0.9)', borderRadius: 22, borderWidth: 1.5, borderColor: '#B9D3F4', paddingLeft: 15, paddingRight: 10, shadowColor: colors.navy, shadowOpacity: 0.16, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 5 }, currency: { width: 20, color: colors.muted, fontSize: 25, fontWeight: '700' }, amountInput: { flex: 1, minWidth: 0, color: colors.ink, fontSize: 30, fontWeight: '800', marginLeft: 1, paddingHorizontal: 0 },
+  tokenPill: { width: 112, flexShrink: 0, height: 50, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(229,240,255,0.96)', borderWidth: 1, borderColor: '#BCD5F5', borderRadius: 17, paddingHorizontal: 9, shadowColor: colors.brandDark, shadowOpacity: 0.1, shadowRadius: 7, shadowOffset: { width: 0, height: 4 }, elevation: 2 }, tokenDot: { width: 23, height: 23, borderRadius: 8, marginRight: 7 }, tokenPillCopy: { flex: 1 }, tokenPillLabel: { color: colors.muted, fontSize: 8, fontWeight: '800' }, tokenText: { color: colors.brandDark, fontSize: 12, fontWeight: '800', marginTop: 1 },
   balanceRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }, balance: { color: colors.muted, fontSize: 11 }, max: { color: colors.brand, fontSize: 11, fontWeight: '800' },
   recipientRow: { flexDirection: 'row', gap: 9 }, addressBox: { flex: 1, height: 62, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFDFB', borderRadius: 18, borderWidth: 1.5, borderColor: '#D9D1E7', paddingHorizontal: 13, shadowColor: colors.navy, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 2 }, addressInput: { flex: 1, color: colors.ink, fontSize: 13, marginLeft: 8 },
-  contactsButton: { width: 88, height: 58, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brandSoft, borderRadius: 18, borderWidth: 1, borderColor: colors.brandIce }, contactsText: { color: colors.brand, fontSize: 9, fontWeight: '800', marginTop: 3 }, help: { color: colors.muted, fontSize: 10, lineHeight: 15, marginTop: 8 }, changeContact: { color: colors.brand, fontSize: 11, fontWeight: '800', marginTop: 9 },
+  contactsButton: { width: 88, height: 58, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E3EEFF', borderRadius: 18, borderWidth: 1, borderColor: colors.brandIce, shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 9, shadowOffset: { width: 0, height: 5 }, elevation: 2 }, contactsText: { color: colors.brand, fontSize: 9, fontWeight: '800', marginTop: 3 }, help: { color: colors.muted, fontSize: 10, lineHeight: 15, marginTop: 8 }, changeContact: { color: colors.brand, fontSize: 11, fontWeight: '800', marginTop: 9 },
   selectedContact: { height: 66, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.brandIce, borderRadius: 19, paddingHorizontal: 12 }, avatar: { width: 43, height: 43, borderRadius: 15, alignItems: 'center', justifyContent: 'center' }, avatarText: { color: colors.ink, fontSize: 12, fontWeight: '800' }, contactCopy: { flex: 1, marginLeft: 11 }, contactName: { color: colors.ink, fontSize: 14, fontWeight: '700' }, handle: { color: colors.muted, fontSize: 11, marginTop: 3 }, clear: { width: 34, height: 34, borderRadius: 13, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
-  summary: { flexDirection: 'row', alignItems: 'center', marginTop: 28, padding: 15, backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border }, summaryIcon: { width: 42, height: 42, borderRadius: 15, alignItems: 'center', justifyContent: 'center' }, summaryCopy: { flex: 1, marginLeft: 11 }, summaryTitle: { color: colors.ink, fontSize: 13, fontWeight: '800' }, summaryText: { color: colors.muted, fontSize: 10, lineHeight: 15, marginTop: 3 },
-  primaryButton: { height: 56, borderRadius: 18, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginTop: 25 }, disabled: { backgroundColor: '#BAC5D5' }, primaryText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+  summary: { flexDirection: 'row', alignItems: 'center', marginTop: 28, padding: 15, backgroundColor: 'rgba(255,255,255,0.84)', borderRadius: radius.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.92)', shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 }, summaryIcon: { width: 42, height: 42, borderRadius: 15, alignItems: 'center', justifyContent: 'center' }, summaryCopy: { flex: 1, marginLeft: 11 }, summaryTitle: { color: colors.ink, fontSize: 13, fontWeight: '800' }, summaryText: { color: colors.muted, fontSize: 10, lineHeight: 15, marginTop: 3 },
+  primaryButton: { height: 56, borderRadius: 18, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginTop: 25, shadowColor: colors.brandDark, shadowOpacity: 0.24, shadowRadius: 13, shadowOffset: { width: 0, height: 7 }, elevation: 4 }, disabled: { backgroundColor: '#BAC5D5', shadowOpacity: 0.05 }, primaryText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   backdrop: { flex: 1, backgroundColor: 'rgba(5,16,35,0.38)' }, sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 22, paddingBottom: 30 }, sheetHandle: { width: 42, height: 5, borderRadius: 3, backgroundColor: '#D4DBE6', alignSelf: 'center', marginBottom: 16 }, sheetTitle: { color: colors.ink, fontSize: 19, fontWeight: '800', textAlign: 'center', marginBottom: 16 }, contactRow: { minHeight: 64, flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.border },
 });

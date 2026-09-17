@@ -95,7 +95,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
         </BlurView>
 
         <ScrollView contentContainerStyle={styles.messages} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <View style={styles.networkWrap}><StellarNetworkBadge label="Movya funciona sobre Stellar" /></View>
+          <View style={styles.networkWrap}><StellarNetworkBadge label="Powered by Stellar" /></View>
           <Text style={styles.today}>HOY</Text>
           {messages.map((message) => message.role === 'movya' ? (
             <View key={message.id} style={styles.movyaGroup}>

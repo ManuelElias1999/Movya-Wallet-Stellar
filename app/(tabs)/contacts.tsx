@@ -5,7 +5,9 @@ import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
+import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { MovyaContextHelp } from '@/components/MovyaContextHelp';
+import { PressableScale } from '@/components/PressableScale';
 import { demoContacts } from '@/data/demo';
 import { colors, radius } from '@/theme/tokens';
 
@@ -96,6 +98,7 @@ export default function ContactsScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
+      <InternalScreenBackground />
       <PageHeader subtitle="Envía dinero sin copiar direcciones" title="Contactos" />
       <ScrollView contentContainerStyle={styles.content}>
         <MovyaContextHelp
@@ -113,17 +116,17 @@ export default function ContactsScreen() {
           <Ionicons name="search" size={18} color={colors.muted} />
           <TextInput placeholder="Buscar personas" placeholderTextColor={colors.muted} style={styles.input} />
         </View>
-        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Tus contactos</Text><Pressable onPress={() => setAdding(true)} style={styles.add}><Ionicons name="person-add-outline" size={18} color={colors.brand} /></Pressable></View>
+        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Tus contactos</Text><PressableScale onPress={() => setAdding(true)} pressedScale={0.9} style={styles.add}><Ionicons name="person-add-outline" size={18} color={colors.brand} /></PressableScale></View>
         <View style={styles.card}>
           {ordered.map((contact, index) => (
-            <Pressable key={contact.id} onPress={() => openContact(contact)} style={[styles.contact, index > 0 && styles.divider]}>
+            <PressableScale key={contact.id} onPress={() => openContact(contact)} style={[styles.contact, index > 0 && styles.divider]}>
               <View style={[styles.avatar, { backgroundColor: contact.color }]}><Text style={styles.avatarText}>{contact.initials}</Text></View>
               <View style={styles.contactCopy}>
                 <View style={styles.nameRow}><Text style={styles.name}>{contact.name}</Text>{contact.favorite ? <Ionicons name="star" size={14} color="#F5A623" /> : null}</View>
                 <Text style={styles.handle}>{contact.handle}</Text>
               </View>
               <Ionicons name="chevron-forward" color={colors.muted} size={18} />
-            </Pressable>
+            </PressableScale>
           ))}
         </View>
       </ScrollView>
@@ -148,12 +151,12 @@ export default function ContactsScreen() {
               <View style={[styles.largeAvatar, { backgroundColor: selected.color }]}><Text style={styles.largeInitials}>{selected.initials}</Text></View>
               <Text style={styles.sheetTitle}>{selected.name}</Text>
               <Text style={styles.sheetHandle}>{selected.handle}</Text>
-              <Pressable onPress={() => { const name = selected.name; setSelected(null); router.push({ pathname: '/send', params: { contact: name } }); }} style={styles.sendButton}>
+              <PressableScale onPress={() => { const name = selected.name; setSelected(null); router.push({ pathname: '/send', params: { contact: name } }); }} style={styles.sendButton}>
                 <Ionicons name="paper-plane-outline" size={19} color="#FFFFFF" /><Text style={styles.sendText}>Enviar dinero</Text>
-              </Pressable>
+              </PressableScale>
               <View style={styles.secondaryActions}>
-                <Pressable onPress={() => setEditing(true)} style={styles.secondaryButton}><Ionicons name="create-outline" size={20} color={colors.ink} /><Text style={styles.secondaryText}>Editar</Text></Pressable>
-                <Pressable onPress={deleteContact} style={styles.secondaryButton}><Ionicons name="trash-outline" size={20} color="#D04444" /><Text style={styles.deleteText}>Eliminar</Text></Pressable>
+                <PressableScale onPress={() => setEditing(true)} style={styles.secondaryButton}><Ionicons name="create-outline" size={20} color={colors.ink} /><Text style={styles.secondaryText}>Editar</Text></PressableScale>
+                <PressableScale onPress={deleteContact} style={styles.secondaryButton}><Ionicons name="trash-outline" size={20} color="#D04444" /><Text style={styles.deleteText}>Eliminar</Text></PressableScale>
               </View>
               <Text style={styles.favoriteHint}>{selected.favorite ? 'Aparece primero en tu lista' : 'Toca la estrella para fijarlo arriba'}</Text>
             </View>
@@ -185,7 +188,7 @@ export default function ContactsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.pageBackground }, content: { padding: 20, paddingBottom: 40 },
+  safeArea: { flex: 1, backgroundColor: '#E8F1FF' }, content: { padding: 20, paddingBottom: 40 },
   search: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#D9D1E7', borderRadius: radius.md, backgroundColor: '#FFFDFB', paddingHorizontal: 15, height: 54, marginTop: 18, shadowColor: colors.navy, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 2 }, input: { flex: 1, marginLeft: 10, color: colors.ink, fontSize: 14 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 26, marginBottom: 11 }, sectionTitle: { color: colors.ink, fontSize: 17, fontWeight: '800' }, add: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
   card: { backgroundColor: '#EEF5FF', borderRadius: radius.md, borderWidth: 1.5, borderColor: '#C7D9F1', paddingHorizontal: 15, shadowColor: colors.navy, shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 2 }, contact: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }, divider: { borderTopWidth: 1, borderTopColor: '#D8E4F4' },

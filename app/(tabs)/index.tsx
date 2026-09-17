@@ -11,7 +11,9 @@ import { AnimatedAccountCard } from '@/components/AnimatedAccountCard';
 import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackground';
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
 import { MovyaChatSheet } from '@/components/MovyaChatSheet';
+import { PressableScale } from '@/components/PressableScale';
 import { SectionHeader } from '@/components/SectionHeader';
+import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
 import { demoAssets } from '@/data/demo';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { colors, radius } from '@/theme/tokens';
@@ -37,13 +39,17 @@ export default function HomeScreen() {
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <StatusBar style="dark" />
       <AnimatedDashboardBackground />
-      <BlurView intensity={80} tint="light" style={styles.fixedHeader}>
-        <View>
-          <Text style={styles.greeting}>Hola, Manuel!</Text>
-          <Text style={styles.subtitle}>Qué gusto verte de nuevo.</Text>
-        </View>
-        <Pressable onPress={() => router.push('/settings')} style={styles.settingsButton}><Ionicons name="settings-outline" size={22} color={colors.ink} /></Pressable>
-      </BlurView>
+      <View style={styles.headerShell}>
+        <View style={styles.headerBlueGlow} /><View style={styles.headerCyanGlow} />
+        <BlurView intensity={78} tint="light" style={styles.fixedHeader}>
+          <View>
+            <Text style={styles.greeting}>Hola, Manuel!</Text>
+            <Text style={styles.subtitle}>Qué gusto verte de nuevo.</Text>
+            <View style={styles.headerNetwork}><StellarNetworkBadge /></View>
+          </View>
+          <PressableScale onPress={() => router.push('/settings')} pressedScale={0.9} style={styles.settingsButton}><Ionicons name="settings-outline" size={22} color={colors.ink} /></PressableScale>
+        </BlurView>
+      </View>
 
       <View style={styles.body}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -63,11 +69,11 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <SectionHeader title="Accesos rápidos" />
           <ScrollView contentContainerStyle={styles.quickRow} horizontal showsHorizontalScrollIndicator={false}>
-            <Pressable onPress={() => router.push('/send')} style={styles.quickItem}><View style={[styles.quickIcon, styles.blue]}><Ionicons name="paper-plane-outline" size={21} color="#176BFF" /></View><Text style={styles.quickLabel}>Enviar</Text></Pressable>
-            <Pressable onPress={() => router.push('/receive')} style={styles.quickItem}><View style={[styles.quickIcon, styles.teal]}><Ionicons name="qr-code-outline" size={21} color="#008B83" /></View><Text style={styles.quickLabel}>Recibir</Text></Pressable>
-            <Pressable onPress={() => router.push('/swap')} style={styles.quickItem}><View style={[styles.quickIcon, styles.violet]}><Ionicons name="repeat-outline" size={21} color="#7655D9" /></View><Text style={styles.quickLabel}>Cambiar</Text></Pressable>
-            <Pressable onPress={() => router.push('/contacts')} style={styles.quickItem}><View style={[styles.quickIcon, styles.amber]}><Ionicons name="people-outline" size={21} color="#B66A00" /></View><Text style={styles.quickLabel}>Contactos</Text></Pressable>
-            <Pressable onPress={() => router.push('/activity')} style={styles.quickItem}><View style={[styles.quickIcon, styles.rose]}><Ionicons name="time-outline" size={21} color="#B94F72" /></View><Text style={styles.quickLabel}>Historial</Text></Pressable>
+            <PressableScale onPress={() => router.push('/send')} style={styles.quickItem}><View style={[styles.quickIcon, styles.blue]}><Ionicons name="paper-plane-outline" size={21} color="#176BFF" /></View><Text style={styles.quickLabel}>Enviar</Text></PressableScale>
+            <PressableScale onPress={() => router.push('/receive')} style={styles.quickItem}><View style={[styles.quickIcon, styles.teal]}><Ionicons name="qr-code-outline" size={21} color="#008B83" /></View><Text style={styles.quickLabel}>Recibir</Text></PressableScale>
+            <PressableScale onPress={() => router.push('/swap')} style={styles.quickItem}><View style={[styles.quickIcon, styles.violet]}><Ionicons name="repeat-outline" size={21} color="#7655D9" /></View><Text style={styles.quickLabel}>Cambiar</Text></PressableScale>
+            <PressableScale onPress={() => router.push('/contacts')} style={styles.quickItem}><View style={[styles.quickIcon, styles.amber]}><Ionicons name="people-outline" size={21} color="#B66A00" /></View><Text style={styles.quickLabel}>Contactos</Text></PressableScale>
+            <PressableScale onPress={() => router.push('/activity')} style={styles.quickItem}><View style={[styles.quickIcon, styles.rose]}><Ionicons name="time-outline" size={21} color="#B94F72" /></View><Text style={styles.quickLabel}>Historial</Text></PressableScale>
           </ScrollView>
         </View>
 
@@ -75,7 +81,7 @@ export default function HomeScreen() {
           <SectionHeader title="Mis cuentas" action="Ver todas" />
           <View style={styles.card}>
             {visibleAssets.map((asset, index) => (
-              <Pressable key={`${asset.code}-${index}`} onPress={() => setSelectedAsset(asset)} style={styles.assetRow}>
+              <PressableScale key={`${asset.code}-${index}`} onPress={() => setSelectedAsset(asset)} style={styles.assetRow}>
                 <View style={[styles.assetIcon, { backgroundColor: asset.color }]}><Text style={styles.assetCode}>{asset.code.slice(0, 1)}</Text></View>
                 <View style={styles.assetCopy}>
                   <Text style={styles.assetName}>{asset.name}</Text>
@@ -86,7 +92,7 @@ export default function HomeScreen() {
                   <Text style={styles.assetValue}>{amountsVisible ? asset.value : '••••'}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={colors.muted} style={styles.assetChevron} />
-              </Pressable>
+              </PressableScale>
             ))}
           </View>
           {assets.length > 3 ? <Pressable onPress={() => setShowAllAssets((current) => !current)} style={styles.moreAssets}><Text style={styles.moreAssetsText}>{showAllAssets ? 'Ver menos' : `Ver ${assets.length - 3} activo más`}</Text><Ionicons name={showAllAssets ? 'chevron-up' : 'chevron-down'} size={17} color={colors.brand} /></Pressable> : null}
@@ -99,12 +105,12 @@ export default function HomeScreen() {
       </ScrollView>
       </View>
 
-      <Pressable accessibilityLabel="Abrir el chat de Movya" onPress={() => setChatOpen(true)} style={styles.movyaButton}>
+      <PressableScale accessibilityLabel="Abrir el chat de Movya" onPress={() => setChatOpen(true)} pressedScale={0.9} style={styles.movyaButton}>
         <View style={styles.buttonHalo} />
         <AnimatedMovyaLogo size={58} />
         <View style={styles.onlineDot} />
         <View style={styles.chatBadge}><Ionicons name="chatbubble-ellipses" size={14} color="#FFFFFF" /></View>
-      </Pressable>
+      </PressableScale>
 
       <MovyaChatSheet onClose={() => setChatOpen(false)} open={chatOpen} />
       <AssetDetailSheet asset={selectedAsset} onClose={() => setSelectedAsset(null)} />
@@ -114,10 +120,14 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#BBD8FF' }, body: { flex: 1, backgroundColor: 'transparent' },
-  fixedHeader: { minHeight: 72, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.28)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.58)', zIndex: 10, overflow: 'hidden' },
+  headerShell: { minHeight: 92, marginHorizontal: 12, marginTop: 7, borderRadius: 25, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.88)', shadowColor: colors.navy, shadowOpacity: 0.22, shadowRadius: 18, shadowOffset: { width: 0, height: 9 }, elevation: 7, zIndex: 10 },
+  headerBlueGlow: { position: 'absolute', width: 250, height: 120, borderRadius: 999, backgroundColor: '#609EFF', opacity: 0.56, left: -55, top: -52 },
+  headerCyanGlow: { position: 'absolute', width: 210, height: 120, borderRadius: 999, backgroundColor: '#72E4D4', opacity: 0.47, right: -45, bottom: -60 },
+  fixedHeader: { minHeight: 90, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, backgroundColor: 'rgba(225,240,255,0.34)', overflow: 'hidden' },
   content: { paddingHorizontal: 20, paddingTop: 17, paddingBottom: 106 },
   greeting: { color: colors.navy, fontSize: 23, fontWeight: '800', letterSpacing: -0.6 },
-  subtitle: { color: '#486887', fontSize: 11, marginTop: 2 },
+  subtitle: { color: '#486887', fontSize: 11, marginTop: 1 },
+  headerNetwork: { marginTop: 5 },
   settingsButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.66)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.9)', shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
   totalCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FBFF', borderRadius: radius.lg, marginTop: 22, padding: 20, borderWidth: 1, borderColor: '#CFE2FF', shadowColor: colors.brandDark, shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
   totalLabel: { color: colors.muted, fontSize: 12, fontWeight: '600' },
@@ -127,7 +137,7 @@ const styles = StyleSheet.create({
   section: { marginTop: 30, gap: 12 },
   quickRow: { gap: 11, paddingRight: 4 },
   quickItem: { width: 72, alignItems: 'center' },
-  quickIcon: { width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  quickIcon: { width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1, shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
   blue: { backgroundColor: '#E8F1FF', borderColor: '#D2E3FF' },
   teal: { backgroundColor: '#E4F8F5', borderColor: '#C9EEE9' },
   violet: { backgroundColor: '#F0EBFF', borderColor: '#E0D7FF' },
