@@ -24,7 +24,6 @@ export default function SendScreen() {
   const ready = Boolean(amount && (selected || address.trim()));
   const balances: Record<string, string> = { USDC: '$1,240.00', XLM: '862.41 XLM', EURC: '92.00 EURC', AQUA: '4,800 AQUA' };
   const tokenColors: Record<string, string> = { USDC: '#2775CA', XLM: colors.navy, EURC: '#6857E5', AQUA: '#00A6A6' };
-  const tokenOptions = ['USDC', 'XLM', 'EURC', 'AQUA'];
 
   const pickContact = (id: string) => {
     setSelectedContactId(id);
@@ -38,22 +37,6 @@ export default function SendScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.networkBadge}><StellarNetworkBadge label="Envío por Stellar · Testnet" /></View>
-          <Text style={styles.label}>¿Qué token quieres enviar?</Text>
-          <ScrollView contentContainerStyle={styles.tokenChoices} horizontal showsHorizontalScrollIndicator={false}>
-            {tokenOptions.map((option) => <Pressable key={option} onPress={() => setToken(option)} style={[styles.tokenChoice, token === option && styles.tokenChoiceActive]}><View style={[styles.choiceDot, { backgroundColor: tokenColors[option] }]} /><Text style={[styles.choiceText, token === option && styles.choiceTextActive]}>{option}</Text>{token === option ? <Ionicons name="checkmark-circle" size={17} color={colors.brand} /> : null}</Pressable>)}
-          </ScrollView>
-          <Text style={styles.label}>¿Cuánto quieres enviar?</Text>
-          <View style={styles.amountCard}>
-            <Text style={styles.currency}>{token === 'USDC' ? '$' : ''}</Text>
-            <TextInput keyboardType="decimal-pad" onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#A7B2C5" style={styles.amountInput} value={amount} />
-            <Pressable onPress={() => setTokensOpen(true)} style={styles.tokenPill}>
-              <View style={[styles.tokenDot, { backgroundColor: tokenColors[token] }]} />
-              <Text style={styles.tokenText}>{token}</Text>
-              <Ionicons name="chevron-down" size={15} color={colors.brand} />
-            </Pressable>
-          </View>
-          <View style={styles.balanceRow}><Text style={styles.balance}>Disponible: {balances[token]}</Text><Pressable onPress={() => setAmount(token === 'USDC' ? '1240.00' : token === 'XLM' ? '862.41' : token === 'EURC' ? '92.00' : '4800')}><Text style={styles.max}>Usar máximo</Text></Pressable></View>
-
           <View style={styles.contextHelp}>
             <MovyaContextHelp
               actionPrompt={`Quiero enviar ${amount || 'un monto'} de ${token}. Ayúdame a elegir el destinatario y preparar el envío.`}
@@ -67,6 +50,17 @@ export default function SendScreen() {
               question="¿Necesitas ayuda para completar el envío?"
             />
           </View>
+          <Text style={styles.label}>Monto</Text>
+          <View style={styles.amountCard}>
+            <Text style={styles.currency}>{token === 'USDC' ? '$' : ''}</Text>
+            <TextInput keyboardType="decimal-pad" onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#A7B2C5" style={styles.amountInput} value={amount} />
+            <Pressable onPress={() => setTokensOpen(true)} style={styles.tokenPill}>
+              <View style={[styles.tokenDot, { backgroundColor: tokenColors[token] }]} />
+              <View style={styles.tokenPillCopy}><Text style={styles.tokenPillLabel}>TOKEN</Text><Text style={styles.tokenText}>{token}</Text></View>
+              <Ionicons name="chevron-down" size={15} color={colors.brand} />
+            </Pressable>
+          </View>
+          <View style={styles.balanceRow}><Text style={styles.balance}>Disponible: {balances[token]}</Text><Pressable onPress={() => setAmount(token === 'USDC' ? '1240.00' : token === 'XLM' ? '862.41' : token === 'EURC' ? '92.00' : '4800')}><Text style={styles.max}>Usar máximo</Text></Pressable></View>
 
           <Text style={styles.label}>Destinatario</Text>
           {selected ? (
@@ -121,14 +115,14 @@ export default function SendScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background }, flex: { flex: 1 }, content: { padding: 20, paddingBottom: 40 },
+  safeArea: { flex: 1, backgroundColor: colors.pageBackground }, flex: { flex: 1 }, content: { padding: 20, paddingBottom: 40 },
   networkBadge: { marginTop: 14 },
-  tokenChoices: { gap: 9, paddingRight: 4 }, tokenChoice: { height: 48, minWidth: 91, flexDirection: 'row', alignItems: 'center', gap: 7, paddingHorizontal: 12, backgroundColor: colors.surface, borderRadius: 16, borderWidth: 1, borderColor: colors.border }, tokenChoiceActive: { backgroundColor: colors.brandSoft, borderColor: colors.brand }, choiceDot: { width: 23, height: 23, borderRadius: 8 }, choiceText: { color: colors.text, fontSize: 11, fontWeight: '800' }, choiceTextActive: { color: colors.brandDark }, contextHelp: { marginTop: 20 },
+  contextHelp: { marginTop: 15 },
   label: { color: colors.ink, fontSize: 15, fontWeight: '800', marginTop: 20, marginBottom: 10 },
-  amountCard: { height: 104, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 24, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 18 }, currency: { color: colors.muted, fontSize: 31, fontWeight: '700' }, amountInput: { flex: 1, color: colors.ink, fontSize: 40, fontWeight: '800', marginLeft: 3 },
-  tokenPill: { height: 42, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.brandSoft, borderRadius: 15, paddingHorizontal: 10 }, tokenDot: { width: 22, height: 22, borderRadius: 8, marginRight: 7 }, tokenText: { color: colors.brandDark, fontSize: 12, fontWeight: '800', marginRight: 4 },
+  amountCard: { height: 104, flexDirection: 'row', alignItems: 'center', backgroundColor: '#EAF3FF', borderRadius: 24, borderWidth: 1.5, borderColor: '#BFD5F3', paddingHorizontal: 18, shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 3 }, currency: { color: colors.muted, fontSize: 30, fontWeight: '700' }, amountInput: { flex: 1, color: colors.ink, fontSize: 38, fontWeight: '800', marginLeft: 3 },
+  tokenPill: { minWidth: 105, height: 52, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.84)', borderWidth: 1, borderColor: '#D5E2F2', borderRadius: 17, paddingHorizontal: 10 }, tokenDot: { width: 25, height: 25, borderRadius: 9, marginRight: 7 }, tokenPillCopy: { flex: 1 }, tokenPillLabel: { color: colors.muted, fontSize: 8, fontWeight: '800' }, tokenText: { color: colors.brandDark, fontSize: 12, fontWeight: '800', marginTop: 1 },
   balanceRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }, balance: { color: colors.muted, fontSize: 11 }, max: { color: colors.brand, fontSize: 11, fontWeight: '800' },
-  recipientRow: { flexDirection: 'row', gap: 9 }, addressBox: { flex: 1, height: 58, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 13 }, addressInput: { flex: 1, color: colors.ink, fontSize: 13, marginLeft: 8 },
+  recipientRow: { flexDirection: 'row', gap: 9 }, addressBox: { flex: 1, height: 62, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFDFB', borderRadius: 18, borderWidth: 1.5, borderColor: '#D9D1E7', paddingHorizontal: 13, shadowColor: colors.navy, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 2 }, addressInput: { flex: 1, color: colors.ink, fontSize: 13, marginLeft: 8 },
   contactsButton: { width: 88, height: 58, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brandSoft, borderRadius: 18, borderWidth: 1, borderColor: colors.brandIce }, contactsText: { color: colors.brand, fontSize: 9, fontWeight: '800', marginTop: 3 }, help: { color: colors.muted, fontSize: 10, lineHeight: 15, marginTop: 8 }, changeContact: { color: colors.brand, fontSize: 11, fontWeight: '800', marginTop: 9 },
   selectedContact: { height: 66, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.brandIce, borderRadius: 19, paddingHorizontal: 12 }, avatar: { width: 43, height: 43, borderRadius: 15, alignItems: 'center', justifyContent: 'center' }, avatarText: { color: colors.ink, fontSize: 12, fontWeight: '800' }, contactCopy: { flex: 1, marginLeft: 11 }, contactName: { color: colors.ink, fontSize: 14, fontWeight: '700' }, handle: { color: colors.muted, fontSize: 11, marginTop: 3 }, clear: { width: 34, height: 34, borderRadius: 13, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
   summary: { flexDirection: 'row', alignItems: 'center', marginTop: 28, padding: 15, backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border }, summaryIcon: { width: 42, height: 42, borderRadius: 15, alignItems: 'center', justifyContent: 'center' }, summaryCopy: { flex: 1, marginLeft: 11 }, summaryTitle: { color: colors.ink, fontSize: 13, fontWeight: '800' }, summaryText: { color: colors.muted, fontSize: 10, lineHeight: 15, marginTop: 3 },

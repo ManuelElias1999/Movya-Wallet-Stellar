@@ -75,12 +75,12 @@ export default function ReceiveScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background }, content: { padding: 20, paddingBottom: 40, alignItems: 'center' },
+  safeArea: { flex: 1, backgroundColor: colors.pageBackground }, content: { padding: 20, paddingBottom: 40, alignItems: 'center' },
   helper: { width: '100%', marginBottom: 12 },
   title: { color: colors.ink, fontSize: 23, fontWeight: '800', marginTop: 10, textAlign: 'center' }, subtitle: { color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: 7, paddingHorizontal: 20 },
-  qrCard: { width: '100%', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 28, borderWidth: 1, borderColor: colors.border, padding: 24, marginTop: 24 },
+  qrCard: { width: '100%', alignItems: 'center', backgroundColor: '#EEF5FF', borderRadius: 28, borderWidth: 1.5, borderColor: '#C4D7F1', padding: 24, marginTop: 24, shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
   qrWrap: { padding: 14, borderRadius: 22, backgroundColor: '#FFFFFF' }, badge: { flexDirection: 'row', alignItems: 'center', marginTop: 17, backgroundColor: colors.positiveSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.positive, marginRight: 6 }, badgeText: { color: colors.positive, fontSize: 11, fontWeight: '700' },
-  addressCard: { width: '100%', backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, padding: 17, marginTop: 16 }, addressLabel: { color: colors.muted, fontSize: 11, fontWeight: '700' }, address: { color: colors.ink, fontSize: 13, lineHeight: 19, fontWeight: '600', marginTop: 8 },
+  addressCard: { width: '100%', backgroundColor: '#FFFDFB', borderRadius: radius.md, borderWidth: 1.5, borderColor: '#D9D1E7', padding: 17, marginTop: 16, shadowColor: colors.navy, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 2 }, addressLabel: { color: colors.muted, fontSize: 11, fontWeight: '700' }, address: { color: colors.ink, fontSize: 13, lineHeight: 19, fontWeight: '600', marginTop: 8 },
   actions: { flexDirection: 'row', gap: 9, marginTop: 14 },
   actionButton: { flex: 1, height: 45, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.brandSoft, borderRadius: 15 },
   actionText: { color: colors.brand, fontSize: 13, fontWeight: '800', marginLeft: 7 },

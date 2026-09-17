@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
@@ -12,7 +12,6 @@ import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackg
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
 import { MovyaChatSheet } from '@/components/MovyaChatSheet';
 import { SectionHeader } from '@/components/SectionHeader';
-import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
 import { demoAssets } from '@/data/demo';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { colors, radius } from '@/theme/tokens';
@@ -22,6 +21,7 @@ export default function HomeScreen() {
   const [amountsVisible, setAmountsVisible] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AssetDetail | null>(null);
+  const [showAllAssets, setShowAllAssets] = useState(false);
   const account = useStellarAccount();
   const assets = account.data?.balances.map((item) => ({
     code: item.assetCode,
@@ -30,13 +30,14 @@ export default function HomeScreen() {
     value: 'Cuenta Testnet',
     color: item.assetCode === 'XLM' ? colors.navy : colors.brand,
   })) ?? demoAssets;
+  const visibleAssets = showAllAssets ? assets : assets.slice(0, 3);
   const privateValue = (value: string) => amountsVisible ? value : '••••••';
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <AnimatedDashboardBackground />
-      <BlurView intensity={72} tint="dark" style={styles.fixedHeader}>
+      <BlurView intensity={80} tint="light" style={styles.fixedHeader}>
         <View>
           <Text style={styles.greeting}>Hola, Manuel!</Text>
           <Text style={styles.subtitle}>Qué gusto verte de nuevo.</Text>
@@ -73,7 +74,7 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <SectionHeader title="Mis cuentas" action="Ver todas" />
           <View style={styles.card}>
-            {assets.map((asset, index) => (
+            {visibleAssets.map((asset, index) => (
               <Pressable key={`${asset.code}-${index}`} onPress={() => setSelectedAsset(asset)} style={styles.assetRow}>
                 <View style={[styles.assetIcon, { backgroundColor: asset.color }]}><Text style={styles.assetCode}>{asset.code.slice(0, 1)}</Text></View>
                 <View style={styles.assetCopy}>
@@ -88,7 +89,11 @@ export default function HomeScreen() {
               </Pressable>
             ))}
           </View>
-          <View style={styles.stellarFooter}><StellarNetworkBadge label="Powered by Stellar · Testnet" /></View>
+          {assets.length > 3 ? <Pressable onPress={() => setShowAllAssets((current) => !current)} style={styles.moreAssets}><Text style={styles.moreAssetsText}>{showAllAssets ? 'Ver menos' : `Ver ${assets.length - 3} activo más`}</Text><Ionicons name={showAllAssets ? 'chevron-up' : 'chevron-down'} size={17} color={colors.brand} /></Pressable> : null}
+          <View style={styles.networkCard}>
+            <View style={styles.networkCopy}><Text style={styles.networkEyebrow}>RED PRINCIPAL Y ÚNICA</Text><Text style={styles.networkTitle}>Movya funciona en Stellar</Text><Text style={styles.networkText}>Todos tus envíos, cobros y cambios se realizan en la red Stellar.</Text><View style={styles.testnetBadge}><View style={styles.testnetDot} /><Text style={styles.testnetText}>Testnet durante esta versión</Text></View></View>
+            <View style={styles.wordmarkCrop}><Image source={require('../../assets/stellar-wordmark.png')} style={styles.stellarWordmark} /></View>
+          </View>
         </View>
         {account.error ? <Text style={styles.syncError}>No pudimos sincronizar Testnet: {account.error}</Text> : null}
       </ScrollView>
@@ -108,12 +113,12 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#9FC9FF' }, body: { flex: 1, backgroundColor: 'transparent' },
-  fixedHeader: { minHeight: 72, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(8,52,113,0.34)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.3)', zIndex: 10, overflow: 'hidden' },
+  safeArea: { flex: 1, backgroundColor: '#BBD8FF' }, body: { flex: 1, backgroundColor: 'transparent' },
+  fixedHeader: { minHeight: 72, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.28)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.58)', zIndex: 10, overflow: 'hidden' },
   content: { paddingHorizontal: 20, paddingTop: 17, paddingBottom: 106 },
-  greeting: { color: '#FFFFFF', fontSize: 23, fontWeight: '800', letterSpacing: -0.6 },
-  subtitle: { color: 'rgba(255,255,255,0.75)', fontSize: 11, marginTop: 2 },
-  settingsButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.74)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.88)', shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
+  greeting: { color: colors.navy, fontSize: 23, fontWeight: '800', letterSpacing: -0.6 },
+  subtitle: { color: '#486887', fontSize: 11, marginTop: 2 },
+  settingsButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.66)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.9)', shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
   totalCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FBFF', borderRadius: radius.lg, marginTop: 22, padding: 20, borderWidth: 1, borderColor: '#CFE2FF', shadowColor: colors.brandDark, shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
   totalLabel: { color: colors.muted, fontSize: 12, fontWeight: '600' },
   totalAmount: { color: colors.ink, fontSize: 28, fontWeight: '800', letterSpacing: -0.8, marginTop: 5 },
@@ -140,7 +145,8 @@ const styles = StyleSheet.create({
   assetChevron: { marginLeft: 8 },
   assetAmount: { color: colors.ink, fontSize: 14, fontWeight: '700' },
   assetValue: { color: colors.muted, fontSize: 12, marginTop: 3 },
-  stellarFooter: { alignItems: 'center', marginTop: 5 },
+  moreAssets: { height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.55)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.75)', marginTop: 2 }, moreAssetsText: { color: colors.brand, fontSize: 12, fontWeight: '800' },
+  networkCard: { minHeight: 132, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.7)', borderRadius: 23, borderWidth: 1, borderColor: 'rgba(255,255,255,0.88)', padding: 17, marginTop: 16, shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 }, networkCopy: { flex: 1, paddingRight: 8 }, networkEyebrow: { color: colors.brand, fontSize: 9, fontWeight: '900', letterSpacing: 0.9 }, networkTitle: { color: colors.ink, fontSize: 16, fontWeight: '900', marginTop: 4 }, networkText: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: 5 }, testnetBadge: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', marginTop: 9 }, testnetDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.warning, marginRight: 5 }, testnetText: { color: colors.muted, fontSize: 9, fontWeight: '700' }, wordmarkCrop: { width: 118, height: 42, overflow: 'hidden' }, stellarWordmark: { position: 'absolute', width: 150, height: 84, resizeMode: 'contain', left: -16, top: -22 },
   syncError: { color: colors.warning, fontSize: 11, lineHeight: 16, marginTop: 16 },
   movyaButton: { position: 'absolute', right: 20, bottom: 18, width: 68, height: 68, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.brandIce, shadowColor: colors.brandDark, shadowOpacity: 0.28, shadowRadius: 20, shadowOffset: { width: 0, height: 9 }, elevation: 10 },
   buttonHalo: { position: 'absolute', width: 62, height: 62, borderRadius: 23, backgroundColor: colors.brandSoft },

@@ -8,6 +8,7 @@ export const colors = {
   text: '#21314D',
   muted: '#71809B',
   background: '#ECF3FB',
+  pageBackground: '#F4F1FA',
   surface: '#FCFDFF',
   border: '#DCE6F2',
   positive: '#16A071',
