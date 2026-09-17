@@ -11,19 +11,19 @@ export default function ActivityScreen() {
     <Screen>
       <View style={styles.header}>
         <View>
-          <Text style={styles.eyebrow}>YOUR MONEY</Text>
-          <Text style={styles.title}>Activity</Text>
+          <Text style={styles.eyebrow}>TU DINERO</Text>
+          <Text style={styles.title}>Movimientos</Text>
         </View>
         <View style={styles.filter}><Ionicons name="options-outline" size={20} color={colors.ink} /></View>
       </View>
       <View style={styles.statusCard}>
         <View style={styles.statusIcon}><Ionicons name="checkmark" color={colors.positive} size={18} /></View>
         <View style={styles.statusCopy}>
-          <Text style={styles.statusTitle}>Everything is up to date</Text>
-          <Text style={styles.statusText}>Your Stellar activity will appear here automatically.</Text>
+          <Text style={styles.statusTitle}>Todo está al día</Text>
+          <Text style={styles.statusText}>Tus movimientos aparecerán aquí automáticamente.</Text>
         </View>
       </View>
-      <Text style={styles.month}>September</Text>
+      <Text style={styles.month}>Septiembre</Text>
       <View style={styles.card}>
         {demoActivity.map((item) => <ActivityRow key={item.id} {...item} />)}
       </View>

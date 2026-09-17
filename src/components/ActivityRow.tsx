@@ -9,9 +9,10 @@ type ActivityRowProps = {
   amount: string;
   time: string;
   positive: boolean;
+  hidden?: boolean;
 };
 
-export function ActivityRow({ type, detail, amount, time, positive }: ActivityRowProps) {
+export function ActivityRow({ type, detail, amount, time, positive, hidden = false }: ActivityRowProps) {
   const icon = type === 'Swap' ? 'swap-horizontal' : positive ? 'arrow-down' : 'arrow-up';
 
   return (
@@ -23,7 +24,7 @@ export function ActivityRow({ type, detail, amount, time, positive }: ActivityRo
         <Text style={styles.type}>{type}</Text>
         <Text style={styles.detail}>{detail} · {time}</Text>
       </View>
-      <Text style={[styles.amount, positive && styles.positiveText]}>{amount}</Text>
+      <Text style={[styles.amount, positive && styles.positiveText]}>{hidden ? '••••' : amount}</Text>
     </View>
   );
 }

@@ -31,10 +31,10 @@ export default function TabsLayout() {
         },
       })}
     >
-      <Tabs.Screen name="index" options={{ title: 'Home' }} />
-      <Tabs.Screen name="activity" options={{ title: 'Activity' }} />
-      <Tabs.Screen name="contacts" options={{ title: 'Contacts' }} />
-      <Tabs.Screen name="movya" options={{ title: 'Ask Movya' }} />
+      <Tabs.Screen name="index" options={{ title: 'Inicio' }} />
+      <Tabs.Screen name="activity" options={{ title: 'Movimientos' }} />
+      <Tabs.Screen name="contacts" options={{ title: 'Contactos' }} />
+      <Tabs.Screen name="movya" options={{ title: 'Movya' }} />
     </Tabs>
   );
 }

@@ -1,12 +1,12 @@
 export const demoAssets = [
-  { code: 'USDC', name: 'USD Coin', amount: '1,240.00', value: '$1,240.00', color: '#2775CA' },
-  { code: 'XLM', name: 'Stellar', amount: '862.41', value: '$276.84', color: '#101828' },
+  { code: 'USDC', name: 'Dólares digitales', amount: '1,240.00', value: '$1,240.00', color: '#2775CA' },
+  { code: 'XLM', name: 'Stellar', amount: '862.41', value: '$276.84', color: '#0B2348' },
 ];
 
 export const demoActivity = [
-  { id: '1', type: 'Received', detail: 'From Mateo', amount: '+ 120 USDC', time: 'Today, 09:42', positive: true },
-  { id: '2', type: 'Sent', detail: 'To Camila', amount: '- 35 USDC', time: 'Yesterday, 18:10', positive: false },
-  { id: '3', type: 'Swap', detail: 'XLM to USDC', amount: '+ 68.20 USDC', time: 'Monday, 12:25', positive: true },
+  { id: '1', type: 'Recibiste', detail: 'De Mateo', amount: '+ $120.00', time: 'Hoy, 09:42', positive: true },
+  { id: '2', type: 'Enviaste', detail: 'A Camila', amount: '- $35.00', time: 'Ayer, 18:10', positive: false },
+  { id: '3', type: 'Cambio', detail: 'De XLM a USDC', amount: '+ $68.20', time: 'Lunes, 12:25', positive: true },
 ];
 
 export const demoContacts = [

@@ -10,16 +10,16 @@ export default function ContactsScreen() {
     <Screen>
       <View style={styles.header}>
         <View>
-          <Text style={styles.eyebrow}>SEND BY NAME</Text>
-          <Text style={styles.title}>Contacts</Text>
+          <Text style={styles.eyebrow}>ENVÍA POR NOMBRE</Text>
+          <Text style={styles.title}>Contactos</Text>
         </View>
         <Pressable style={styles.addButton}><Ionicons name="add" size={22} color="#FFFFFF" /></Pressable>
       </View>
       <View style={styles.search}>
         <Ionicons name="search" size={18} color={colors.muted} />
-        <TextInput placeholder="Search people" placeholderTextColor={colors.muted} style={styles.input} />
+        <TextInput placeholder="Buscar personas" placeholderTextColor={colors.muted} style={styles.input} />
       </View>
-      <Text style={styles.sectionTitle}>Favorites</Text>
+      <Text style={styles.sectionTitle}>Favoritos</Text>
       <View style={styles.card}>
         {demoContacts.map((contact, index) => (
           <Pressable key={contact.id} style={[styles.contact, index > 0 && styles.divider]}>
@@ -36,7 +36,7 @@ export default function ContactsScreen() {
       </View>
       <View style={styles.info}>
         <Ionicons name="shield-checkmark-outline" color={colors.brand} size={20} />
-        <Text style={styles.infoText}>Movya verifies every address before preparing a payment.</Text>
+        <Text style={styles.infoText}>Movya verifica cada cuenta antes de preparar un envío.</Text>
       </View>
     </Screen>
   );

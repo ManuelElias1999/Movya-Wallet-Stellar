@@ -4,6 +4,7 @@
     "slug": "movya-wallet-stellar",
     "version": "0.1.0",
     "orientation": "portrait",
+    "icon": "./assets/movya-logo.png",
     "userInterfaceStyle": "light",
     "scheme": "movya",
     "newArchEnabled": true,
@@ -14,7 +15,8 @@
     "android": {
       "package": "com.movya.wallet.stellar",
       "adaptiveIcon": {
-        "backgroundColor": "#0461F0"
+        "foregroundImage": "./assets/movya-logo.png",
+        "backgroundColor": "#E8F1FF"
       },
       "edgeToEdgeEnabled": true
     },
