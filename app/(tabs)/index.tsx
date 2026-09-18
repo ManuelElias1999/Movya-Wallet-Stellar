@@ -40,7 +40,8 @@ export default function HomeScreen() {
       <StatusBar style="dark" />
       <AnimatedDashboardBackground />
       <View style={styles.headerShell}>
-        <BlurView intensity={48} tint="light" style={[styles.fixedHeader, Platform.OS === 'web' ? webGlass : null]}>
+        <BlurView intensity={62} tint="light" style={[styles.fixedHeader, Platform.OS === 'web' ? webGlass : null]}>
+          <View pointerEvents="none" style={styles.headerShine} />
           <View>
             <Text style={styles.greeting}>Hola, Manuel!</Text>
             <Text style={styles.subtitle}>Qué gusto verte de nuevo.</Text>
@@ -69,9 +70,9 @@ export default function HomeScreen() {
           <ScrollView contentContainerStyle={styles.quickRow} horizontal showsHorizontalScrollIndicator={false}>
             <PressableScale onPress={() => router.push('/send')} style={styles.quickItem}><View style={[styles.quickIcon, styles.blue]}><Ionicons name="paper-plane-outline" size={21} color="#176BFF" /></View><Text style={styles.quickLabel}>Enviar</Text></PressableScale>
             <PressableScale onPress={() => router.push('/receive')} style={styles.quickItem}><View style={[styles.quickIcon, styles.teal]}><Ionicons name="qr-code-outline" size={21} color="#008B83" /></View><Text style={styles.quickLabel}>Recibir</Text></PressableScale>
-            <PressableScale onPress={() => router.push('/swap')} style={styles.quickItem}><View style={[styles.quickIcon, styles.violet]}><Ionicons name="repeat-outline" size={21} color="#7655D9" /></View><Text style={styles.quickLabel}>Cambiar</Text></PressableScale>
-            <PressableScale onPress={() => router.push('/contacts')} style={styles.quickItem}><View style={[styles.quickIcon, styles.amber]}><Ionicons name="people-outline" size={21} color="#B66A00" /></View><Text style={styles.quickLabel}>Contactos</Text></PressableScale>
-            <PressableScale onPress={() => router.push('/activity')} style={styles.quickItem}><View style={[styles.quickIcon, styles.rose]}><Ionicons name="time-outline" size={21} color="#B94F72" /></View><Text style={styles.quickLabel}>Historial</Text></PressableScale>
+            <PressableScale onPress={() => router.push('/swap')} style={styles.quickItem}><View style={[styles.quickIcon, styles.deepBlue]}><Ionicons name="repeat-outline" size={21} color="#3158B8" /></View><Text style={styles.quickLabel}>Cambiar</Text></PressableScale>
+            <PressableScale onPress={() => router.push('/contacts')} style={styles.quickItem}><View style={[styles.quickIcon, styles.sky]}><Ionicons name="people-outline" size={21} color="#1677B8" /></View><Text style={styles.quickLabel}>Contactos</Text></PressableScale>
+            <PressableScale onPress={() => router.push('/activity')} style={styles.quickItem}><View style={[styles.quickIcon, styles.navy]}><Ionicons name="time-outline" size={21} color="#173F7A" /></View><Text style={styles.quickLabel}>Historial</Text></PressableScale>
           </ScrollView>
         </View>
 
@@ -113,13 +114,14 @@ export default function HomeScreen() {
   );
 }
 
-const webGlass = { backdropFilter: 'blur(24px) saturate(155%)', WebkitBackdropFilter: 'blur(24px) saturate(155%)' } as const;
+const webGlass = { backdropFilter: 'blur(26px) saturate(165%)', WebkitBackdropFilter: 'blur(26px) saturate(165%)' } as const;
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#BBD8FF' }, body: { flex: 1, backgroundColor: 'transparent' },
-  headerShell: { minHeight: 78, width: '100%', overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.66)', shadowColor: colors.navy, shadowOpacity: 0.16, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 7, zIndex: 10 },
-  fixedHeader: { minHeight: 78, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.1)', overflow: 'hidden' },
-  content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 17, paddingBottom: 106 },
+  safeArea: { flex: 1, backgroundColor: '#8DBEFF' }, body: { flex: 1, backgroundColor: 'transparent' },
+  headerShell: { minHeight: 76, marginHorizontal: 14, marginTop: 8, overflow: 'hidden', borderRadius: 26, borderWidth: 1, borderColor: 'rgba(255,255,255,0.68)', shadowColor: colors.navy, shadowOpacity: 0.18, shadowRadius: 20, shadowOffset: { width: 0, height: 9 }, elevation: 8, zIndex: 10 },
+  fixedHeader: { minHeight: 76, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 8, backgroundColor: 'rgba(238,247,255,0.16)', overflow: 'hidden' },
+  headerShine: { position: 'absolute', left: 1, right: 1, top: 1, height: '48%', borderTopLeftRadius: 25, borderTopRightRadius: 25, backgroundColor: 'rgba(255,255,255,0.15)' },
+  content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 15, paddingBottom: 106 },
   greeting: { color: colors.navy, fontSize: 23, fontWeight: '800', letterSpacing: -0.6 },
   subtitle: { color: '#486887', fontSize: 11, marginTop: 1 },
   settingsButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.66)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.9)', shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
@@ -134,9 +136,9 @@ const styles = StyleSheet.create({
   quickIcon: { width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1, shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
   blue: { backgroundColor: '#E8F1FF', borderColor: '#D2E3FF' },
   teal: { backgroundColor: '#E4F8F5', borderColor: '#C9EEE9' },
-  violet: { backgroundColor: '#F0EBFF', borderColor: '#E0D7FF' },
-  amber: { backgroundColor: '#FFF3DE', borderColor: '#FFE3B2' },
-  rose: { backgroundColor: '#FCEAF0', borderColor: '#F6D4E0' },
+  deepBlue: { backgroundColor: '#E9EFFF', borderColor: '#CFDCFF' },
+  sky: { backgroundColor: '#E1F3FF', borderColor: '#C2E5FA' },
+  navy: { backgroundColor: '#E5ECF6', borderColor: '#CCD9EA' },
   quickLabel: { color: colors.text, fontSize: 10, fontWeight: '700', marginTop: 7 },
   card: { gap: 11 },
   assetRow: { minHeight: 74, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 20, backgroundColor: 'rgba(252,253,255,0.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.85)', shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 4 },

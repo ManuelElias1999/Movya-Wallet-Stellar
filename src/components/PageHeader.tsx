@@ -12,7 +12,8 @@ export function PageHeader({ title, subtitle }: PageHeaderProps) {
   const router = useRouter();
   return (
     <View style={styles.shell}>
-      <BlurView intensity={48} tint="light" style={[styles.header, Platform.OS === 'web' ? webGlass : null]}>
+      <BlurView intensity={62} tint="light" style={[styles.header, Platform.OS === 'web' ? webGlass : null]}>
+        <View pointerEvents="none" style={styles.shine} />
         <PressableScale onPress={() => router.back()} pressedScale={0.9} style={styles.back}>
           <Ionicons name="arrow-back" size={20} color={colors.ink} />
         </PressableScale>
@@ -26,12 +27,13 @@ export function PageHeader({ title, subtitle }: PageHeaderProps) {
   );
 }
 
-const webGlass = { backdropFilter: 'blur(24px) saturate(155%)', WebkitBackdropFilter: 'blur(24px) saturate(155%)' } as const;
+const webGlass = { backdropFilter: 'blur(26px) saturate(165%)', WebkitBackdropFilter: 'blur(26px) saturate(165%)' } as const;
 
 const styles = StyleSheet.create({
-  shell: { minHeight: 74, width: '100%', overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.5)', shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 5 },
-  header: { minHeight: 74, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, backgroundColor: 'rgba(255,255,255,0.1)' },
-  back: { width: 40, height: 40, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.24)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.56)', alignItems: 'center', justifyContent: 'center', shadowColor: colors.navy, shadowOpacity: 0.08, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
+  shell: { minHeight: 72, marginHorizontal: 14, marginTop: 8, overflow: 'hidden', borderRadius: 25, borderWidth: 1, borderColor: 'rgba(255,255,255,0.68)', shadowColor: colors.navy, shadowOpacity: 0.17, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 7, zIndex: 10 },
+  header: { minHeight: 72, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, backgroundColor: 'rgba(238,247,255,0.16)' },
+  shine: { position: 'absolute', left: 1, right: 1, top: 1, height: '48%', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: 'rgba(255,255,255,0.15)' },
+  back: { width: 40, height: 40, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.34)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.66)', alignItems: 'center', justifyContent: 'center', shadowColor: colors.navy, shadowOpacity: 0.08, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 2 },
   copy: { flex: 1, alignItems: 'center', paddingHorizontal: 5 },
   title: { color: colors.ink, fontSize: 17, fontWeight: '800' },
   subtitle: { color: '#496786', fontSize: 10, marginTop: 1, maxWidth: 220 },

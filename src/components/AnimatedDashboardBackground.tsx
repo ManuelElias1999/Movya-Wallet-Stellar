@@ -18,12 +18,12 @@ export function AnimatedDashboardBackground() {
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <LinearGradient colors={['#92BFFF', '#C7D8FF', '#D8C9FF', '#AEE8E3']} end={{ x: 1, y: 1 }} locations={[0, 0.34, 0.68, 1]} start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#72AFFF', '#A9CCFF', '#D8E9FF', '#8EBFFF']} end={{ x: 1, y: 1 }} locations={[0, 0.32, 0.68, 1]} start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: transition }]}>
-        <LinearGradient colors={['#B7E3F3', '#91BAFF', '#B7A9F4', '#D9E8FF']} end={{ x: 0.08, y: 1 }} locations={[0, 0.31, 0.67, 1]} start={{ x: 0.92, y: 0 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['#DDEEFF', '#85B8FF', '#B6D6FF', '#5E9CF4']} end={{ x: 0.08, y: 1 }} locations={[0, 0.3, 0.68, 1]} start={{ x: 0.92, y: 0 }} style={StyleSheet.absoluteFill} />
       </Animated.View>
-      <Animated.View style={[styles.lightWash, { opacity: transition.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.18, 0.04, 0.2] }) }]}>
-        <LinearGradient colors={['rgba(255,255,255,0.72)', 'rgba(255,255,255,0)', 'rgba(112,171,255,0.3)']} end={{ x: 1, y: 1 }} start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
+      <Animated.View style={[styles.lightWash, { opacity: transition.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.22, 0.08, 0.22] }) }]}>
+        <LinearGradient colors={['rgba(255,255,255,0.62)', 'rgba(255,255,255,0.04)', 'rgba(35,113,226,0.24)']} end={{ x: 1, y: 1 }} start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
       </Animated.View>
     </View>
   );
