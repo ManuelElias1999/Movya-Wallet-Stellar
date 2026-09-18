@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ActivityRow } from '@/components/ActivityRow';
+import { BottomNavigation } from '@/components/BottomNavigation';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { PageHeader } from '@/components/PageHeader';
 import { PoweredByStellarFooter } from '@/components/PoweredByStellarFooter';
@@ -28,13 +29,14 @@ export default function ActivityScreen() {
         </View>
         <PoweredByStellarFooter />
       </ScrollView>
+      <BottomNavigation active="activity" />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#E8F1FF' },
-  content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 42 },
+  content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 125 },
   statusCard: { flexDirection: 'row', backgroundColor: 'rgba(232,248,242,0.9)', borderRadius: radius.md, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.92)', shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 13, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   statusIcon: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   statusCopy: { flex: 1, marginLeft: 12 },

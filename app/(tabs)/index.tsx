@@ -6,155 +6,121 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
+import { ActivityRow } from '@/components/ActivityRow';
 import { AssetDetail, AssetDetailSheet } from '@/components/AssetDetailSheet';
 import { AnimatedAccountCard } from '@/components/AnimatedAccountCard';
 import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackground';
-import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
+import { BottomNavigation } from '@/components/BottomNavigation';
 import { MovyaChatSheet } from '@/components/MovyaChatSheet';
 import { PoweredByStellarFooter } from '@/components/PoweredByStellarFooter';
 import { PressableScale } from '@/components/PressableScale';
-import { SectionHeader } from '@/components/SectionHeader';
-import { demoAssets } from '@/data/demo';
+import { demoActivity, demoAssets } from '@/data/demo';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
-import { colors, radius } from '@/theme/tokens';
+import { colors } from '@/theme/tokens';
+
+const quickActions = [
+  { label: 'Enviar', icon: 'arrow-up' as const, route: '/send' as const, tint: '#E4F0FF', color: '#176BFF' },
+  { label: 'Recibir', icon: 'arrow-down' as const, route: '/receive' as const, tint: '#E4F8F5', color: '#008B83' },
+  { label: 'Swap', icon: 'swap-horizontal' as const, route: '/swap' as const, tint: '#E8EEFF', color: '#3158B8' },
+  { label: 'Agregar', icon: 'add' as const, route: '/receive' as const, tint: '#E6F4FF', color: '#1677B8' },
+];
 
 export default function HomeScreen() {
   const router = useRouter();
   const [amountsVisible, setAmountsVisible] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AssetDetail | null>(null);
-  const [showAllAssets, setShowAllAssets] = useState(false);
   const account = useStellarAccount();
   const assets = account.data?.balances.map((item) => ({
     code: item.assetCode,
-    name: item.assetCode === 'XLM' ? 'Stellar' : item.assetCode === 'USDC' ? 'Dólares digitales' : item.assetCode,
+    name: item.assetCode === 'XLM' ? 'Stellar' : item.assetCode === 'USDC' ? 'USD Coin' : item.assetCode,
     amount: Number(item.balance).toLocaleString(undefined, { maximumFractionDigits: 4 }),
     value: 'Cuenta Testnet',
     color: item.assetCode === 'XLM' ? colors.navy : colors.brand,
   })) ?? demoAssets;
-  const visibleAssets = showAllAssets ? assets : assets.slice(0, 3);
   const privateValue = (value: string) => amountsVisible ? value : '••••••';
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <StatusBar style="dark" />
       <AnimatedDashboardBackground />
-      <View style={styles.headerShell}>
-        <BlurView intensity={62} tint="light" style={[styles.fixedHeader, Platform.OS === 'web' ? webGlass : null]}>
-          <View pointerEvents="none" style={styles.headerShine} />
-          <View>
-            <Text style={styles.greeting}>Hola, Manuel!</Text>
-            <Text style={styles.subtitle}>Qué gusto verte de nuevo.</Text>
-          </View>
-          <PressableScale onPress={() => router.push('/settings')} pressedScale={0.9} style={styles.settingsButton}><Ionicons name="settings-outline" size={22} color={colors.ink} /></PressableScale>
-        </BlurView>
-      </View>
 
-      <View style={styles.body}>
+      <BlurView intensity={68} tint="light" style={[styles.header, Platform.OS === 'web' ? webGlass : null]}>
+        <View style={styles.profileRow}>
+          <View style={styles.avatar}><Text style={styles.avatarText}>ME</Text></View>
+          <View>
+            <Text style={styles.hello}>Hola, Manuel</Text>
+            <Text style={styles.welcome}>Bienvenido a tu wallet</Text>
+          </View>
+        </View>
+        <View style={styles.headerActions}>
+          <PressableScale accessibilityLabel={amountsVisible ? 'Ocultar saldos' : 'Mostrar saldos'} onPress={() => setAmountsVisible((value) => !value)} pressedScale={0.9} style={styles.headerButton}>
+            <Ionicons color={colors.navy} name={amountsVisible ? 'eye-outline' : 'eye-off-outline'} size={20} />
+          </PressableScale>
+          <PressableScale onPress={() => router.push('/settings')} pressedScale={0.9} style={styles.headerButton}>
+            <Ionicons color={colors.navy} name="notifications-outline" size={20} />
+            <View style={styles.notificationDot} />
+          </PressableScale>
+        </View>
+      </BlurView>
+
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AnimatedAccountCard amountsVisible={amountsVisible} />
+        <AnimatedAccountCard amountsVisible={amountsVisible} totalAmount="$1,629.24" />
 
-        <View style={styles.totalCard}>
-          <View>
-            <Text style={styles.totalLabel}>Balance total en USD</Text>
-            <Text style={styles.totalAmount}>{privateValue('$1,629.24')}</Text>
-            <Text style={styles.totalCaption}>Entre todas tus cuentas</Text>
-          </View>
-          <Pressable accessibilityLabel={amountsVisible ? 'Ocultar montos' : 'Mostrar montos'} onPress={() => setAmountsVisible((visible) => !visible)} style={styles.eyeButton}>
-            <Ionicons color={colors.brand} name={amountsVisible ? 'eye-outline' : 'eye-off-outline'} size={22} />
-          </Pressable>
+        <View style={styles.actionsRow}>
+          {quickActions.map((action) => (
+            <PressableScale key={action.label} onPress={() => router.push(action.route)} style={styles.actionItem}>
+              <View style={[styles.actionIcon, { backgroundColor: action.tint }]}><Ionicons color={action.color} name={action.icon} size={22} /></View>
+              <Text style={styles.actionLabel}>{action.label}</Text>
+            </PressableScale>
+          ))}
         </View>
 
-        <View style={styles.section}>
-          <SectionHeader title="Accesos rápidos" />
-          <ScrollView contentContainerStyle={styles.quickRow} horizontal showsHorizontalScrollIndicator={false}>
-            <PressableScale onPress={() => router.push('/send')} style={styles.quickItem}><View style={[styles.quickIcon, styles.blue]}><Ionicons name="paper-plane-outline" size={21} color="#176BFF" /></View><Text style={styles.quickLabel}>Enviar</Text></PressableScale>
-            <PressableScale onPress={() => router.push('/receive')} style={styles.quickItem}><View style={[styles.quickIcon, styles.teal]}><Ionicons name="qr-code-outline" size={21} color="#008B83" /></View><Text style={styles.quickLabel}>Recibir</Text></PressableScale>
-            <PressableScale onPress={() => router.push('/swap')} style={styles.quickItem}><View style={[styles.quickIcon, styles.deepBlue]}><Ionicons name="repeat-outline" size={21} color="#3158B8" /></View><Text style={styles.quickLabel}>Cambiar</Text></PressableScale>
-            <PressableScale onPress={() => router.push('/contacts')} style={styles.quickItem}><View style={[styles.quickIcon, styles.sky]}><Ionicons name="people-outline" size={21} color="#1677B8" /></View><Text style={styles.quickLabel}>Contactos</Text></PressableScale>
-            <PressableScale onPress={() => router.push('/activity')} style={styles.quickItem}><View style={[styles.quickIcon, styles.navy]}><Ionicons name="time-outline" size={21} color="#173F7A" /></View><Text style={styles.quickLabel}>Historial</Text></PressableScale>
-          </ScrollView>
+        <View style={styles.sectionHeader}>
+          <View><Text style={styles.sectionTitle}>Portafolio</Text><Text style={styles.sectionSubtitle}>Tus activos en Stellar</Text></View>
+          <Pressable onPress={() => router.push('/activity')}><Text style={styles.sectionAction}>Ver todo</Text></Pressable>
+        </View>
+        <ScrollView contentContainerStyle={styles.portfolioRow} horizontal showsHorizontalScrollIndicator={false}>
+          {assets.map((asset, index) => (
+            <PressableScale key={`${asset.code}-${index}`} onPress={() => setSelectedAsset(asset)} style={styles.assetCard}>
+              <View style={styles.assetTop}>
+                <View style={[styles.assetIcon, { backgroundColor: asset.color }]}><Text style={styles.assetInitial}>{asset.code.slice(0, 1)}</Text></View>
+                <View style={styles.assetIdentity}><Text style={styles.assetName}>{asset.name}</Text><Text style={styles.assetCode}>{asset.code}</Text></View>
+                <Ionicons color="#9AA7B8" name="chevron-forward" size={16} />
+              </View>
+              <Text style={styles.assetAmount}>{privateValue(asset.amount)}</Text>
+              <Text style={styles.assetValue}>{amountsVisible ? asset.value : '••••'}</Text>
+            </PressableScale>
+          ))}
+        </ScrollView>
+
+        <View style={styles.sectionHeader}>
+          <View><Text style={styles.sectionTitle}>Actividad reciente</Text><Text style={styles.sectionSubtitle}>Tus últimos movimientos</Text></View>
+          <Pressable onPress={() => router.push('/activity')}><Text style={styles.sectionAction}>Ver todo</Text></Pressable>
+        </View>
+        <View style={styles.activityCard}>
+          {demoActivity.map((item) => <ActivityRow hidden={!amountsVisible} key={item.id} {...item} />)}
         </View>
 
-        <View style={styles.section}>
-          <SectionHeader title="Mis cuentas" action="Ver todas" />
-          <View style={styles.card}>
-            {visibleAssets.map((asset, index) => (
-              <PressableScale key={`${asset.code}-${index}`} onPress={() => setSelectedAsset(asset)} style={styles.assetRow}>
-                <View style={[styles.assetIcon, { backgroundColor: asset.color }]}><Text style={styles.assetCode}>{asset.code.slice(0, 1)}</Text></View>
-                <View style={styles.assetCopy}>
-                  <Text style={styles.assetName}>{asset.name}</Text>
-                  <Text style={styles.assetSymbol}>{asset.code}</Text>
-                </View>
-                <View style={styles.assetNumbers}>
-                  <Text style={styles.assetAmount}>{privateValue(asset.amount)}</Text>
-                  <Text style={styles.assetValue}>{amountsVisible ? asset.value : '••••'}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={colors.muted} style={styles.assetChevron} />
-              </PressableScale>
-            ))}
-          </View>
-          {assets.length > 3 ? <Pressable onPress={() => setShowAllAssets((current) => !current)} style={styles.moreAssets}><Text style={styles.moreAssetsText}>{showAllAssets ? 'Ver menos' : `Ver ${assets.length - 3} activo más`}</Text><Ionicons name={showAllAssets ? 'chevron-up' : 'chevron-down'} size={17} color={colors.brand} /></Pressable> : null}
-        </View>
         {account.error ? <Text style={styles.syncError}>No pudimos sincronizar Testnet: {account.error}</Text> : null}
         <PoweredByStellarFooter />
       </ScrollView>
-      </View>
 
-      <PressableScale accessibilityLabel="Abrir el chat de Movya" onPress={() => setChatOpen(true)} pressedScale={0.9} style={styles.movyaButton}>
-        <View style={styles.buttonHalo} />
-        <AnimatedMovyaLogo size={58} />
-        <View style={styles.onlineDot} />
-        <View style={styles.chatBadge}><Ionicons name="chatbubble-ellipses" size={14} color="#FFFFFF" /></View>
-      </PressableScale>
-
+      <BottomNavigation active="home" onMovyaPress={() => setChatOpen(true)} />
       <MovyaChatSheet onClose={() => setChatOpen(false)} open={chatOpen} />
       <AssetDetailSheet asset={selectedAsset} onClose={() => setSelectedAsset(null)} />
     </SafeAreaView>
   );
 }
 
-const webGlass = { backdropFilter: 'blur(26px) saturate(165%)', WebkitBackdropFilter: 'blur(26px) saturate(165%)' } as const;
+const webGlass = { backdropFilter: 'blur(24px) saturate(165%)', WebkitBackdropFilter: 'blur(24px) saturate(165%)' } as const;
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#8DBEFF' }, body: { flex: 1, backgroundColor: 'transparent' },
-  headerShell: { minHeight: 76, width: '100%', overflow: 'hidden', borderBottomLeftRadius: 28, borderBottomRightRadius: 28, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.62)', shadowColor: colors.navy, shadowOpacity: 0.17, shadowRadius: 21, shadowOffset: { width: 0, height: 9 }, elevation: 8, zIndex: 10 },
-  fixedHeader: { minHeight: 76, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(238,247,255,0.12)', overflow: 'hidden' },
-  headerShine: { position: 'absolute', left: 0, right: 0, top: 0, height: '48%', backgroundColor: 'rgba(255,255,255,0.12)' },
-  content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 15, paddingBottom: 106 },
-  greeting: { color: colors.navy, fontSize: 23, fontWeight: '800', letterSpacing: -0.6 },
-  subtitle: { color: '#486887', fontSize: 11, marginTop: 1 },
-  settingsButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.66)', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.9)', shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 },
-  totalCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FBFF', borderRadius: radius.lg, marginTop: 22, padding: 20, borderWidth: 1, borderColor: '#CFE2FF', shadowColor: colors.brandDark, shadowOpacity: 0.08, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
-  totalLabel: { color: colors.muted, fontSize: 12, fontWeight: '600' },
-  totalAmount: { color: colors.ink, fontSize: 28, fontWeight: '800', letterSpacing: -0.8, marginTop: 5 },
-  totalCaption: { color: colors.muted, fontSize: 11, marginTop: 4 },
-  eyeButton: { width: 44, height: 44, borderRadius: 16, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
-  section: { marginTop: 30, gap: 12 },
-  quickRow: { gap: 11, paddingRight: 4 },
-  quickItem: { width: 72, alignItems: 'center' },
-  quickIcon: { width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center', borderWidth: 1, shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 10, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
-  blue: { backgroundColor: '#E8F1FF', borderColor: '#D2E3FF' },
-  teal: { backgroundColor: '#E4F8F5', borderColor: '#C9EEE9' },
-  deepBlue: { backgroundColor: '#E9EFFF', borderColor: '#CFDCFF' },
-  sky: { backgroundColor: '#E1F3FF', borderColor: '#C2E5FA' },
-  navy: { backgroundColor: '#E5ECF6', borderColor: '#CCD9EA' },
-  quickLabel: { color: colors.text, fontSize: 10, fontWeight: '700', marginTop: 7 },
-  card: { gap: 11 },
-  assetRow: { minHeight: 74, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, borderRadius: 20, backgroundColor: 'rgba(252,253,255,0.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.85)', shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
-  assetIcon: { width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  assetCode: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
-  assetCopy: { flex: 1, marginLeft: 12 },
-  assetName: { color: colors.ink, fontSize: 15, fontWeight: '700' },
-  assetSymbol: { color: colors.muted, fontSize: 12, marginTop: 3 },
-  assetNumbers: { alignItems: 'flex-end' },
-  assetChevron: { marginLeft: 8 },
-  assetAmount: { color: colors.ink, fontSize: 14, fontWeight: '700' },
-  assetValue: { color: colors.muted, fontSize: 12, marginTop: 3 },
-  moreAssets: { height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.55)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.75)', marginTop: 2 }, moreAssetsText: { color: colors.brand, fontSize: 12, fontWeight: '800' },
-  syncError: { color: colors.warning, fontSize: 11, lineHeight: 16, marginTop: 16 },
-  movyaButton: { position: 'absolute', right: 20, bottom: 18, width: 68, height: 68, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.brandIce, shadowColor: colors.brandDark, shadowOpacity: 0.28, shadowRadius: 20, shadowOffset: { width: 0, height: 9 }, elevation: 10 },
-  buttonHalo: { position: 'absolute', width: 62, height: 62, borderRadius: 23, backgroundColor: colors.brandSoft },
-  onlineDot: { position: 'absolute', right: 4, top: 5, width: 12, height: 12, borderRadius: 6, backgroundColor: colors.positive, borderWidth: 2, borderColor: colors.surface },
-  chatBadge: { position: 'absolute', left: -5, bottom: -3, width: 27, height: 27, borderRadius: 10, backgroundColor: colors.brand, borderWidth: 2, borderColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  safeArea: { flex: 1, backgroundColor: '#9DC9FF' },
+  header: { width: '100%', minHeight: 72, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 9, backgroundColor: 'rgba(245,250,255,0.25)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.55)' }, profileRow: { flexDirection: 'row', alignItems: 'center' }, avatar: { width: 43, height: 43, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 10, backgroundColor: 'rgba(255,255,255,0.72)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.9)' }, avatarText: { color: colors.brandDark, fontSize: 12, fontWeight: '900' }, hello: { color: colors.navy, fontSize: 16, fontWeight: '900' }, welcome: { color: '#52708D', fontSize: 10, marginTop: 3 }, headerActions: { flexDirection: 'row', gap: 8 }, headerButton: { width: 39, height: 39, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.58)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.76)' }, notificationDot: { position: 'absolute', right: 8, top: 7, width: 7, height: 7, borderRadius: 4, backgroundColor: '#176BFF', borderWidth: 1.5, borderColor: '#FFFFFF' },
+  content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 126 },
+  actionsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 23, paddingHorizontal: 2 }, actionItem: { width: '23%', alignItems: 'center' }, actionIcon: { width: 54, height: 54, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.78)', shadowColor: colors.navy, shadowOpacity: 0.11, shadowRadius: 11, shadowOffset: { width: 0, height: 6 }, elevation: 3 }, actionLabel: { color: colors.navy, fontSize: 10, fontWeight: '800', marginTop: 7 },
+  sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 31, marginBottom: 12 }, sectionTitle: { color: colors.ink, fontSize: 19, fontWeight: '900', letterSpacing: -0.35 }, sectionSubtitle: { color: '#66809B', fontSize: 10, marginTop: 3 }, sectionAction: { color: colors.brand, fontSize: 11, fontWeight: '800' },
+  portfolioRow: { gap: 12, paddingRight: 4, paddingBottom: 12 }, assetCard: { width: 184, minHeight: 142, padding: 14, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.96)', shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 4 }, assetTop: { flexDirection: 'row', alignItems: 'center' }, assetIcon: { width: 42, height: 42, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }, assetInitial: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' }, assetIdentity: { flex: 1, marginLeft: 9 }, assetName: { color: colors.ink, fontSize: 12, fontWeight: '800' }, assetCode: { color: colors.muted, fontSize: 9, marginTop: 3 }, assetAmount: { color: colors.ink, fontSize: 19, fontWeight: '900', letterSpacing: -0.4, marginTop: 16 }, assetValue: { color: '#657A93', fontSize: 10, marginTop: 4 },
+  activityCard: { paddingHorizontal: 15, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.96)', shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 4 }, syncError: { color: colors.warning, fontSize: 10, lineHeight: 15, marginTop: 14 },
 });

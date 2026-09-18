@@ -5,6 +5,7 @@ import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
+import { BottomNavigation } from '@/components/BottomNavigation';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { PoweredByStellarFooter } from '@/components/PoweredByStellarFooter';
@@ -132,6 +133,7 @@ export default function ContactsScreen() {
         </View>
         <PoweredByStellarFooter />
       </ScrollView>
+      <BottomNavigation active="contacts" />
 
       <Modal animationType="slide" onRequestClose={() => setSelected(null)} transparent visible={Boolean(selected)}>
         <Pressable onPress={() => setSelected(null)} style={styles.backdrop} />
@@ -190,7 +192,7 @@ export default function ContactsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#E8F1FF' }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 40 },
+  safeArea: { flex: 1, backgroundColor: '#E8F1FF' }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 125 },
   search: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#D9D1E7', borderRadius: radius.md, backgroundColor: '#FFFDFB', paddingHorizontal: 15, height: 54, marginTop: 18, shadowColor: colors.navy, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 2 }, input: { flex: 1, marginLeft: 10, color: colors.ink, fontSize: 14 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 26, marginBottom: 11 }, sectionTitle: { color: colors.ink, fontSize: 17, fontWeight: '800' }, add: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
   card: { backgroundColor: '#EEF5FF', borderRadius: radius.md, borderWidth: 1.5, borderColor: '#C7D9F1', paddingHorizontal: 15, shadowColor: colors.navy, shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 2 }, contact: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }, divider: { borderTopWidth: 1, borderTopColor: '#D8E4F4' },

@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-nat
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
+import { BottomNavigation } from '@/components/BottomNavigation';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { PressableScale } from '@/components/PressableScale';
 import { PoweredByStellarFooter } from '@/components/PoweredByStellarFooter';
@@ -47,12 +48,13 @@ export default function SettingsScreen() {
         </View>
         <PoweredByStellarFooter />
       </ScrollView>
+      <BottomNavigation active="account" />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#E8F1FF' }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 40 },
+  safeArea: { flex: 1, backgroundColor: '#E8F1FF' }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 125 },
   profile: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.86)', borderRadius: radius.lg, borderWidth: 1, borderColor: 'rgba(255,255,255,0.94)', padding: 17, shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   avatar: { width: 54, height: 54, borderRadius: 19, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginRight: 13 }, initials: { color: colors.brand, fontSize: 15, fontWeight: '800' }, name: { color: colors.ink, fontSize: 17, fontWeight: '800' }, email: { color: colors.muted, fontSize: 11, marginTop: 4 },
   sectionTitle: { color: colors.ink, fontSize: 16, fontWeight: '800', marginTop: 26, marginBottom: 10 }, card: { backgroundColor: 'rgba(255,255,255,0.86)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.94)', borderRadius: radius.md, paddingHorizontal: 14, shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },

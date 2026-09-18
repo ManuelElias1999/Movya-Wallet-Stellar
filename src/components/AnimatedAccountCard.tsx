@@ -7,9 +7,10 @@ import { colors } from '@/theme/tokens';
 
 type AnimatedAccountCardProps = {
   amountsVisible: boolean;
+  totalAmount?: string;
 };
 
-export function AnimatedAccountCard({ amountsVisible }: AnimatedAccountCardProps) {
+export function AnimatedAccountCard({ amountsVisible, totalAmount = '$1,629.24' }: AnimatedAccountCardProps) {
   const movement = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
   const wink = useRef(new Animated.Value(0)).current;
@@ -17,8 +18,10 @@ export function AnimatedAccountCard({ amountsVisible }: AnimatedAccountCardProps
   useEffect(() => {
     const animation = Animated.loop(
       Animated.sequence([
-        Animated.timing(movement, { toValue: 1, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(movement, { toValue: 0, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.delay(900),
+        Animated.timing(movement, { toValue: 1, duration: 2800, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
+        Animated.delay(1800),
+        Animated.timing(movement, { toValue: 0, duration: 0, useNativeDriver: true }),
       ]),
     );
     animation.start();
@@ -47,29 +50,22 @@ export function AnimatedAccountCard({ amountsVisible }: AnimatedAccountCardProps
     <Pressable accessibilityHint="Movya reaccionará al tocar la tarjeta" accessibilityRole="button" onPress={playReaction}>
     <Animated.View style={{ transform: [{ translateX: shake.interpolate({ inputRange: [-1, 0, 1], outputRange: [-3, 0, 3] }) }, { rotate: shake.interpolate({ inputRange: [-1, 0, 1], outputRange: ['-0.4deg', '0deg', '0.4deg'] }) }] }}>
     <LinearGradient colors={['#061A38', '#0B4FB8', '#2578FF']} end={{ x: 1, y: 1 }} start={{ x: 0, y: 0 }} style={styles.card}>
+      <View pointerEvents="none" style={styles.ambientLight} />
       <Animated.View
+        pointerEvents="none"
         style={[
-          styles.glowLarge,
+          styles.lightSweep,
           {
+            opacity: movement.interpolate({ inputRange: [0, 0.08, 0.78, 1], outputRange: [0, 0.8, 0.62, 0] }),
             transform: [
-              { translateX: movement.interpolate({ inputRange: [0, 1], outputRange: [0, -42] }) },
-              { translateY: movement.interpolate({ inputRange: [0, 1], outputRange: [0, 28] }) },
-              { scale: movement.interpolate({ inputRange: [0, 1], outputRange: [1, 1.18] }) },
+              { translateX: movement.interpolate({ inputRange: [0, 1], outputRange: [-210, 410] }) },
+              { rotate: '16deg' },
             ],
           },
         ]}
-      />
-      <Animated.View
-        style={[
-          styles.glowSmall,
-          {
-            transform: [
-              { translateX: movement.interpolate({ inputRange: [0, 1], outputRange: [0, 34] }) },
-              { translateY: movement.interpolate({ inputRange: [0, 1], outputRange: [0, -22] }) },
-            ],
-          },
-        ]}
-      />
+      >
+        <LinearGradient colors={['rgba(255,255,255,0)', 'rgba(168,216,255,0.46)', 'rgba(255,255,255,0)']} end={{ x: 1, y: 0 }} start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
 
       <View style={styles.top}>
         <View>
@@ -85,8 +81,8 @@ export function AnimatedAccountCard({ amountsVisible }: AnimatedAccountCardProps
         <View style={styles.statusPill}><View style={styles.statusDot} /><Text style={styles.statusText}>Activa</Text></View>
       </View>
       <View>
-        <Text style={styles.availableLabel}>Saldo disponible</Text>
-        <Text style={styles.amount}>{amountsVisible ? '$1,240.00' : '••••••'}</Text>
+        <Text style={styles.availableLabel}>Saldo total en USD</Text>
+        <Text style={styles.amount}>{amountsVisible ? totalAmount : '••••••'}</Text>
       </View>
       <View style={styles.footer}>
         <Text style={styles.owner}>MANUEL ELIAS</Text>
@@ -99,9 +95,9 @@ export function AnimatedAccountCard({ amountsVisible }: AnimatedAccountCardProps
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 28, minHeight: 220, padding: 22, justifyContent: 'space-between', overflow: 'hidden', shadowColor: '#0B4FB8', shadowOpacity: 0.24, shadowRadius: 24, shadowOffset: { width: 0, height: 14 }, elevation: 8 },
-  glowLarge: { position: 'absolute', width: 250, height: 250, borderRadius: 125, backgroundColor: 'rgba(129,190,255,0.18)', right: -90, top: -98 },
-  glowSmall: { position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: 'rgba(255,255,255,0.09)', left: -60, bottom: -70 },
+  card: { borderRadius: 28, minHeight: 220, padding: 22, justifyContent: 'space-between', overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', shadowColor: '#0B4FB8', shadowOpacity: 0.28, shadowRadius: 26, shadowOffset: { width: 0, height: 14 }, elevation: 9 },
+  ambientLight: { position: 'absolute', left: 0, right: 0, top: 0, height: 2, backgroundColor: 'rgba(255,255,255,0.52)' },
+  lightSweep: { position: 'absolute', top: -95, bottom: -95, width: 115 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   brandRow: { flexDirection: 'row', alignItems: 'center' },
   brandLogoWrap: { width: 34, height: 34, marginRight: 7 },
