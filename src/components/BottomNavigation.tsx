@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Image, Platform, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,13 +22,13 @@ export function BottomNavigation({ active, onMovyaPress }: BottomNavigationProps
   };
 
   return (
-    <View style={[styles.shell, { paddingBottom: bottomPadding }]}>
-      <BlurView intensity={88} tint="light" style={[styles.bar, Platform.OS === 'web' ? webGlass : null]}>
+    <View style={[styles.shell, { paddingBottom: bottomPadding }]}> 
+      <BlurView intensity={78} tint="dark" style={[styles.bar, Platform.OS === 'web' ? webGlass : null]}> 
+        <LinearGradient colors={['rgba(7,30,102,0.76)', 'rgba(8,106,156,0.58)']} end={{ x: 1, y: 0 }} pointerEvents="none" start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
         <NavItem active={active === 'home'} icon="home-outline" label="Inicio" onPress={() => router.replace('/(tabs)')} />
         <NavItem active={active === 'activity'} icon="stats-chart-outline" label="Actividad" onPress={() => router.replace('/activity')} />
         <View style={styles.centerSlot}>
           <PressableScale accessibilityLabel="Abrir chat con Movya" onPress={openMovya} pressedScale={0.91} style={styles.movyaButton}>
-            <View style={styles.movyaGlow} />
             <Image source={require('../../assets/movya-logo.png')} style={styles.movyaLogo} />
           </PressableScale>
           <Text style={styles.movyaLabel}>Movya</Text>
@@ -45,18 +46,18 @@ function NavItem({ active, icon, label, onPress }: NavItemProps) {
   return (
     <PressableScale haptic={false} onPress={onPress} pressedScale={0.9} style={styles.item}>
       <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
-        <Ionicons color={active ? colors.brand : '#8290A4'} name={icon} size={21} />
+        <Ionicons color={active ? '#FFFFFF' : 'rgba(255,255,255,0.7)'} name={icon} size={21} />
       </View>
       <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
     </PressableScale>
   );
 }
 
-const webGlass = { backdropFilter: 'blur(25px) saturate(170%)', WebkitBackdropFilter: 'blur(25px) saturate(170%)' } as const;
+const webGlass = { backdropFilter: 'blur(28px) saturate(160%)', WebkitBackdropFilter: 'blur(28px) saturate(160%)' } as const;
 
 const styles = StyleSheet.create({
-  shell: { position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 40, backgroundColor: 'rgba(255,255,255,0.72)', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.9)', shadowColor: colors.navy, shadowOpacity: 0.14, shadowRadius: 20, shadowOffset: { width: 0, height: -8 }, elevation: 16 },
-  bar: { height: 69, width: '100%', maxWidth: 760, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 6, overflow: 'visible', backgroundColor: 'rgba(250,252,255,0.5)' },
-  item: { width: 62, height: 58, alignItems: 'center', justifyContent: 'center' }, iconWrap: { width: 34, height: 29, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }, iconWrapActive: { backgroundColor: '#E4F0FF' }, label: { color: '#8290A4', fontSize: 9, fontWeight: '700', marginTop: 2 }, labelActive: { color: colors.brand, fontWeight: '900' },
-  centerSlot: { width: 70, height: 70, alignItems: 'center', justifyContent: 'flex-end' }, movyaButton: { position: 'absolute', top: -31, width: 70, height: 70, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FBFF', borderWidth: 4, borderColor: colors.brand, shadowColor: colors.brandDark, shadowOpacity: 0.38, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 14 }, movyaGlow: { position: 'absolute', width: 59, height: 59, borderRadius: 20, backgroundColor: '#D9E9FF', borderWidth: 1, borderColor: '#FFFFFF' }, movyaLogo: { width: 56, height: 56, resizeMode: 'contain' }, movyaLabel: { color: colors.brandDark, fontSize: 9, fontWeight: '900', marginBottom: 4 },
+  shell: { position: 'absolute', left: 12, right: 12, bottom: 8, zIndex: 40, backgroundColor: 'transparent', shadowColor: '#00123F', shadowOpacity: 0.24, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, elevation: 16 },
+  bar: { height: 76, width: '100%', maxWidth: 720, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 5, overflow: 'hidden', backgroundColor: 'rgba(5,42,112,0.46)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)', borderRadius: 999 },
+  item: { width: 61, height: 62, alignItems: 'center', justifyContent: 'center' }, iconWrap: { width: 36, height: 31, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, iconWrapActive: { backgroundColor: 'rgba(255,255,255,0.13)' }, label: { color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: '700', marginTop: 2 }, labelActive: { color: '#FFFFFF', fontWeight: '900' },
+  centerSlot: { width: 62, height: 64, alignItems: 'center', justifyContent: 'flex-end' }, movyaButton: { position: 'absolute', top: 1, width: 45, height: 45, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.24)' }, movyaLogo: { width: 43, height: 43, resizeMode: 'contain' }, movyaLabel: { color: '#FFFFFF', fontSize: 9, fontWeight: '900', marginBottom: 1 },
 });
