@@ -118,9 +118,9 @@ const webGlass = { backdropFilter: 'blur(26px) saturate(165%)', WebkitBackdropFi
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#8DBEFF' }, body: { flex: 1, backgroundColor: 'transparent' },
-  headerShell: { minHeight: 76, marginHorizontal: 14, marginTop: 8, overflow: 'hidden', borderRadius: 26, borderWidth: 1, borderColor: 'rgba(255,255,255,0.68)', shadowColor: colors.navy, shadowOpacity: 0.18, shadowRadius: 20, shadowOffset: { width: 0, height: 9 }, elevation: 8, zIndex: 10 },
-  fixedHeader: { minHeight: 76, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 8, backgroundColor: 'rgba(238,247,255,0.16)', overflow: 'hidden' },
-  headerShine: { position: 'absolute', left: 1, right: 1, top: 1, height: '48%', borderTopLeftRadius: 25, borderTopRightRadius: 25, backgroundColor: 'rgba(255,255,255,0.15)' },
+  headerShell: { minHeight: 76, width: '100%', overflow: 'hidden', borderBottomLeftRadius: 28, borderBottomRightRadius: 28, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.62)', shadowColor: colors.navy, shadowOpacity: 0.17, shadowRadius: 21, shadowOffset: { width: 0, height: 9 }, elevation: 8, zIndex: 10 },
+  fixedHeader: { minHeight: 76, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(238,247,255,0.12)', overflow: 'hidden' },
+  headerShine: { position: 'absolute', left: 0, right: 0, top: 0, height: '48%', backgroundColor: 'rgba(255,255,255,0.12)' },
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 15, paddingBottom: 106 },
   greeting: { color: colors.navy, fontSize: 23, fontWeight: '800', letterSpacing: -0.6 },
   subtitle: { color: '#486887', fontSize: 11, marginTop: 1 },
