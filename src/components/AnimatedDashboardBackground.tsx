@@ -18,12 +18,12 @@ export function AnimatedDashboardBackground() {
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <LinearGradient colors={['#72AFFF', '#A9CCFF', '#D8E9FF', '#8EBFFF']} end={{ x: 1, y: 1 }} locations={[0, 0.32, 0.68, 1]} start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
-      <Animated.View style={[StyleSheet.absoluteFill, { opacity: transition }]}>
-        <LinearGradient colors={['#DDEEFF', '#85B8FF', '#B6D6FF', '#5E9CF4']} end={{ x: 0.08, y: 1 }} locations={[0, 0.3, 0.68, 1]} start={{ x: 0.92, y: 0 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={['#C6D3E1', '#E8EDF3', '#D6E0EA', '#B8C9DA']} end={{ x: 1, y: 1 }} locations={[0, 0.32, 0.68, 1]} start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: transition }]}> 
+        <LinearGradient colors={['#F4F6F8', '#CCD8E5', '#E1E7ED', '#AABED1']} end={{ x: 0.08, y: 1 }} locations={[0, 0.3, 0.68, 1]} start={{ x: 0.92, y: 0 }} style={StyleSheet.absoluteFill} />
       </Animated.View>
-      <Animated.View style={[styles.lightWash, { opacity: transition.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.22, 0.08, 0.22] }) }]}>
-        <LinearGradient colors={['rgba(255,255,255,0.62)', 'rgba(255,255,255,0.04)', 'rgba(35,113,226,0.24)']} end={{ x: 1, y: 1 }} start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
+      <Animated.View style={[styles.lightWash, { opacity: transition.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.22, 0.08, 0.22] }) }]}> 
+        <LinearGradient colors={['rgba(255,255,255,0.58)', 'rgba(255,255,255,0.04)', 'rgba(25,66,111,0.16)']} end={{ x: 1, y: 1 }} start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
       </Animated.View>
     </View>
   );

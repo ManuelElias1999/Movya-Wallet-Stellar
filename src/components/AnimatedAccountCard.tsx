@@ -1,16 +1,19 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 import { colors } from '@/theme/tokens';
+import { PressableScale } from '@/components/PressableScale';
 
 type AnimatedAccountCardProps = {
   amountsVisible: boolean;
+  onToggleAmounts: () => void;
   totalAmount?: string;
 };
 
-export function AnimatedAccountCard({ amountsVisible, totalAmount = '$1,629.24' }: AnimatedAccountCardProps) {
+export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmount = '$1,629.24' }: AnimatedAccountCardProps) {
   const movement = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
   const wink = useRef(new Animated.Value(0)).current;
@@ -82,7 +85,20 @@ export function AnimatedAccountCard({ amountsVisible, totalAmount = '$1,629.24' 
       </View>
       <View>
         <Text style={styles.availableLabel}>Saldo total en USD</Text>
-        <Text style={styles.amount}>{amountsVisible ? totalAmount : '••••••'}</Text>
+        <View style={styles.amountRow}>
+          <Text style={styles.amount}>{amountsVisible ? totalAmount : '••••••'}</Text>
+          <PressableScale
+            accessibilityLabel={amountsVisible ? 'Ocultar saldo total' : 'Mostrar saldo total'}
+            onPress={(event) => {
+              event.stopPropagation?.();
+              onToggleAmounts();
+            }}
+            pressedScale={0.88}
+            style={styles.eyeButton}
+          >
+            <Ionicons color="#FFFFFF" name={amountsVisible ? 'eye-outline' : 'eye-off-outline'} size={20} />
+          </PressableScale>
+        </View>
       </View>
       <View style={styles.footer}>
         <Text style={styles.owner}>MANUEL ELIAS</Text>
@@ -109,7 +125,9 @@ const styles = StyleSheet.create({
   statusDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#78F0C3', marginRight: 6 },
   statusText: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   availableLabel: { color: 'rgba(255,255,255,0.68)', fontSize: 12, fontWeight: '600' },
-  amount: { color: '#FFFFFF', fontSize: 35, fontWeight: '800', letterSpacing: -1.2, marginTop: 4 },
+  amountRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  amount: { color: '#FFFFFF', fontSize: 35, fontWeight: '800', letterSpacing: -1.2, flexShrink: 1 },
+  eyeButton: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginLeft: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)' },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   owner: { color: 'rgba(255,255,255,0.76)', fontSize: 10, fontWeight: '700', letterSpacing: 1.2 },
   currencyPill: { backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 },

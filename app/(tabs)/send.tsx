@@ -120,7 +120,7 @@ export default function SendScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#E8F1FF' }, flex: { flex: 1 }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 40 },
+  safeArea: { flex: 1, backgroundColor: '#D8E1EB' }, flex: { flex: 1 }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 40 },
   networkBadge: { marginTop: 14 },
   contextHelp: { marginTop: 15 },
   label: { color: colors.ink, fontSize: 15, fontWeight: '800', marginTop: 20, marginBottom: 10 },

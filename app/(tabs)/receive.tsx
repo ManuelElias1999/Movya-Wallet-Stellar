@@ -80,7 +80,7 @@ export default function ReceiveScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#E8F1FF' }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 40, alignItems: 'center' },
+  safeArea: { flex: 1, backgroundColor: '#D8E1EB' }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 40, alignItems: 'center' },
   helper: { width: '100%', marginBottom: 12 },
   title: { color: colors.ink, fontSize: 23, fontWeight: '800', marginTop: 10, textAlign: 'center' }, subtitle: { color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: 7, paddingHorizontal: 20 },
   qrCard: { width: '100%', alignItems: 'center', backgroundColor: '#EEF5FF', borderRadius: 28, borderWidth: 1.5, borderColor: '#C4D7F1', padding: 24, marginTop: 24, shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 3 },

@@ -19,10 +19,10 @@ import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { colors } from '@/theme/tokens';
 
 const quickActions = [
-  { label: 'Enviar', icon: 'arrow-up' as const, route: '/send' as const, tint: '#E4F0FF', color: '#176BFF' },
-  { label: 'Recibir', icon: 'arrow-down' as const, route: '/receive' as const, tint: '#E4F8F5', color: '#008B83' },
-  { label: 'Swap', icon: 'swap-horizontal' as const, route: '/swap' as const, tint: '#E8EEFF', color: '#3158B8' },
-  { label: 'Agregar', icon: 'add' as const, route: '/receive' as const, tint: '#E6F4FF', color: '#1677B8' },
+  { label: 'Enviar', icon: 'arrow-up-outline' as const, route: '/send' as const },
+  { label: 'Recibir', icon: 'arrow-down-outline' as const, route: '/receive' as const },
+  { label: 'Swap', icon: 'swap-horizontal-outline' as const, route: '/swap' as const },
+  { label: 'Agregar', icon: 'add-outline' as const, route: '/receive' as const },
 ];
 
 export default function HomeScreen() {
@@ -42,7 +42,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <AnimatedDashboardBackground />
 
       <BlurView intensity={68} tint="light" style={[styles.header, Platform.OS === 'web' ? webGlass : null]}>
@@ -54,23 +54,20 @@ export default function HomeScreen() {
           </View>
         </View>
         <View style={styles.headerActions}>
-          <PressableScale accessibilityLabel={amountsVisible ? 'Ocultar saldos' : 'Mostrar saldos'} onPress={() => setAmountsVisible((value) => !value)} pressedScale={0.9} style={styles.headerButton}>
-            <Ionicons color={colors.navy} name={amountsVisible ? 'eye-outline' : 'eye-off-outline'} size={20} />
-          </PressableScale>
-          <PressableScale onPress={() => router.push('/settings')} pressedScale={0.9} style={styles.headerButton}>
-            <Ionicons color={colors.navy} name="notifications-outline" size={20} />
+          <PressableScale accessibilityLabel="Abrir notificaciones" onPress={() => router.push('/settings')} pressedScale={0.9} style={styles.headerButton}>
+            <Ionicons color="#FFFFFF" name="notifications-outline" size={20} />
             <View style={styles.notificationDot} />
           </PressableScale>
         </View>
       </BlurView>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AnimatedAccountCard amountsVisible={amountsVisible} totalAmount="$1,629.24" />
+        <AnimatedAccountCard amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount="$1,629.24" />
 
         <View style={styles.actionsRow}>
           {quickActions.map((action) => (
             <PressableScale key={action.label} onPress={() => router.push(action.route)} style={styles.actionItem}>
-              <View style={[styles.actionIcon, { backgroundColor: action.tint }]}><Ionicons color={action.color} name={action.icon} size={22} /></View>
+              <View style={styles.actionIcon}><Ionicons color="#FFFFFF" name={action.icon} size={23} /></View>
               <Text style={styles.actionLabel}>{action.label}</Text>
             </PressableScale>
           ))}
@@ -116,10 +113,10 @@ export default function HomeScreen() {
 const webGlass = { backdropFilter: 'blur(24px) saturate(165%)', WebkitBackdropFilter: 'blur(24px) saturate(165%)' } as const;
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#9DC9FF' },
-  header: { width: '100%', minHeight: 72, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 9, backgroundColor: 'rgba(245,250,255,0.25)', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.55)' }, profileRow: { flexDirection: 'row', alignItems: 'center' }, avatar: { width: 43, height: 43, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginRight: 10, backgroundColor: 'rgba(255,255,255,0.72)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.9)' }, avatarText: { color: colors.brandDark, fontSize: 12, fontWeight: '900' }, hello: { color: colors.navy, fontSize: 16, fontWeight: '900' }, welcome: { color: '#52708D', fontSize: 10, marginTop: 3 }, headerActions: { flexDirection: 'row', gap: 8 }, headerButton: { width: 39, height: 39, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.58)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.76)' }, notificationDot: { position: 'absolute', right: 8, top: 7, width: 7, height: 7, borderRadius: 4, backgroundColor: '#176BFF', borderWidth: 1.5, borderColor: '#FFFFFF' },
+  safeArea: { flex: 1, backgroundColor: '#D8E1EB' },
+  header: { width: '100%', minHeight: 76, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 10, backgroundColor: 'rgba(7,27,54,0.76)', borderBottomLeftRadius: 24, borderBottomRightRadius: 24, borderBottomWidth: 1.5, borderBottomColor: 'rgba(95,160,255,0.68)', shadowColor: '#071B36', shadowOpacity: 0.2, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 7, overflow: 'hidden' }, profileRow: { flexDirection: 'row', alignItems: 'center' }, avatar: { width: 43, height: 43, borderRadius: 15, alignItems: 'center', justifyContent: 'center', marginRight: 10, backgroundColor: 'rgba(255,255,255,0.13)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }, avatarText: { color: '#FFFFFF', fontSize: 12, fontWeight: '900' }, hello: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' }, welcome: { color: 'rgba(222,237,255,0.74)', fontSize: 10, marginTop: 3 }, headerActions: { flexDirection: 'row' }, headerButton: { width: 41, height: 41, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)' }, notificationDot: { position: 'absolute', right: 8, top: 7, width: 7, height: 7, borderRadius: 4, backgroundColor: '#60A5FA', borderWidth: 1.5, borderColor: '#FFFFFF' },
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 126 },
-  actionsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 23, paddingHorizontal: 2 }, actionItem: { width: '23%', alignItems: 'center' }, actionIcon: { width: 54, height: 54, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.78)', shadowColor: colors.navy, shadowOpacity: 0.11, shadowRadius: 11, shadowOffset: { width: 0, height: 6 }, elevation: 3 }, actionLabel: { color: colors.navy, fontSize: 10, fontWeight: '800', marginTop: 7 },
+  actionsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 23, paddingHorizontal: 2 }, actionItem: { width: '23%', alignItems: 'center' }, actionIcon: { width: 54, height: 54, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#102F58', borderWidth: 1.5, borderColor: '#3C79C9', shadowColor: '#071B36', shadowOpacity: 0.2, shadowRadius: 11, shadowOffset: { width: 0, height: 6 }, elevation: 4 }, actionLabel: { color: colors.navy, fontSize: 10, fontWeight: '800', marginTop: 7 },
   sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 31, marginBottom: 12 }, sectionTitle: { color: colors.ink, fontSize: 19, fontWeight: '900', letterSpacing: -0.35 }, sectionSubtitle: { color: '#66809B', fontSize: 10, marginTop: 3 }, sectionAction: { color: colors.brand, fontSize: 11, fontWeight: '800' },
   portfolioRow: { gap: 12, paddingRight: 4, paddingBottom: 12 }, assetCard: { width: 184, minHeight: 142, padding: 14, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.96)', shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 4 }, assetTop: { flexDirection: 'row', alignItems: 'center' }, assetIcon: { width: 42, height: 42, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }, assetInitial: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' }, assetIdentity: { flex: 1, marginLeft: 9 }, assetName: { color: colors.ink, fontSize: 12, fontWeight: '800' }, assetCode: { color: colors.muted, fontSize: 9, marginTop: 3 }, assetAmount: { color: colors.ink, fontSize: 19, fontWeight: '900', letterSpacing: -0.4, marginTop: 16 }, assetValue: { color: '#657A93', fontSize: 10, marginTop: 4 },
   activityCard: { paddingHorizontal: 15, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.96)', shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 4 }, syncError: { color: colors.warning, fontSize: 10, lineHeight: 15, marginTop: 14 },
