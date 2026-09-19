@@ -24,7 +24,7 @@ export default function OnboardingScreen() {
   const current = steps[step];
 
   const next = () => {
-    if (step === steps.length - 1) router.replace('/(tabs)');
+    if (step === steps.length - 1) router.push('/entering-wallet');
     else setStep((value) => value + 1);
   };
 
@@ -106,7 +106,7 @@ function ChatPreview() {
       <View style={styles.demoBadge}><Ionicons color={colors.brand} name="sparkles" size={12} /><Text style={styles.demoBadgeText}>DEMO · ENVÍO A AYA</Text></View>
       <View style={styles.movyaRow}><Image source={require('../assets/movya-logo.png')} style={styles.messageLogo} /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>Hola, Manuel. Escribe el envío que quieres hacer.</Text></View></View>
       <View style={styles.userMessage}><Text style={styles.userMessageText}>Envía 20 USDC a Aya</Text></View>
-      <View style={styles.fakeComposer}><Ionicons color={colors.muted} name="mic-outline" size={18} /><Text style={styles.fakeComposerText}>Pregúntale algo a Movya…</Text><View style={styles.fakeSend}><Ionicons color="#FFFFFF" name="arrow-up" size={15} /></View></View>
+      <DemoComposer />
     </View>
   );
 }
@@ -117,6 +117,7 @@ function ConfirmationPreview() {
       <View style={styles.chatHeader}><View style={styles.chatLogo}><AnimatedMovyaLogo size={39} /></View><View><Text style={styles.chatName}>Movya</Text><Text style={styles.chatStatus}>En línea</Text></View></View>
       <View style={styles.movyaRow}><Image source={require('../assets/movya-logo.png')} style={styles.messageLogo} /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>¿Confirmas la transacción de 20 USDC a Aya?</Text><View style={styles.reviewCard}><View style={styles.reviewRow}><Text style={styles.reviewLabel}>Enviar</Text><Text style={styles.reviewValue}>20 USDC</Text></View><View style={styles.reviewRow}><Text style={styles.reviewLabel}>A</Text><Text style={styles.reviewValue}>Aya</Text></View><View style={styles.reviewRow}><Text style={styles.reviewLabel}>Red</Text><Text style={styles.reviewValue}>Stellar · Testnet</Text></View></View><View style={styles.demoActions}><View style={styles.demoNo}><Text style={styles.demoNoText}>No</Text></View><View style={styles.demoYes}><Text style={styles.demoYesText}>Sí, confirmar</Text></View></View></View></View>
       <View style={styles.userMessage}><Text style={styles.userMessageText}>Sí</Text></View>
+      <DemoComposer />
     </View>
   );
 }
@@ -128,8 +129,13 @@ function SuccessPreview() {
       <View style={styles.movyaRow}><Image source={require('../assets/movya-logo.png')} style={styles.messageLogo} /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>Preparando la transacción en Stellar Testnet…</Text></View></View>
       <View style={styles.movyaRow}><Image source={require('../assets/movya-logo.png')} style={styles.messageLogo} /><View style={styles.movyaMessage}><View style={styles.successDemoTitle}><Ionicons color="#16A071" name="checkmark-circle" size={21} /><Text style={styles.successDemoText}>Transacción exitosa</Text></View><Text style={styles.movyaMessageText}>Se enviaron 20 USDC a Aya.</Text><View style={styles.explorerDemo}><Ionicons color={colors.brand} name="open-outline" size={15} /><Text style={styles.explorerDemoText}>Ver en Stellar Expert · Testnet</Text></View></View></View>
       <View style={styles.movyaRow}><Image source={require('../assets/movya-logo.png')} style={styles.messageLogo} /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>¿Deseas hacer algo más?</Text></View></View>
+      <DemoComposer />
     </View>
   );
+}
+
+function DemoComposer() {
+  return <View style={styles.fakeComposer}><Ionicons color={colors.muted} name="mic-outline" size={18} /><Text style={styles.fakeComposerText}>Pregúntale algo a Movya…</Text><View style={styles.fakeSend}><Ionicons color="#FFFFFF" name="arrow-up" size={15} /></View></View>;
 }
 
 const webGlass = { backdropFilter: 'blur(28px) saturate(170%)', WebkitBackdropFilter: 'blur(28px) saturate(170%)' } as const;

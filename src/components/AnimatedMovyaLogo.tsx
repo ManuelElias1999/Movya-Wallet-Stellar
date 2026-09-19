@@ -3,24 +3,23 @@ import { Animated, Easing, StyleSheet, View } from 'react-native';
 
 import { colors } from '@/theme/tokens';
 
-type AnimatedMovyaLogoProps = { size?: number };
+type AnimatedMovyaLogoProps = { size?: number; delayMs?: number; repeat?: boolean };
 
-export function AnimatedMovyaLogo({ size = 48 }: AnimatedMovyaLogoProps) {
+export function AnimatedMovyaLogo({ size = 48, delayMs = 3800, repeat = true }: AnimatedMovyaLogoProps) {
   const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.delay(3800),
-        Animated.timing(pulse, { toValue: 1, duration: 150, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: -1, duration: 120, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.65, duration: 110, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 180, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      ]),
-    );
+    const gesture = Animated.sequence([
+      Animated.delay(delayMs),
+      Animated.timing(pulse, { toValue: 1, duration: 150, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: -1, duration: 120, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 0.65, duration: 110, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 0, duration: 180, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+    ]);
+    const animation = repeat ? Animated.loop(gesture) : gesture;
     animation.start();
     return () => animation.stop();
-  }, [pulse]);
+  }, [delayMs, pulse, repeat]);
 
   return (
     <Animated.View
