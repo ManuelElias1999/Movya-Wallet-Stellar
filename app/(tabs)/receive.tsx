@@ -35,19 +35,6 @@ export default function ReceiveScreen() {
       <InternalScreenBackground />
       <PageHeader subtitle="Tu cuenta personal" title="Recibir dinero" />
       <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.helper}>
-          <MovyaContextHelp
-            actionPrompt="Ayúdame a compartir mis datos para recibir dinero"
-            explanationSteps={[
-              'Confirma que la otra persona enviará el dinero por la red Stellar.',
-              'Puede escanear tu código QR o copiar tu dirección, que empieza con la letra G.',
-              'Pulsa Compartir para enviarla por WhatsApp, Instagram u otra aplicación.',
-              'El activo recibido aparecerá en tu balance cuando la operación se confirme.',
-            ]}
-            explanationTitle="Cómo recibir dinero"
-            question="¿Necesitas ayuda para recibir dinero?"
-          />
-        </View>
         <StellarNetworkBadge label="Recibe únicamente por la red Stellar" />
         <Text style={styles.title}>Tu código para recibir</Text>
         <Text style={styles.subtitle}>La otra persona puede escanearlo o copiar tu dirección.</Text>
@@ -73,6 +60,19 @@ export default function ReceiveScreen() {
           <Ionicons name="information-circle-outline" size={21} color={colors.brand} />
           <Text style={styles.infoText}>Este QR corresponde a una dirección de Stellar de demostración. Cuando conectemos tu cuenta real, se generará automáticamente con tu dirección.</Text>
         </View>
+        <View style={styles.helper}>
+          <MovyaContextHelp
+            actionPrompt="Ayúdame a compartir mis datos para recibir dinero"
+            explanationSteps={[
+              'Confirma que la otra persona enviará el dinero por la red Stellar.',
+              'Puede escanear tu código QR o copiar tu dirección, que empieza con la letra G.',
+              'Pulsa Compartir para enviarla por WhatsApp, Instagram u otra aplicación.',
+              'El activo recibido aparecerá en tu balance cuando la operación se confirme.',
+            ]}
+            explanationTitle="Cómo recibir dinero"
+            question="¿Necesitas ayuda para recibir dinero?"
+          />
+        </View>
         <PoweredByStellarFooter />
       </ScrollView>
     </SafeAreaView>
@@ -81,7 +81,7 @@ export default function ReceiveScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#D8E1EB' }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 40, alignItems: 'center' },
-  helper: { width: '100%', marginBottom: 12 },
+  helper: { width: '100%', marginTop: 18 },
   title: { color: colors.ink, fontSize: 23, fontWeight: '800', marginTop: 10, textAlign: 'center' }, subtitle: { color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: 7, paddingHorizontal: 20 },
   qrCard: { width: '100%', alignItems: 'center', backgroundColor: '#EEF5FF', borderRadius: 28, borderWidth: 1.5, borderColor: '#C4D7F1', padding: 24, marginTop: 24, shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
   qrWrap: { padding: 14, borderRadius: 22, backgroundColor: '#FFFFFF' }, badge: { flexDirection: 'row', alignItems: 'center', marginTop: 17, backgroundColor: colors.positiveSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 }, dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.positive, marginRight: 6 }, badgeText: { color: colors.positive, fontSize: 11, fontWeight: '700' },

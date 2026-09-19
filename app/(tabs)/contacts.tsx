@@ -103,17 +103,6 @@ export default function ContactsScreen() {
       <InternalScreenBackground />
       <PageHeader subtitle="Envía dinero sin copiar direcciones" title="Contactos" />
       <ScrollView contentContainerStyle={styles.content}>
-        <MovyaContextHelp
-          actionPrompt="Ayúdame a agregar un contacto nuevo"
-          explanationSteps={[
-            'Puedes guardar a una persona usando el correo con el que creó su cuenta Movya.',
-            'Si el correo existe en Movya, vincularemos automáticamente su dirección Stellar.',
-            'Para una wallet externa, pega directamente su dirección pública, que empieza con G.',
-            'Luego podrás elegir ese contacto al enviar dinero sin volver a copiar la dirección.',
-          ]}
-          explanationTitle="Cómo agregar un contacto"
-          question="¿Necesitas ayuda para agregar un contacto?"
-        />
         <View style={styles.search}>
           <Ionicons name="search" size={18} color={colors.muted} />
           <TextInput placeholder="Buscar personas" placeholderTextColor={colors.muted} style={styles.input} />
@@ -130,6 +119,19 @@ export default function ContactsScreen() {
               <Ionicons name="chevron-forward" color={colors.muted} size={18} />
             </PressableScale>
           ))}
+        </View>
+        <View style={styles.contextHelp}>
+          <MovyaContextHelp
+            actionPrompt="Ayúdame a agregar un contacto nuevo"
+            explanationSteps={[
+              'Puedes guardar a una persona usando el correo con el que creó su cuenta Movya.',
+              'Si el correo existe en Movya, vincularemos automáticamente su dirección Stellar.',
+              'Para una wallet externa, pega directamente su dirección pública, que empieza con G.',
+              'Luego podrás elegir ese contacto al enviar dinero sin volver a copiar la dirección.',
+            ]}
+            explanationTitle="Cómo agregar un contacto"
+            question="¿Necesitas ayuda para agregar un contacto?"
+          />
         </View>
         <PoweredByStellarFooter />
       </ScrollView>
@@ -194,6 +196,7 @@ export default function ContactsScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#D8E1EB' }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 125 },
   search: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#D9D1E7', borderRadius: radius.md, backgroundColor: '#FFFDFB', paddingHorizontal: 15, height: 54, marginTop: 18, shadowColor: colors.navy, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 2 }, input: { flex: 1, marginLeft: 10, color: colors.ink, fontSize: 14 },
+  contextHelp: { marginTop: 22 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 26, marginBottom: 11 }, sectionTitle: { color: colors.ink, fontSize: 17, fontWeight: '800' }, add: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
   card: { backgroundColor: '#EEF5FF', borderRadius: radius.md, borderWidth: 1.5, borderColor: '#C7D9F1', paddingHorizontal: 15, shadowColor: colors.navy, shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 2 }, contact: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }, divider: { borderTopWidth: 1, borderTopColor: '#D8E4F4' },
   avatar: { width: 46, height: 46, borderRadius: 17, alignItems: 'center', justifyContent: 'center' }, avatarText: { color: colors.ink, fontSize: 13, fontWeight: '800' }, contactCopy: { flex: 1, marginLeft: 12 }, nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 }, name: { color: colors.ink, fontSize: 15, fontWeight: '700' }, handle: { color: colors.muted, fontSize: 12, marginTop: 3 },

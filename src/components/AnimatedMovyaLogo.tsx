@@ -23,7 +23,16 @@ export function AnimatedMovyaLogo({ size = 48 }: AnimatedMovyaLogoProps) {
   }, [pulse]);
 
   return (
-    <View style={[styles.wrap, { width: size, height: size }]}> 
+    <Animated.View
+      style={[
+        styles.wrap,
+        {
+          width: size,
+          height: size,
+          transform: [{ translateY: pulse.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 0, -5] }) }],
+        },
+      ]}
+    > 
       <Animated.View
         style={[
           styles.glow,
@@ -50,7 +59,19 @@ export function AnimatedMovyaLogo({ size = 48 }: AnimatedMovyaLogoProps) {
           },
         ]}
       />
-    </View>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.wink,
+          {
+            left: size * 0.65,
+            top: size * 0.47,
+            width: Math.max(5, size * 0.13),
+            opacity: pulse.interpolate({ inputRange: [-1, 0, 0.65, 1], outputRange: [0, 0, 0.5, 1] }),
+          },
+        ]}
+      />
+    </Animated.View>
   );
 }
 
@@ -58,4 +79,5 @@ const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center' },
   glow: { position: 'absolute', width: '100%', height: '100%', borderRadius: 18, backgroundColor: colors.brand },
   logo: { resizeMode: 'contain' },
+  wink: { position: 'absolute', height: 2, borderRadius: 2, backgroundColor: '#13243B' },
 });

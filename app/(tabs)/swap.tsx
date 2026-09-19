@@ -56,18 +56,6 @@ export default function SwapScreen() {
       <InternalScreenBackground />
       <PageHeader subtitle="Revisarás la cotización antes de confirmar" title="Cambiar dinero" />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <MovyaContextHelp
-          actionPrompt={`Quiero cambiar ${amount || 'un monto'} de ${from} a ${to}. Ayúdame a prepararlo.`}
-          explanationSteps={[
-            'Abre la lista de Tú entregas y escoge el activo que quieres cambiar.',
-            'Escribe el monto y luego elige, en la segunda lista, el activo que quieres recibir.',
-            'Movya mostrará la cotización, el mínimo recibido y cualquier comisión antes de confirmar.',
-            'Nada se cambiará hasta que revises y apruebes el resumen final.',
-          ]}
-          explanationTitle="Cómo cambiar activos"
-          question="¿Necesitas ayuda para cambiar tus activos?"
-        />
-
         <Text style={styles.label}>Tú entregas</Text>
         {assetSelector(from, () => setFromOpen(true))}
         <View style={styles.amountBox}>
@@ -86,6 +74,19 @@ export default function SwapScreen() {
 
         <View style={styles.rate}><Text style={styles.rateLabel}>Tipo de cambio estimado</Text><Text style={styles.rateValue}>Disponible al conectar Stellar DEX</Text></View>
         <PressableScale disabled={!amount} onPress={() => Alert.alert('Vista previa', 'La cotización y confirmación se conectarán en una fase posterior.')} style={[styles.button, !amount && styles.disabled]}><Text style={styles.buttonText}>Revisar cambio</Text></PressableScale>
+        <View style={styles.contextHelp}>
+          <MovyaContextHelp
+            actionPrompt={`Quiero cambiar ${amount || 'un monto'} de ${from} a ${to}. Ayúdame a prepararlo.`}
+            explanationSteps={[
+              'Abre la lista de Tú entregas y escoge el activo que quieres cambiar.',
+              'Escribe el monto y luego elige, en la segunda lista, el activo que quieres recibir.',
+              'Movya mostrará la cotización, el mínimo recibido y cualquier comisión antes de confirmar.',
+              'Nada se cambiará hasta que revises y apruebes el resumen final.',
+            ]}
+            explanationTitle="Cómo cambiar activos"
+            question="¿Necesitas ayuda para cambiar tus activos?"
+          />
+        </View>
         <PoweredByStellarFooter />
       </ScrollView>
 
@@ -124,6 +125,7 @@ const styles = StyleSheet.create({
   rateLabel: { color: colors.muted, fontSize: 11 },
   rateValue: { color: colors.text, fontSize: 11, fontWeight: '700' },
   button: { height: 56, borderRadius: 18, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginTop: 30, shadowColor: colors.brandDark, shadowOpacity: 0.25, shadowRadius: 13, shadowOffset: { width: 0, height: 7 }, elevation: 5 },
+  contextHelp: { marginTop: 24 },
   disabled: { backgroundColor: '#BAC5D5', shadowOpacity: 0.05 },
   buttonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   backdrop: { flex: 1, backgroundColor: 'rgba(5,16,35,0.42)' },

@@ -31,7 +31,7 @@ const webGlass = { backdropFilter: 'blur(30px) saturate(150%)', WebkitBackdropFi
 
 const styles = StyleSheet.create({
   shell: { minHeight: 68, width: '100%', overflow: 'hidden', borderBottomLeftRadius: 18, borderBottomRightRadius: 18, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.22)', shadowColor: '#00123F', shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 5, zIndex: 10 },
-  header: { minHeight: 68, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 7, backgroundColor: 'rgba(2,21,68,0.24)' },
+  header: { minHeight: 68, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 7, backgroundColor: 'rgba(7,31,73,0.94)' },
   shine: { position: 'absolute', left: 0, right: 0, top: 0, height: '50%', backgroundColor: 'rgba(255,255,255,0.045)' },
   back: { width: 38, height: 38, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.09)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)', alignItems: 'center', justifyContent: 'center' },
   copy: { flex: 1, alignItems: 'center', paddingHorizontal: 5 },

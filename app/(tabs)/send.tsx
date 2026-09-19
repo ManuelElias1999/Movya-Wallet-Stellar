@@ -41,19 +41,6 @@ export default function SendScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.networkBadge}><StellarNetworkBadge label="Todos los envíos se realizan en Stellar · Testnet" /></View>
-          <View style={styles.contextHelp}>
-            <MovyaContextHelp
-              actionPrompt={`Quiero enviar ${amount || 'un monto'} de ${token}. Ayúdame a elegir el destinatario y preparar el envío.`}
-              explanationSteps={[
-                'Escoge el token que quieres enviar: USDC, XLM, EURC o AQUA.',
-                'Escribe el monto y revisa que tengas balance suficiente.',
-                'Pega la dirección Stellar del destinatario. Empieza con la letra G; por ejemplo: GABCD…9XYZ.',
-                'También puedes pulsar Contactos y elegir una persona guardada. Antes de enviar verás una confirmación final.',
-              ]}
-              explanationTitle="Cómo enviar dinero"
-              question="¿Necesitas ayuda para completar el envío?"
-            />
-          </View>
           <Text style={styles.label}>Monto</Text>
           <View style={styles.amountCard}>
             <Text style={styles.currency}>{token === 'USDC' ? '$' : ''}</Text>
@@ -90,6 +77,19 @@ export default function SendScreen() {
           </View>
 
           <PressableScale disabled={!ready} onPress={() => Alert.alert('Vista previa', 'En la siguiente fase aparecerá la confirmación antes de firmar la operación.')} style={[styles.primaryButton, !ready && styles.disabled]}><Text style={styles.primaryText}>Revisar envío</Text></PressableScale>
+          <View style={styles.contextHelp}>
+            <MovyaContextHelp
+              actionPrompt={`Quiero enviar ${amount || 'un monto'} de ${token}. Ayúdame a elegir el destinatario y preparar el envío.`}
+              explanationSteps={[
+                'Escoge el token que quieres enviar: USDC, XLM, EURC o AQUA.',
+                'Escribe el monto y revisa que tengas balance suficiente.',
+                'Pega la dirección Stellar del destinatario. Empieza con la letra G; por ejemplo: GABCD…9XYZ.',
+                'También puedes pulsar Contactos y elegir una persona guardada. Antes de enviar verás una confirmación final.',
+              ]}
+              explanationTitle="Cómo enviar dinero"
+              question="¿Necesitas ayuda para completar el envío?"
+            />
+          </View>
           <PoweredByStellarFooter />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -122,7 +122,7 @@ export default function SendScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#D8E1EB' }, flex: { flex: 1 }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 40 },
   networkBadge: { marginTop: 14 },
-  contextHelp: { marginTop: 15 },
+  contextHelp: { marginTop: 24 },
   label: { color: colors.ink, fontSize: 15, fontWeight: '800', marginTop: 20, marginBottom: 10 },
   amountCard: { height: 78, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(247,251,255,0.9)', borderRadius: 22, borderWidth: 1.5, borderColor: '#B9D3F4', paddingLeft: 15, paddingRight: 10, shadowColor: colors.navy, shadowOpacity: 0.16, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 5 }, currency: { width: 20, color: colors.muted, fontSize: 25, fontWeight: '700' }, amountInput: { flex: 1, minWidth: 0, color: colors.ink, fontSize: 30, fontWeight: '800', marginLeft: 1, paddingHorizontal: 0 },
   tokenPill: { width: 112, flexShrink: 0, height: 50, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(229,240,255,0.96)', borderWidth: 1, borderColor: '#BCD5F5', borderRadius: 17, paddingHorizontal: 9, shadowColor: colors.brandDark, shadowOpacity: 0.1, shadowRadius: 7, shadowOffset: { width: 0, height: 4 }, elevation: 2 }, tokenDot: { width: 23, height: 23, borderRadius: 8, marginRight: 7 }, tokenPillCopy: { flex: 1 }, tokenPillLabel: { color: colors.muted, fontSize: 8, fontWeight: '800' }, tokenText: { color: colors.brandDark, fontSize: 12, fontWeight: '800', marginTop: 1 },
