@@ -7,7 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PageHeader } from '@/components/PageHeader';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { MovyaContextHelp } from '@/components/MovyaContextHelp';
-import { PoweredByStellarFooter } from '@/components/PoweredByStellarFooter';
 import { PressableScale } from '@/components/PressableScale';
 import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
 import { TokenSelector } from '@/components/TokenSelector';
@@ -90,7 +89,6 @@ export default function SendScreen() {
               question="¿Necesitas ayuda para completar el envío?"
             />
           </View>
-          <PoweredByStellarFooter />
         </ScrollView>
       </KeyboardAvoidingView>
 

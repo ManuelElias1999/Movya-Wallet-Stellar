@@ -7,7 +7,6 @@ import { PageHeader } from '@/components/PageHeader';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { PressableScale } from '@/components/PressableScale';
-import { PoweredByStellarFooter } from '@/components/PoweredByStellarFooter';
 import { colors, radius } from '@/theme/tokens';
 
 const rows = [
@@ -46,7 +45,6 @@ export default function SettingsScreen() {
             <Switch onValueChange={setNotifications} trackColor={{ false: '#CED5E0', true: colors.brandIce }} thumbColor={notifications ? colors.brand : '#FFFFFF'} value={notifications} />
           </View>
         </View>
-        <PoweredByStellarFooter />
       </ScrollView>
       <BottomNavigation active="account" />
     </SafeAreaView>

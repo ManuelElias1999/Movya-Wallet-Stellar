@@ -6,7 +6,6 @@ import { ActivityRow } from '@/components/ActivityRow';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { PageHeader } from '@/components/PageHeader';
-import { PoweredByStellarFooter } from '@/components/PoweredByStellarFooter';
 import { demoActivity } from '@/data/demo';
 import { colors, radius } from '@/theme/tokens';
 
@@ -27,7 +26,6 @@ export default function ActivityScreen() {
         <View style={styles.card}>
           {demoActivity.map((item) => <ActivityRow key={item.id} {...item} />)}
         </View>
-        <PoweredByStellarFooter />
       </ScrollView>
       <BottomNavigation active="activity" />
     </SafeAreaView>

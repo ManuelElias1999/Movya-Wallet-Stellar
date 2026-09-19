@@ -11,6 +11,7 @@ export default function AppLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="activity" />
+      <Stack.Screen name="portfolio" />
       <Stack.Screen name="contacts" />
       <Stack.Screen name="send" />
       <Stack.Screen name="receive" />

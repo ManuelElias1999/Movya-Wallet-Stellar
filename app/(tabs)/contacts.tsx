@@ -8,7 +8,6 @@ import { PageHeader } from '@/components/PageHeader';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { MovyaContextHelp } from '@/components/MovyaContextHelp';
-import { PoweredByStellarFooter } from '@/components/PoweredByStellarFooter';
 import { PressableScale } from '@/components/PressableScale';
 import { demoContacts } from '@/data/demo';
 import { colors, radius } from '@/theme/tokens';
@@ -133,7 +132,6 @@ export default function ContactsScreen() {
             question="¿Necesitas ayuda para agregar un contacto?"
           />
         </View>
-        <PoweredByStellarFooter />
       </ScrollView>
       <BottomNavigation active="contacts" />
 
