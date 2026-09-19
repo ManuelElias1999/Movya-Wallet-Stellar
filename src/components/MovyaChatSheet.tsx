@@ -31,7 +31,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   const [playingVoiceId, setPlayingVoiceId] = useState<number | null>(null);
   const [pendingTransaction, setPendingTransaction] = useState<TransactionDetails | null>(null);
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, role: 'movya', kind: 'text', text: 'Hola, Manuel. Puedo ayudarte a enviar, recibir o cambiar dinero en Stellar. ¿Qué necesitas hacer?' },
+    { id: 1, role: 'movya', kind: 'text', text: 'Hola, Manuel. Puedo ayudarte a enviar, recibir o cambiar dinero en Stellar. Prueba escribiendo: “Envía 20 USDC a Aya”.' },
   ]);
 
   useEffect(() => {
