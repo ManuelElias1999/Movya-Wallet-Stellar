@@ -103,10 +103,6 @@ export default function WelcomeScreen() {
                 </LinearGradient>
               </PressableScale>
 
-              <PressableScale onPress={() => router.push('/onboarding')} style={styles.demoButton}>
-                <Ionicons color={colors.brand} name="play-circle-outline" size={20} />
-                <Text style={styles.demoText}>Ver cómo funciona Movya</Text>
-              </PressableScale>
             </BlurView>
 
             <View style={styles.stellarFooter}>
