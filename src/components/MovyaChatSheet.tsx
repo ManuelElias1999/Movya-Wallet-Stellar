@@ -2,8 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, Image, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme/tokens';
 
@@ -21,6 +23,7 @@ const waveBars = [11, 18, 25, 15, 29, 21, 13, 24, 18, 28, 16, 23, 12, 19];
 const formatDuration = (seconds: number) => `0:${String(seconds).padStart(2, '0')}`;
 
 export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetProps) {
+  const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(screenHeight)).current;
   const scrollRef = useRef<ScrollView | null>(null);
   const consumedPrompt = useRef('');
@@ -128,10 +131,12 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   };
 
   return (
-    <Animated.View pointerEvents={open ? 'auto' : 'none'} style={[styles.sheet, { transform: [{ translateY }] }]}>
+    <>
+    {open ? <StatusBar style="dark" /> : null}
+    <Animated.View pointerEvents={open ? 'auto' : 'none'} style={[styles.sheet, { transform: [{ translateY }] }]}> 
       <View style={styles.chatBackdrop} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <BlurView intensity={78} tint="light" style={styles.header}>
+        <BlurView intensity={78} tint="light" style={[styles.header, { minHeight: 76 + insets.top, paddingTop: insets.top }]}>
           <Pressable onPress={onClose} style={styles.closeButton}><Ionicons name="chevron-down" size={24} color={colors.ink} /></Pressable>
           <View style={styles.identity}>
             <View style={styles.logoWrap}><Image source={require('../../assets/movya-logo.png')} style={styles.logo} /><View style={styles.statusDot} /></View>
@@ -188,7 +193,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
           <View style={styles.suggestions}>{suggestions.map((suggestion) => <Pressable key={suggestion} onPress={() => sendDirect(suggestion)} style={styles.suggestion}><Ionicons name="sparkles-outline" size={14} color={colors.brand} /><Text style={styles.suggestionText}>{suggestion}</Text><Ionicons name="arrow-up-circle" size={15} color={colors.brand} /></Pressable>)}</View>
         </ScrollView>
 
-        <BlurView intensity={88} tint="light" style={styles.composerArea}>
+        <BlurView intensity={88} tint="light" style={[styles.composerArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           {recording ? (
             <View style={styles.recordingComposer}>
               <Pressable onPress={cancelRecording} style={styles.cancelRecording}><Ionicons name="trash-outline" size={20} color="#C84B63" /></Pressable>
@@ -206,6 +211,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
         </BlurView>
       </KeyboardAvoidingView>
     </Animated.View>
+    </>
   );
 }
 
