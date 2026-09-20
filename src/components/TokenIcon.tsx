@@ -11,7 +11,7 @@ const tokenImages: Record<string, ImageSourcePropType> = {
 
 export function TokenIcon({ code, color = colors.navy, size = 42 }: TokenIconProps) {
   const source = tokenImages[code];
-  const imageSize = code === 'USDC' ? size : Math.round(size * 0.72);
+  const imageSize = Math.round(size * 0.84);
 
   return (
     <View style={[styles.container, { width: size, height: size, borderRadius: size / 2, backgroundColor: source ? '#FFFFFF' : color }]}>

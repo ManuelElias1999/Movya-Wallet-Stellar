@@ -40,7 +40,7 @@ export default function EnteringWalletScreen() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.center}>
         <Animated.View style={{ transform: [{ translateX: travelX }, { translateY: runningY }] }}>
-          <AnimatedMovyaLogo delayMs={1040} repeat={false} showGlow={false} size={126} />
+          <AnimatedMovyaLogo delayMs={1040} repeat={false} showGlow={false} size={126} strongWink />
         </Animated.View>
       </View>
     </SafeAreaView>
