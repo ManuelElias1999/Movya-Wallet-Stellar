@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
 import { ActivityRow } from '@/components/ActivityRow';
@@ -30,6 +30,7 @@ const quickActions = [
 
 export default function HomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [amountsVisible, setAmountsVisible] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AssetDetail | null>(null);
@@ -46,7 +47,8 @@ export default function HomeScreen() {
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <StatusBar style="light" />
-      <AnimatedDashboardBackground />
+      <AnimatedDashboardBackground topInset={insets.top} />
+      <View pointerEvents="none" style={[styles.statusBarBackdrop, { height: insets.top }]} />
 
       <BlurView intensity={54} tint="dark" style={[styles.header, Platform.OS === 'web' ? webGlass : null]}>
         <LinearGradient colors={['rgba(31,80,135,0.8)', 'rgba(60,127,150,0.64)']} end={{ x: 1, y: 0 }} pointerEvents="none" start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
@@ -121,6 +123,7 @@ const webGlass = { backdropFilter: 'blur(24px) saturate(165%)', WebkitBackdropFi
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#1F5087' },
+  statusBarBackdrop: { position: 'absolute', top: 0, right: 0, left: 0, zIndex: 60, elevation: 60, backgroundColor: '#1F5087' },
   header: { width: '100%', minHeight: 70, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(42,92,137,0.32)', borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.34)', shadowColor: '#173C65', shadowOpacity: 0.13, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 5, overflow: 'hidden' }, profileRow: { flexDirection: 'row', alignItems: 'center' }, avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 10, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.1)' }, hello: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' }, welcome: { color: 'rgba(239,248,255,0.74)', fontSize: 10, marginTop: 3 }, headerActions: { flexDirection: 'row', gap: 6 }, headerButton: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }, notificationDot: { position: 'absolute', right: 7, top: 6, width: 7, height: 7, borderRadius: 4, backgroundColor: '#B9ECF4', borderWidth: 1.5, borderColor: '#FFFFFF' },
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 136 },
   actionsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 23, paddingHorizontal: 2 }, actionItem: { width: '23%', alignItems: 'center' }, actionIcon: { width: 54, height: 54, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#C9DBEC', borderWidth: 1, borderColor: '#AFC7DD', shadowColor: '#204B75', shadowOpacity: 0.14, shadowRadius: 11, shadowOffset: { width: 0, height: 5 }, elevation: 4 }, actionLabel: { color: colors.navy, fontSize: 10, fontWeight: '800', marginTop: 7 },

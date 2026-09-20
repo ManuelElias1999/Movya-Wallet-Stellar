@@ -7,12 +7,12 @@ export const demoAssets = [
 
 export const demoActivity = [
   { id: '1', type: 'Recibiste', detail: 'De Mateo', amount: '+ $120.00', time: 'Hoy, 09:42', positive: true },
-  { id: '2', type: 'Enviaste', detail: 'A Ayouya', amount: '- 20.00 USDC', time: 'Ayer, 18:10', positive: false },
+  { id: '2', type: 'Enviaste', detail: 'A Ouali', amount: '- 20.00 USDC', time: 'Ayer, 18:10', positive: false },
   { id: '3', type: 'Cambio', detail: 'De XLM a USDC', amount: '+ $68.20', time: 'Lunes, 12:25', positive: true },
 ];
 
 export const demoContacts = [
-  { id: '1', name: 'Ayouya', handle: 'ayouya@movya.app', email: 'ayouya@movya.app', initials: 'AY', color: '#EEE9FF' },
+  { id: '1', name: 'Ouali', handle: 'ouali@movya.app', email: 'ouali@movya.app', initials: 'OU', color: '#EEE9FF' },
   { id: '2', name: 'Mateo Silva', handle: 'mateo@movya.app', email: 'mateo@movya.app', initials: 'MS', color: '#E8F8F2' },
   { id: '3', name: 'Sofía Vargas', handle: 'Wallet externa · GDK3…P9Q', address: 'GDK3EXTERNALADDRESSP9Q', initials: 'SV', color: '#FFF2E3' },
 ];

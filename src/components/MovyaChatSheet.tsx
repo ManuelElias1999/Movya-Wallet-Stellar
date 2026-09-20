@@ -18,7 +18,7 @@ type Message = TextMessage | VoiceMessage | ConfirmationMessage | SuccessMessage
 type MovyaChatSheetProps = { open: boolean; onClose: () => void; initialPrompt?: string };
 
 const screenHeight = Dimensions.get('window').height;
-const suggestions = ['¿Cuánto dinero tengo?', 'Envía 20 USDC a Ayouya', 'Cambia 50 XLM a USDC'];
+const suggestions = ['¿Cuánto dinero tengo?', 'Envía 20 USDC a Ouali', 'Cambia 50 XLM a USDC'];
 const waveBars = [11, 18, 25, 15, 29, 21, 13, 24, 18, 28, 16, 23, 12, 19];
 const formatDuration = (seconds: number) => `0:${String(seconds).padStart(2, '0')}`;
 
@@ -33,7 +33,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   const [playingVoiceId, setPlayingVoiceId] = useState<number | null>(null);
   const [pendingTransaction, setPendingTransaction] = useState<TransactionDetails | null>(null);
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, role: 'movya', kind: 'text', text: 'Hola, Manuel. Puedo ayudarte a enviar, recibir o cambiar dinero en Stellar. Prueba escribiendo: “Envía 20 USDC a Ayouya”.' },
+    { id: 1, role: 'movya', kind: 'text', text: 'Hola, Manuel. Puedo ayudarte a enviar, recibir o cambiar dinero en Stellar. Prueba escribiendo: “Envía 20 USDC a Ouali”.' },
   ]);
 
   useEffect(() => {
