@@ -13,7 +13,7 @@ import { colors } from '@/theme/tokens';
 
 const steps = [
   { eyebrow: 'PASO 1', title: 'Abre el chat de Movya', description: 'En tu wallet, toca el logo de Movya ubicado en el centro del menú inferior.' },
-  { eyebrow: 'PASO 2 · DEMO CON AYA', title: 'Escribe lo que quieres hacer', description: 'En este ejemplo enviarás 20 USDC a Aya directamente desde el chat, sin entrar al formulario de Enviar.' },
+  { eyebrow: 'PASO 2 · DEMO CON AYOUYA', title: 'Escribe lo que quieres hacer', description: 'En este ejemplo enviarás 20 USDC a Ayouya directamente desde el chat, sin entrar al formulario de Enviar.' },
   { eyebrow: 'PASO 3', title: 'Confirma antes de enviar', description: 'Movya siempre mostrará un resumen y preguntará si estás seguro. Puedes responder Sí o No.' },
   { eyebrow: 'PASO 4', title: 'Revisa el resultado', description: 'Movya mostrará el envío exitoso y el enlace de la operación en el explorador de Stellar.' },
 ];
@@ -105,7 +105,7 @@ function ChatPreview() {
       <View style={styles.chatHeader}><View style={[styles.chatLogo, { borderWidth: 0 }]}><DemoAnimatedLogo size={39} /></View><View><Text style={styles.chatName}>Movya</Text><Text style={styles.chatStatus}>En línea</Text></View></View>
       <View style={styles.demoBadge}><Ionicons color={colors.brand} name="sparkles" size={12} /><Text style={styles.demoBadgeText}>DEMO · ENVÍO A AYA</Text></View>
       <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>Hola, Manuel. Escribe el envío que quieres hacer.</Text></View></View>
-      <View style={styles.userMessage}><Text style={styles.userMessageText}>Envía 20 USDC a Aya</Text></View>
+      <View style={styles.userMessage}><Text style={styles.userMessageText}>Envía 20 USDC a Ayouya</Text></View>
       <DemoComposer />
     </View>
   );
@@ -115,7 +115,7 @@ function ConfirmationPreview() {
   return (
     <View style={styles.phoneDemo}>
       <View style={styles.chatHeader}><View style={[styles.chatLogo, { borderWidth: 0 }]}><DemoAnimatedLogo size={39} /></View><View><Text style={styles.chatName}>Movya</Text><Text style={styles.chatStatus}>En línea</Text></View></View>
-      <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>¿Confirmas la transacción de 20 USDC a Aya?</Text><View style={styles.reviewCard}><View style={styles.reviewRow}><Text style={styles.reviewLabel}>Enviar</Text><Text style={styles.reviewValue}>20 USDC</Text></View><View style={styles.reviewRow}><Text style={styles.reviewLabel}>A</Text><Text style={styles.reviewValue}>Aya</Text></View><View style={styles.reviewRow}><Text style={styles.reviewLabel}>Red</Text><Text style={styles.reviewValue}>Stellar · Testnet</Text></View></View><View style={styles.demoActions}><View style={styles.demoNo}><Text style={styles.demoNoText}>No</Text></View><View style={styles.demoYes}><Text style={styles.demoYesText}>Sí, confirmar</Text></View></View></View></View>
+      <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>¿Confirmas la transacción de 20 USDC a Ayouya?</Text><View style={styles.reviewCard}><View style={styles.reviewRow}><Text style={styles.reviewLabel}>Enviar</Text><Text style={styles.reviewValue}>20 USDC</Text></View><View style={styles.reviewRow}><Text style={styles.reviewLabel}>A</Text><Text style={styles.reviewValue}>Ayouya</Text></View><View style={styles.reviewRow}><Text style={styles.reviewLabel}>Red</Text><Text style={styles.reviewValue}>Stellar · Testnet</Text></View></View><View style={styles.demoActions}><View style={styles.demoNo}><Text style={styles.demoNoText}>No</Text></View><View style={styles.demoYes}><Text style={styles.demoYesText}>Sí, confirmar</Text></View></View></View></View>
       <View style={styles.userMessage}><Text style={styles.userMessageText}>Sí</Text></View>
       <DemoComposer />
     </View>
@@ -127,7 +127,7 @@ function SuccessPreview() {
     <View style={styles.phoneDemo}>
       <View style={styles.chatHeader}><View style={[styles.chatLogo, { borderWidth: 0 }]}><DemoAnimatedLogo size={39} /></View><View><Text style={styles.chatName}>Movya</Text><Text style={styles.chatStatus}>En línea</Text></View></View>
       <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>Preparando la transacción en Stellar Testnet…</Text></View></View>
-      <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><View style={styles.successDemoTitle}><Ionicons color="#16A071" name="checkmark-circle" size={21} /><Text style={styles.successDemoText}>Transacción exitosa</Text></View><Text style={styles.movyaMessageText}>Se enviaron 20 USDC a Aya.</Text><View style={styles.explorerDemo}><Ionicons color={colors.brand} name="open-outline" size={15} /><Text style={styles.explorerDemoText}>Ver en Stellar Expert · Testnet</Text></View></View></View>
+      <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><View style={styles.successDemoTitle}><Ionicons color="#16A071" name="checkmark-circle" size={21} /><Text style={styles.successDemoText}>Transacción exitosa</Text></View><Text style={styles.movyaMessageText}>Se enviaron 20 USDC a Ayouya.</Text><View style={styles.explorerDemo}><Ionicons color={colors.brand} name="open-outline" size={15} /><Text style={styles.explorerDemoText}>Ver en Stellar Expert · Testnet</Text></View></View></View>
       <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>¿Deseas hacer algo más?</Text></View></View>
       <DemoComposer />
     </View>

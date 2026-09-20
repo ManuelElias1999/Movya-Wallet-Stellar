@@ -3,9 +3,9 @@ import { Animated, Easing, StyleSheet, View } from 'react-native';
 
 import { colors } from '@/theme/tokens';
 
-type AnimatedMovyaLogoProps = { size?: number; delayMs?: number; repeat?: boolean; showGlow?: boolean; strongWink?: boolean; outlineColor?: string };
+type AnimatedMovyaLogoProps = { size?: number; delayMs?: number; repeat?: boolean; showGlow?: boolean; outlineColor?: string };
 
-export function AnimatedMovyaLogo({ size = 48, delayMs = 3800, repeat = true, showGlow = true, strongWink = false, outlineColor }: AnimatedMovyaLogoProps) {
+export function AnimatedMovyaLogo({ size = 48, delayMs = 3800, repeat = true, showGlow = true, outlineColor }: AnimatedMovyaLogoProps) {
   const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -74,20 +74,6 @@ export function AnimatedMovyaLogo({ size = 48, delayMs = 3800, repeat = true, sh
           },
         ]}
       />
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.wink,
-          {
-            left: size * (strongWink ? 0.62 : 0.65),
-            top: size * 0.47,
-            width: Math.max(5, size * (strongWink ? 0.19 : 0.13)),
-            height: strongWink ? Math.max(3, size * 0.032) : 2,
-            backgroundColor: strongWink ? '#050A10' : '#13243B',
-            opacity: pulse.interpolate({ inputRange: [-1, 0, 0.65, 1], outputRange: [0, 0, 0.5, 1] }),
-          },
-        ]}
-      />
     </Animated.View>
   );
 }
@@ -97,5 +83,4 @@ const styles = StyleSheet.create({
   glow: { position: 'absolute', width: '100%', height: '100%', borderRadius: 18, backgroundColor: colors.brand },
   logoOutline: { position: 'absolute', resizeMode: 'contain' },
   logo: { resizeMode: 'contain' },
-  wink: { position: 'absolute', borderRadius: 2 },
 });

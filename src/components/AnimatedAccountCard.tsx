@@ -16,7 +16,6 @@ type AnimatedAccountCardProps = {
 export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmount = '$1,629.24' }: AnimatedAccountCardProps) {
   const movement = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
-  const wink = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -33,19 +32,11 @@ export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmou
 
   const playReaction = () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Animated.parallel([
-      Animated.sequence([
-        Animated.timing(shake, { toValue: 1, duration: 55, useNativeDriver: true }),
-        Animated.timing(shake, { toValue: -1, duration: 55, useNativeDriver: true }),
-        Animated.timing(shake, { toValue: 0.7, duration: 55, useNativeDriver: true }),
-        Animated.timing(shake, { toValue: 0, duration: 90, useNativeDriver: true }),
-      ]),
-      Animated.sequence([
-        Animated.delay(60),
-        Animated.timing(wink, { toValue: 1, duration: 80, useNativeDriver: true }),
-        Animated.delay(170),
-        Animated.timing(wink, { toValue: 0, duration: 100, useNativeDriver: true }),
-      ]),
+    Animated.sequence([
+      Animated.timing(shake, { toValue: 1, duration: 55, useNativeDriver: true }),
+      Animated.timing(shake, { toValue: -1, duration: 55, useNativeDriver: true }),
+      Animated.timing(shake, { toValue: 0.7, duration: 55, useNativeDriver: true }),
+      Animated.timing(shake, { toValue: 0, duration: 90, useNativeDriver: true }),
     ]).start();
   };
 
@@ -75,7 +66,6 @@ export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmou
           <View style={styles.brandRow}>
             <View style={styles.brandLogoWrap}>
               <Image source={require('../../assets/movya-logo.png')} style={styles.brandLogo} />
-              <Animated.View style={[styles.wink, { opacity: wink, transform: [{ scaleX: wink.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] }) }] }]} />
             </View>
             <Text style={styles.brand}>Movya</Text>
           </View>
@@ -118,7 +108,6 @@ const styles = StyleSheet.create({
   brandRow: { flexDirection: 'row', alignItems: 'center' },
   brandLogoWrap: { width: 34, height: 34, marginRight: 7 },
   brandLogo: { width: 34, height: 34, resizeMode: 'contain' },
-  wink: { position: 'absolute', width: 5, height: 2, borderRadius: 2, backgroundColor: '#172638', top: 16, left: 22 },
   brand: { color: '#FFFFFF', fontSize: 25, fontWeight: '800', letterSpacing: -0.8 },
   type: { color: 'rgba(255,255,255,0.68)', fontSize: 11, marginTop: 2 },
   statusPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
