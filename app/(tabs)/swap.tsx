@@ -8,6 +8,7 @@ import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { PageHeader } from '@/components/PageHeader';
 import { PressableScale } from '@/components/PressableScale';
 import { TokenSelector } from '@/components/TokenSelector';
+import { TokenIcon } from '@/components/TokenIcon';
 import { colors } from '@/theme/tokens';
 
 const tokenInfo: Record<string, { name: string; color: string }> = {
@@ -43,7 +44,7 @@ export default function SwapScreen() {
 
   const assetSelector = (code: string, onPress: () => void) => (
     <PressableScale onPress={onPress} pressedScale={0.97} style={styles.assetBox}>
-      <View style={[styles.assetDot, { backgroundColor: tokenInfo[code].color }]}><Text style={styles.assetInitial}>{code[0]}</Text></View>
+      <View style={styles.assetDot}><TokenIcon code={code} color={tokenInfo[code].color} size={37} /></View>
       <View style={styles.assetCopy}><Text style={styles.assetName}>{tokenInfo[code].name}</Text><Text style={styles.assetNetwork}>Activo en Stellar</Text></View>
       <Text style={styles.code}>{code}</Text>
       <Ionicons name="chevron-down" size={17} color={colors.brand} />

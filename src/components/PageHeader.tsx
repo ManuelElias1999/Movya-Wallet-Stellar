@@ -32,8 +32,8 @@ export function PageHeader({ title, subtitle }: PageHeaderProps) {
 const webGlass = { backdropFilter: 'blur(30px) saturate(150%)', WebkitBackdropFilter: 'blur(30px) saturate(150%)' } as const;
 
 const styles = StyleSheet.create({
-  shell: { minHeight: 64, width: '96%', maxWidth: 736, alignSelf: 'center', marginTop: 6, overflow: 'hidden', borderRadius: 999, borderWidth: 1, borderColor: 'rgba(255,255,255,0.34)', shadowColor: '#173C65', shadowOpacity: 0.13, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 5, zIndex: 10 },
-  header: { minHeight: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 13, paddingVertical: 6, backgroundColor: 'rgba(42,92,137,0.32)' },
+  shell: { minHeight: 70, width: '100%', overflow: 'hidden', borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.34)', shadowColor: '#173C65', shadowOpacity: 0.13, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 5, zIndex: 10 },
+  header: { minHeight: 70, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(42,92,137,0.32)' },
   shine: { position: 'absolute', left: 0, right: 0, top: 0, height: '50%', backgroundColor: 'rgba(255,255,255,0.045)' },
   back: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   copy: { flex: 1, alignItems: 'center', paddingHorizontal: 5 },

@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { PressableScale } from '@/components/PressableScale';
+import { ProfilePhoto } from '@/components/ProfilePhoto';
 import { colors, radius } from '@/theme/tokens';
 
 const rows = [
@@ -24,7 +25,7 @@ export default function SettingsScreen() {
       <PageHeader subtitle="Preferencias de tu cuenta" title="Ajustes" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profile}>
-          <View style={styles.avatar}><Text style={styles.initials}>ME</Text></View>
+          <View style={styles.avatar}><ProfilePhoto size={54} /></View>
           <View><Text style={styles.name}>Manuel Elias</Text><Text style={styles.email}>Cuenta personal</Text></View>
         </View>
         <Text style={styles.sectionTitle}>Cuenta</Text>
@@ -54,7 +55,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#D8E1EB' }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 125 },
   profile: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.86)', borderRadius: radius.lg, borderWidth: 1, borderColor: 'rgba(255,255,255,0.94)', padding: 17, shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
-  avatar: { width: 54, height: 54, borderRadius: 19, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginRight: 13 }, initials: { color: colors.brand, fontSize: 15, fontWeight: '800' }, name: { color: colors.ink, fontSize: 17, fontWeight: '800' }, email: { color: colors.muted, fontSize: 11, marginTop: 4 },
+  avatar: { width: 54, height: 54, borderRadius: 27, overflow: 'hidden', backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginRight: 13 }, name: { color: colors.ink, fontSize: 17, fontWeight: '800' }, email: { color: colors.muted, fontSize: 11, marginTop: 4 },
   sectionTitle: { color: colors.ink, fontSize: 16, fontWeight: '800', marginTop: 26, marginBottom: 10 }, card: { backgroundColor: 'rgba(255,255,255,0.86)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.94)', borderRadius: radius.md, paddingHorizontal: 14, shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   row: { minHeight: 70, flexDirection: 'row', alignItems: 'center' }, divider: { borderTopWidth: 1, borderTopColor: colors.border }, rowIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }, rowCopy: { flex: 1, marginLeft: 11 }, rowTitle: { color: colors.ink, fontSize: 14, fontWeight: '700' }, rowSubtitle: { color: colors.muted, fontSize: 10, marginTop: 3 },
 });

@@ -5,6 +5,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient as SvgGradient, Path, Stop } from 'react-native-svg';
 
 import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
+import { TokenIcon } from '@/components/TokenIcon';
 import { colors } from '@/theme/tokens';
 
 export type AssetDetail = {
@@ -41,7 +42,7 @@ export function AssetDetailSheet({ asset, onClose }: AssetDetailSheetProps) {
       <BlurView intensity={85} tint="light" style={styles.sheet}>
         <View style={styles.handle} />
         <View style={styles.topRow}>
-          <View style={[styles.assetIcon, { backgroundColor: asset.color }]}><Text style={styles.assetLetter}>{asset.code.slice(0, 1)}</Text></View>
+          <TokenIcon code={asset.code} color={asset.color} size={52} />
           <View style={styles.assetCopy}><Text style={styles.name}>{asset.name}</Text><Text style={styles.code}>{asset.code} · Stellar</Text></View>
           <Pressable onPress={onClose} style={styles.close}><Ionicons name="close" size={19} color={colors.ink} /></Pressable>
         </View>

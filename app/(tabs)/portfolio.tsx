@@ -7,6 +7,7 @@ import { AssetDetail, AssetDetailSheet } from '@/components/AssetDetailSheet';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { PageHeader } from '@/components/PageHeader';
 import { PressableScale } from '@/components/PressableScale';
+import { TokenIcon } from '@/components/TokenIcon';
 import { demoAssets } from '@/data/demo';
 import { colors } from '@/theme/tokens';
 
@@ -30,7 +31,7 @@ export default function PortfolioScreen() {
         <View style={styles.list}>
           {demoAssets.map((asset, index) => (
             <PressableScale key={asset.code} onPress={() => setSelectedAsset(asset)} style={[styles.assetRow, index > 0 && styles.divider]}>
-              <View style={[styles.assetIcon, { backgroundColor: asset.color }]}><Text style={styles.assetInitial}>{asset.code.slice(0, 1)}</Text></View>
+              <TokenIcon code={asset.code} color={asset.color} size={44} />
               <View style={styles.assetCopy}>
                 <Text style={styles.assetName}>{asset.name}</Text>
                 <Text style={styles.assetCode}>{asset.code} · Stellar</Text>
