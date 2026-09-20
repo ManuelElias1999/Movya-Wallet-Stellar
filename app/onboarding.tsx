@@ -89,7 +89,7 @@ function OpenMovyaPreview() {
         <View style={styles.tutorialItem}><Ionicons color="#FFFFFF" name="home-outline" size={20} /><Text style={styles.tutorialLabel}>Inicio</Text></View>
         <View style={styles.tutorialItem}><Ionicons color="rgba(255,255,255,0.72)" name="stats-chart-outline" size={20} /><Text style={styles.tutorialLabel}>Actividad</Text></View>
         <View style={styles.tutorialItem}>
-          <View style={styles.tutorialMovya}><DemoAnimatedLogo size={42} /></View>
+          <View style={[styles.tutorialMovya, { borderWidth: 0 }]}><DemoAnimatedLogo size={42} /></View>
           <Text style={styles.tutorialLabel}>Movya</Text>
         </View>
         <View style={styles.tutorialItem}><Ionicons color="rgba(255,255,255,0.72)" name="people-outline" size={20} /><Text style={styles.tutorialLabel}>Contactos</Text></View>
@@ -102,7 +102,7 @@ function OpenMovyaPreview() {
 function ChatPreview() {
   return (
     <View style={styles.phoneDemo}>
-      <View style={styles.chatHeader}><View style={styles.chatLogo}><DemoAnimatedLogo size={39} /></View><View><Text style={styles.chatName}>Movya</Text><Text style={styles.chatStatus}>En línea</Text></View></View>
+      <View style={styles.chatHeader}><View style={[styles.chatLogo, { borderWidth: 0 }]}><DemoAnimatedLogo size={39} /></View><View><Text style={styles.chatName}>Movya</Text><Text style={styles.chatStatus}>En línea</Text></View></View>
       <View style={styles.demoBadge}><Ionicons color={colors.brand} name="sparkles" size={12} /><Text style={styles.demoBadgeText}>DEMO · ENVÍO A AYA</Text></View>
       <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>Hola, Manuel. Escribe el envío que quieres hacer.</Text></View></View>
       <View style={styles.userMessage}><Text style={styles.userMessageText}>Envía 20 USDC a Aya</Text></View>
@@ -114,7 +114,7 @@ function ChatPreview() {
 function ConfirmationPreview() {
   return (
     <View style={styles.phoneDemo}>
-      <View style={styles.chatHeader}><View style={styles.chatLogo}><DemoAnimatedLogo size={39} /></View><View><Text style={styles.chatName}>Movya</Text><Text style={styles.chatStatus}>En línea</Text></View></View>
+      <View style={styles.chatHeader}><View style={[styles.chatLogo, { borderWidth: 0 }]}><DemoAnimatedLogo size={39} /></View><View><Text style={styles.chatName}>Movya</Text><Text style={styles.chatStatus}>En línea</Text></View></View>
       <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>¿Confirmas la transacción de 20 USDC a Aya?</Text><View style={styles.reviewCard}><View style={styles.reviewRow}><Text style={styles.reviewLabel}>Enviar</Text><Text style={styles.reviewValue}>20 USDC</Text></View><View style={styles.reviewRow}><Text style={styles.reviewLabel}>A</Text><Text style={styles.reviewValue}>Aya</Text></View><View style={styles.reviewRow}><Text style={styles.reviewLabel}>Red</Text><Text style={styles.reviewValue}>Stellar · Testnet</Text></View></View><View style={styles.demoActions}><View style={styles.demoNo}><Text style={styles.demoNoText}>No</Text></View><View style={styles.demoYes}><Text style={styles.demoYesText}>Sí, confirmar</Text></View></View></View></View>
       <View style={styles.userMessage}><Text style={styles.userMessageText}>Sí</Text></View>
       <DemoComposer />
@@ -125,7 +125,7 @@ function ConfirmationPreview() {
 function SuccessPreview() {
   return (
     <View style={styles.phoneDemo}>
-      <View style={styles.chatHeader}><View style={styles.chatLogo}><DemoAnimatedLogo size={39} /></View><View><Text style={styles.chatName}>Movya</Text><Text style={styles.chatStatus}>En línea</Text></View></View>
+      <View style={styles.chatHeader}><View style={[styles.chatLogo, { borderWidth: 0 }]}><DemoAnimatedLogo size={39} /></View><View><Text style={styles.chatName}>Movya</Text><Text style={styles.chatStatus}>En línea</Text></View></View>
       <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>Preparando la transacción en Stellar Testnet…</Text></View></View>
       <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><View style={styles.successDemoTitle}><Ionicons color="#16A071" name="checkmark-circle" size={21} /><Text style={styles.successDemoText}>Transacción exitosa</Text></View><Text style={styles.movyaMessageText}>Se enviaron 20 USDC a Aya.</Text><View style={styles.explorerDemo}><Ionicons color={colors.brand} name="open-outline" size={15} /><Text style={styles.explorerDemoText}>Ver en Stellar Expert · Testnet</Text></View></View></View>
       <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>¿Deseas hacer algo más?</Text></View></View>
@@ -139,11 +139,11 @@ function DemoComposer() {
 }
 
 function DemoAnimatedLogo({ size }: { size: number }) {
-  return <View style={[styles.demoLogoOutline, { width: size + 2, height: size + 2, borderRadius: (size + 2) / 2 }]}><AnimatedMovyaLogo showGlow={false} size={size} /></View>;
+  return <AnimatedMovyaLogo outlineColor="#4D6A87" showGlow={false} size={size} />;
 }
 
 function DemoMessageLogo() {
-  return <View style={styles.messageLogoRing}><View style={styles.messageLogoOutline}><Image source={require('../assets/movya-logo.png')} style={styles.messageLogo} /></View></View>;
+  return <View style={[styles.messageLogoRing, { borderWidth: 0 }]}><View style={{ width: 29, height: 29, alignItems: 'center', justifyContent: 'center' }}><Image source={require('../assets/movya-logo.png')} style={{ position: 'absolute', width: 29, height: 29, resizeMode: 'contain', tintColor: '#4D6A87' }} /><Image source={require('../assets/movya-logo.png')} style={styles.messageLogo} /></View></View>;
 }
 
 const webGlass = { backdropFilter: 'blur(28px) saturate(170%)', WebkitBackdropFilter: 'blur(28px) saturate(170%)' } as const;

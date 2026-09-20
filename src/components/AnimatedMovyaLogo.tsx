@@ -3,9 +3,9 @@ import { Animated, Easing, StyleSheet, View } from 'react-native';
 
 import { colors } from '@/theme/tokens';
 
-type AnimatedMovyaLogoProps = { size?: number; delayMs?: number; repeat?: boolean; showGlow?: boolean; strongWink?: boolean };
+type AnimatedMovyaLogoProps = { size?: number; delayMs?: number; repeat?: boolean; showGlow?: boolean; strongWink?: boolean; outlineColor?: string };
 
-export function AnimatedMovyaLogo({ size = 48, delayMs = 3800, repeat = true, showGlow = true, strongWink = false }: AnimatedMovyaLogoProps) {
+export function AnimatedMovyaLogo({ size = 48, delayMs = 3800, repeat = true, showGlow = true, strongWink = false, outlineColor }: AnimatedMovyaLogoProps) {
   const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -43,6 +43,22 @@ export function AnimatedMovyaLogo({ size = 48, delayMs = 3800, repeat = true, sh
             },
           ]}
         /> : null}
+      {outlineColor ? <Animated.Image
+        source={require('../../assets/movya-logo.png')}
+        style={[
+          styles.logoOutline,
+          {
+            width: size,
+            height: size,
+            tintColor: outlineColor,
+            transform: [
+              { translateX: pulse.interpolate({ inputRange: [-1, 0, 1], outputRange: [-2, 0, 2] }) },
+              { rotate: pulse.interpolate({ inputRange: [-1, 0, 1], outputRange: ['-2deg', '0deg', '2deg'] }) },
+              { scale: pulse.interpolate({ inputRange: [-1, 0, 1], outputRange: [1.045, 1.035, 1.085] }) },
+            ],
+          },
+        ]}
+      /> : null}
       <Animated.Image
         source={require('../../assets/movya-logo.png')}
         style={[
@@ -79,6 +95,7 @@ export function AnimatedMovyaLogo({ size = 48, delayMs = 3800, repeat = true, sh
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center' },
   glow: { position: 'absolute', width: '100%', height: '100%', borderRadius: 18, backgroundColor: colors.brand },
+  logoOutline: { position: 'absolute', resizeMode: 'contain' },
   logo: { resizeMode: 'contain' },
   wink: { position: 'absolute', borderRadius: 2 },
 });

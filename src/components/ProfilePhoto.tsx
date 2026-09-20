@@ -8,7 +8,7 @@ export function ProfilePhoto({ size = 40 }: ProfilePhotoProps) {
       <Image
         resizeMode="cover"
         source={require('../../assets/manuel-profile.jpg')}
-        style={{ position: 'absolute', width: size * 2.8, height: size * 2.8, left: size * -0.9, top: size * -0.48 }}
+        style={{ position: 'absolute', width: size * 2.8, height: size * 2.8, left: size * -0.9, top: size * -0.8 }}
       />
     </View>
   );
