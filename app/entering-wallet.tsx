@@ -40,9 +40,7 @@ export default function EnteringWalletScreen() {
     <SafeAreaView style={styles.screen}>
       <View style={styles.center}>
         <Animated.View style={{ transform: [{ translateX: travelX }, { translateY: runningY }] }}>
-          <View style={styles.logoRing}>
-            <AnimatedMovyaLogo delayMs={1040} repeat={false} size={126} />
-          </View>
+          <AnimatedMovyaLogo delayMs={1040} repeat={false} showGlow={false} size={126} />
         </Animated.View>
       </View>
     </SafeAreaView>
@@ -52,5 +50,4 @@ export default function EnteringWalletScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#DCEBFA' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  logoRing: { width: 136, height: 136, borderRadius: 68, alignItems: 'center', justifyContent: 'center', borderWidth: 0.75, borderColor: 'rgba(13,62,120,0.2)', backgroundColor: 'rgba(255,255,255,0.2)' },
 });

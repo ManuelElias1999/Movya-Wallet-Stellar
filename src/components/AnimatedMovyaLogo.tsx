@@ -3,9 +3,9 @@ import { Animated, Easing, StyleSheet, View } from 'react-native';
 
 import { colors } from '@/theme/tokens';
 
-type AnimatedMovyaLogoProps = { size?: number; delayMs?: number; repeat?: boolean };
+type AnimatedMovyaLogoProps = { size?: number; delayMs?: number; repeat?: boolean; showGlow?: boolean };
 
-export function AnimatedMovyaLogo({ size = 48, delayMs = 3800, repeat = true }: AnimatedMovyaLogoProps) {
+export function AnimatedMovyaLogo({ size = 48, delayMs = 3800, repeat = true, showGlow = true }: AnimatedMovyaLogoProps) {
   const pulse = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -32,17 +32,17 @@ export function AnimatedMovyaLogo({ size = 48, delayMs = 3800, repeat = true }: 
         },
       ]}
     > 
-      <Animated.View
-        style={[
-          styles.glow,
-          {
-            transform: [
-              { scale: pulse.interpolate({ inputRange: [-1, 0, 1], outputRange: [1.04, 1, 1.12] }) },
-            ],
-            opacity: pulse.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.24, 0.14, 0.32] }),
-          },
-        ]}
-      />
+      {showGlow ? <Animated.View
+          style={[
+            styles.glow,
+            {
+              transform: [
+                { scale: pulse.interpolate({ inputRange: [-1, 0, 1], outputRange: [1.04, 1, 1.12] }) },
+              ],
+              opacity: pulse.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.24, 0.14, 0.32] }),
+            },
+          ]}
+        /> : null}
       <Animated.Image
         source={require('../../assets/movya-logo.png')}
         style={[
