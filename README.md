@@ -52,6 +52,78 @@ Transaction signing is intentionally not enabled yet. The custody, recovery, and
 | Blockchain data | Horizon API |
 | Local security foundation | Expo Secure Store |
 
+## Getting started
+
+### Requirements
+
+- Node.js 20 or newer
+- npm
+- Expo Go on a mobile device for native testing
+
+### Installation
+
+```bash
+git clone https://github.com/ManuelElias1999/Movya-Wallet-Stellar.git
+cd Movya-Wallet-Stellar
+npm install
+cp .env.example .env
+```
+
+### Environment
+
+The app can run with local demo data. To read a real Stellar Testnet account, add its **public key only**:
+
+```bash
+EXPO_PUBLIC_DEMO_ACCOUNT=G...
+```
+
+Never place a Stellar secret key in an `EXPO_PUBLIC_*` variable or commit one to the repository.
+
+### Run with Expo Go
+
+```bash
+npx expo start --go --clear
+```
+
+Connect the computer and phone to the same Wi-Fi network, then scan the QR code with Expo Go. If the local connection is unavailable, use:
+
+```bash
+npx expo start --go --tunnel --clear
+```
+
+### Other commands
+
+```bash
+npm run typecheck
+npm run ios
+npm run android
+npm run web
+```
+
+## Demo flow
+
+1. Create an account to open the guided onboarding.
+2. Tap the Movya logo in the center of the bottom navigation.
+3. Send the message: `Envía 20 USDC a Ouali`.
+4. Review the transaction summary.
+5. Confirm with **Sí** or cancel with **No**.
+6. Movya displays the preparation state, success message, and Stellar explorer link.
+7. The current transaction is a visual Testnet demo and does not move real funds.
+
+## Project structure
+
+```text
+app/                    Expo Router screens and navigation
+assets/                 Movya, Stellar, and token images
+src/components/         Reusable UI and interaction components
+src/config/             Environment configuration
+src/data/               Demo portfolio, activity, and contacts
+src/hooks/              Stellar account hooks
+src/services/stellar/   Horizon service and Stellar types
+src/theme/              Shared colors and design tokens
+docs/                   Migration and security planning
+```
+
 ## Roadmap
 
 - Connect real Stellar transaction building and signing.
@@ -60,3 +132,7 @@ Transaction signing is intentionally not enabled yet. The custody, recovery, and
 - Integrate swap liquidity and quotes.
 - Add gas sponsorship and web2-friendly onboarding.
 - Run user testing in Bolivia and Latin America.
+
+## Documentation
+
+See [`docs/MIGRATION_PLAN.md`](docs/MIGRATION_PLAN.md) for the migration roadmap, security boundaries, and next integration milestones.
