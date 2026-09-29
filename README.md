@@ -1,43 +1,62 @@
-# Movya Wallet — Stellar
+<div align="center">
+  <img src="assets/movya-logo.png" alt="Movya Wallet logo" width="150" />
 
-Movya is a mobile wallet designed to make stablecoin payments feel as simple as sending a message. This repository contains the Stellar migration and the new visual foundation for the product.
+  # Movya Wallet
 
-## Current scope
+  **A smart, non-custodial Stellar wallet designed to make crypto payments feel as simple as sending a message.**
 
-- React Native + Expo Router
-- Premium banking-style Home with fixed header and animated account card
-- Send, receive (QR), exchange, contact management, and history prototypes
-- Full-screen animated Movya chat experience
-- Stellar Testnet configuration
-- Horizon read service for account balances and recent payments
-- Demo data when no public testnet account is configured
-- Migration and security plan
+  <img src="assets/stellar-wordmark.png" alt="Powered by Stellar" width="170" />
 
-Transaction signing is intentionally not enabled yet. The custody and recovery model must be chosen before private-key functionality is added.
+  <br />
 
-## Run locally
+  ![Expo](https://img.shields.io/badge/Expo-57-000020?logo=expo&logoColor=white)
+  ![React Native](https://img.shields.io/badge/React_Native-0.86-61DAFB?logo=react&logoColor=001A2B)
+  ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
+  ![Stellar](https://img.shields.io/badge/Stellar-Testnet-111111?logo=stellar&logoColor=white)
+</div>
 
-```bash
-npm install
-cp .env.example .env
-npm run start
-```
+---
 
-To load a real testnet account, set its public key only:
+## About Movya
 
-```bash
-EXPO_PUBLIC_DEMO_ACCOUNT=G...
-```
+Movya helps people interact with digital assets without needing to understand gas fees, complex addresses, or traditional blockchain flows. Its conversational assistant turns a simple instruction into a guided transaction that the user can review and confirm.
 
-Never place a Stellar secret key in an `EXPO_PUBLIC_*` variable.
+> **“Send 20 USDC to Ouali”** → review → confirm → transaction result.
 
-## Useful commands
+The goal is to build a wallet that feels familiar to everyday users and can become an accessible entry point to Stellar in Latin America.
 
-```bash
-npm run typecheck
-npm run ios
-npm run android
-npm run web
-```
+## Product highlights
 
-See [`docs/MIGRATION_PLAN.md`](docs/MIGRATION_PLAN.md) for the Stacks-to-Stellar roadmap.
+- **Conversational payments:** prepare sends directly from the Movya chat.
+- **Human-readable contacts:** use saved names instead of repeatedly handling wallet addresses.
+- **Stellar portfolio:** view balances, tokens, and recent account activity.
+- **Send, receive, and swap flows:** mobile-first experiences with clear confirmations.
+- **Guided onboarding:** an interactive demo teaches the core wallet flow.
+- **Testnet-ready integration:** Horizon services load public balances and payment history.
+- **Responsive premium UI:** optimized for mobile, web, and modern iPhone safe areas.
+
+## Current status
+
+Movya currently provides the complete product interface, onboarding, portfolio experience, account reads, and conversational transaction demo on Stellar Testnet.
+
+Transaction signing is intentionally not enabled yet. The custody, recovery, and authorization model must be finalized before private-key functionality is introduced.
+
+## Built with
+
+| Layer | Technology |
+| --- | --- |
+| Mobile and web | React Native + Expo |
+| Navigation | Expo Router |
+| Language | TypeScript |
+| Network | Stellar Testnet |
+| Blockchain data | Horizon API |
+| Local security foundation | Expo Secure Store |
+
+## Roadmap
+
+- Connect real Stellar transaction building and signing.
+- Add the final non-custodial account and recovery model.
+- Execute USDC transfers from the conversational assistant.
+- Integrate swap liquidity and quotes.
+- Add gas sponsorship and web2-friendly onboarding.
+- Run user testing in Bolivia and Latin America.
