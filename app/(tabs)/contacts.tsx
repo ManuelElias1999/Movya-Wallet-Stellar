@@ -62,6 +62,10 @@ export default function ContactsScreen() {
   });
   const sendContact = () => {
     if (!selected || lock.current) return;
+    if (!saved.persistent) {
+      const contactId = selected.id; setSelected(null);
+      router.push({ pathname: '/send', params: { contactId } }); return;
+    }
     lock.current = true; setBusy(true);
     void contactDestination(selected).then(address => {
       const contactId = selected.id; setSelected(null);
