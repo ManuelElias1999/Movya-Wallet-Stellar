@@ -2,20 +2,20 @@ import type { Session, User } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { backendConfigured, bindAccessSignal, requireBackend, supabase } from '@/services/backend/client';
 import { unlockUserWallet } from '@/services/backend/accounts';
-import { readWallet, removeWallet, writeWallet } from '@/services/backend/storage';
+import { readWallet, clearWalletOnLogout, writeWallet } from '@/services/backend/storage';
 import { revealRecovery } from '@/services/backend/revealRecovery';
 import type { RecoveryMaterial } from '@/services/stellar/recovery';
 import { assertAccessActive, withAccessDeadline } from '@/services/backend/accessOperation';
 import type { RecoveryProgress } from '@/services/backend/walletRecovery';
 
 type Auth = {
-  configured: boolean; initialized: boolean; user: User | null; ready: boolean; error: string; hasLegacyWallet: boolean; needsBackup: boolean;
+  configured: boolean; initialized: boolean; user: User | null; ready: boolean; error: string; needsBackup: boolean;
   accessStage: string; cancelAccess: () => void;
-  register: (email: string, password: string, name: string, linkExisting: boolean) => Promise<boolean>;
-  login: (email: string, password: string, linkExisting: boolean) => Promise<void>;
-  verifyEmail: (email: string, token: string, password: string, linkExisting: boolean) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<void>;
+  verifyEmail: (email: string, token: string, password: string) => Promise<void>;
   resendEmail: (email: string) => Promise<void>;
-  unlock: (password: string, linkExisting: boolean) => Promise<void>;
+  unlock: (password: string) => Promise<void>;
   logout: () => Promise<void>;
   readRecovery: (password: string) => Promise<RecoveryMaterial>;
   acknowledgeBackup: () => Promise<void>;
@@ -27,18 +27,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [initialized, setInitialized] = useState(false);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
-  const [hasLegacyWallet, setHasLegacyWallet] = useState(false);
   const [needsBackup, setNeedsBackup] = useState(false);
   const [accessStage, setAccessStage] = useState('');
   const accessController = useRef<AbortController | null>(null);
   const operation = useRef(false);
   const revision = useRef(0);
   const sessionOwner = useRef<string | null>(null);
-  useEffect(() => {
-    let active = true;
-    void readWallet().then(value => { if (active) setHasLegacyWallet(Boolean(value)); }).catch(() => undefined);
-    return () => { active = false; };
-  }, []);
   useEffect(() => {
     if (!supabase) { setInitialized(true); return; }
     let active = true;
@@ -75,16 +69,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const cancelAccess = () => accessController.current?.abort(new Error('Se canceló el acceso. Tu cuenta se conserva; vuelve a ingresar con la misma contraseña.'));
   useEffect(() => () => { accessController.current?.abort(); }, []);
 
-  const complete = async (next: Session, password: string, linkExisting: boolean, signal: AbortSignal) => {
+  const complete = async (next: Session, password: string, signal: AbortSignal) => {
     assertAccessActive(signal);
     const current = revision.current;
     setReady(false); setSession(next); setError('');
     const stages: Record<RecoveryProgress, string> = {
       reading: 'Buscando el respaldo de tu wallet…', creating: 'Preparando tu wallet…',
       encrypting: 'Protegiendo tu respaldo. Esto puede tardar un momento…', registering: 'Guardando tu respaldo cifrado…',
-      decrypting: 'Abriendo tu respaldo. Esto puede tardar un momento…', saving: 'Guardando tu wallet en este dispositivo…',
+      decrypting: 'Abriendo tu respaldo. Esto puede tardar un momento…', local: 'Abriendo la wallet guardada en tu teléfono…', saving: 'Guardando tu wallet en este dispositivo…',
     };
-    await unlockUserWallet(next.user.id, password, linkExisting, { signal, onProgress: stage => setAccessStage(stages[stage]) });
+    await unlockUserWallet(next.user.id, password, { signal, onProgress: stage => setAccessStage(stages[stage]) });
     assertAccessActive(signal);
     if (current !== revision.current) throw new Error('La sesión cambió. Vuelve a ingresar.');
     const local = await readWallet(next.user.id);
@@ -93,25 +87,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setNeedsBackup(!local?.backupAcknowledged);
     setReady(true);
   };
-  const login = async (email: string, password: string, linkExisting: boolean) => {
+  const login = async (email: string, password: string) => {
     await runAccess(async signal => {
       const result = await requireBackend().auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (result.error) throw result.error;
-      await complete(result.data.session, password, linkExisting, signal);
+      await complete(result.data.session, password, signal);
     });
   };
-  const register = async (email: string, password: string, name: string, linkExisting: boolean) => {
+  const register = async (email: string, password: string, name: string) => {
     if (password.length < 12) throw new Error('Usa una contraseña de al menos 12 caracteres.');
     return runAccess(async signal => {
       const result = await requireBackend().auth.signUp({ email: email.trim().toLowerCase(), password, options: { data: { display_name: name.trim() } } });
       if (result.error) throw result.error;
       assertAccessActive(signal);
       if (!result.data.session) return false;
-      await complete(result.data.session, password, linkExisting, signal);
+      await complete(result.data.session, password, signal);
       return true;
     });
   };
-  const verifyEmail = async (email: string, token: string, password: string, linkExisting: boolean) => {
+  const verifyEmail = async (email: string, token: string, password: string) => {
     await runAccess(async signal => {
       const db = requireBackend();
       const verified = await db.auth.verifyOtp({ email: email.trim().toLowerCase(), token: token.trim(), type: 'signup' });
@@ -120,27 +114,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Verify the password too before encrypting a new wallet with it.
       const result = await db.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (result.error) throw result.error;
-      await complete(result.data.session, password, linkExisting, signal);
+      await complete(result.data.session, password, signal);
     });
   };
   const resendEmail = async (email: string) => {
     const result = await requireBackend().auth.resend({ type: 'signup', email: email.trim().toLowerCase() });
     if (result.error) throw result.error;
   };
-  const unlock = async (password: string, linkExisting: boolean) => {
+  const unlock = async (password: string) => {
     if (!session) throw new Error('Ingresa con tu correo para abrir tu wallet.');
     await runAccess(async signal => {
       const validated = await requireBackend().auth.signInWithPassword({ email: session.user.email!, password });
       if (validated.error) throw validated.error;
-      await complete(validated.data.session, password, linkExisting, signal);
+      await complete(validated.data.session, password, signal);
     });
   };
   const logout = async () => {
     if (operation.current) throw new Error('Espera a que termine el acceso a tu wallet.');
     const id = session?.user.id;
     revision.current++; setReady(false); setSession(null); sessionOwner.current = null;
-    // Clear auth even if a Keychain deletion fails; routes remain locked.
-    try { if (id) await removeWallet(id); }
+    // Keep the native per-user wallet protected; all routes/signing stay locked.
+    // Web private keys leave memory, and auth tokens are removed on both platforms.
+    try { if (id) await clearWalletOnLogout(id); }
     finally {
       const result = await requireBackend().auth.signOut({ scope: 'local' });
       if (result.error) throw result.error;
@@ -174,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNeedsBackup(false);
     } finally { operation.current = false; }
   };
-  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, hasLegacyWallet, needsBackup, accessStage, cancelAccess, login, register, verifyEmail, resendEmail, unlock, logout, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, accessStage, cancelAccess, login, register, verifyEmail, resendEmail, unlock, logout, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
 }
 export function useAuth() {
   const value = useContext(Context);

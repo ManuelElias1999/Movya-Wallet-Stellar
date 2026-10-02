@@ -1,18 +1,20 @@
 import { Keypair } from '@stellar/stellar-sdk/base';
-import { decryptRecovery, encryptRecovery, encryptWallet, type WalletBackup } from './vault';
+import { decryptRecovery, encryptRecovery, encryptWallet, fingerprintBackup, type WalletBackup } from './vault';
 import { createRecoveryWallet, type RecoveryMaterial } from '../stellar/recovery';
 import { assertAccessActive } from './accessOperation';
 
 export type WalletRecord = { owner_id: string; public_key: string; backup: WalletBackup };
-type LocalWallet = RecoveryMaterial & { oualiAddress: string; backupAcknowledged?: boolean };
+type LocalWallet = RecoveryMaterial & { oualiAddress: string; backupAcknowledged?: boolean; backupFingerprint?: string };
 type WalletStorage = {
   getBackup: () => Promise<WalletRecord | null>;
   register: (publicKey: string, backup: WalletBackup) => Promise<WalletRecord>;
   readLocal: (owner?: string) => Promise<LocalWallet | null>;
   writeLocal: (wallet: LocalWallet, owner: string) => Promise<void>;
 };
-export type RecoveryProgress = 'reading' | 'creating' | 'encrypting' | 'registering' | 'decrypting' | 'saving';
-export async function recoverWallet(storage: WalletStorage, userId: string, password: string, linkExisting: boolean, options: { signal?: AbortSignal; onProgress?: (stage: RecoveryProgress) => void } = {}) {
+export type RecoveryProgress = 'reading' | 'creating' | 'encrypting' | 'registering' | 'decrypting' | 'local' | 'saving';
+// allowLocalCache is only supplied by the native account flow after Supabase
+// verifies credentials; portable callers still always verify the backup password.
+export async function recoverWallet(storage: WalletStorage, userId: string, password: string, linkExisting: boolean, options: { signal?: AbortSignal; onProgress?: (stage: RecoveryProgress) => void; allowLocalCache?: boolean } = {}) {
   const progress = (stage: RecoveryProgress) => { assertAccessActive(options.signal); options.onProgress?.(stage); };
   progress('reading');
   let record = await storage.getBackup();
@@ -33,19 +35,24 @@ export async function recoverWallet(storage: WalletStorage, userId: string, pass
   }
   assertAccessActive(options.signal);
   if (!record || record.owner_id !== userId) throw new Error('La wallet no corresponde a esta cuenta.');
+  const fingerprint = fingerprintBackup(record.backup, userId, record.public_key);
+  const local = await storage.readLocal(userId);
+  assertAccessActive(options.signal);
+  if (local && Keypair.fromSecret(local.secret).publicKey() !== record.public_key) throw new Error('La wallet local no coincide con tu respaldo.');
   // Reuse our own material only when the immutable RPC returns exactly the
   // backup we just encrypted. A concurrent registration winner must be decrypted.
   const ownBackup = created && record.public_key === created.publicKey
     && (['version', 'salt', 'nonce', 'ciphertext'] as const).every(key => record.backup[key] === created.backup[key]);
   let material: RecoveryMaterial;
   if (ownBackup && created) material = created.material;
+  else if (options.allowLocalCache && local?.backupFingerprint === fingerprint) {
+    progress('local');
+    material = { secret: local.secret, ...(local.mnemonic ? { mnemonic: local.mnemonic } : {}) };
+  }
   else { progress('decrypting'); material = await decryptRecovery(record.backup, password, userId, record.public_key); }
   assertAccessActive(options.signal);
-  const local = await storage.readLocal(userId);
-  assertAccessActive(options.signal);
-  if (local && Keypair.fromSecret(local.secret).publicKey() !== record.public_key) throw new Error('La wallet local no coincide con tu respaldo.');
   progress('saving');
-  await storage.writeLocal({ ...material, oualiAddress: local?.oualiAddress ?? '', backupAcknowledged: local?.backupAcknowledged ?? false }, userId);
+  await storage.writeLocal({ ...material, oualiAddress: local?.oualiAddress ?? '', backupAcknowledged: local?.backupAcknowledged ?? false, backupFingerprint: fingerprint }, userId);
   assertAccessActive(options.signal);
   return record.public_key;
 }

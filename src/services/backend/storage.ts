@@ -2,7 +2,7 @@ import { Buffer } from 'buffer';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-export type StoredWallet = { secret: string; mnemonic?: string; backupAcknowledged?: boolean; oualiAddress: string };
+export type StoredWallet = { secret: string; mnemonic?: string; backupAcknowledged?: boolean; backupFingerprint?: string; oualiAddress: string };
 const memory = new Map<string, string>();
 const walletKey = (userId?: string) => userId ? `movya.testnet.wallet.user.${userId}` : 'movya.testnet.wallet.v1';
 export async function readWallet(userId?: string): Promise<StoredWallet | null> {
@@ -19,6 +19,12 @@ export async function removeWallet(userId: string) {
   const key = walletKey(userId);
   if (Platform.OS === 'web') memory.delete(key);
   else await SecureStore.deleteItemAsync(key);
+}
+export async function clearWalletOnLogout(userId: string) {
+  // Native keys stay in the per-user Keychain. Auth guards disable every
+  // wallet read/sign/reveal after logout; the next login verifies credentials.
+  // Web keys have no protected persistence and must leave memory on logout.
+  if (Platform.OS === 'web') await removeWallet(userId);
 }
 
 // Sessions can exceed a single Keychain item. Write chunks first, then atomically
