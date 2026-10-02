@@ -10,7 +10,6 @@ import { PressableScale } from '@/components/PressableScale';
 import { useAuth } from '@/context/AuthContext';
 import type { RecoveryMaterial } from '@/services/stellar/recovery';
 import { colors } from '@/theme/tokens';
-import { KeyboardDismissButton } from '@/components/KeyboardDismissButton';
 import { createSensitiveClipboard } from '@/services/sensitiveClipboard';
 
 const copySensitive = createSensitiveClipboard(Clipboard);
@@ -91,9 +90,8 @@ export default function WalletBackupScreen() {
     finally { lock.current = false; setBusy(false); }
   };
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-    <PageHeader title={auth.needsBackup ? 'Respalda tu wallet' : 'Respaldo y claves'} subtitle="Stellar Testnet · tu cuenta de pruebas" />
+    <PageHeader backTo={auth.needsBackup ? undefined : '/security'} title={auth.needsBackup ? 'Respalda tu wallet' : 'Respaldo y claves'} subtitle="Stellar Testnet · tu cuenta de pruebas" />
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <KeyboardDismissButton />
       <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <View style={styles.icon}><Ionicons name="shield-checkmark-outline" size={30} color={colors.brand} /></View>
@@ -119,10 +117,10 @@ export default function WalletBackupScreen() {
             <PressableScale onPress={hide} style={styles.secondary}><Text style={styles.secondaryText}>Ocultar ahora</Text></PressableScale>
           </View> : null}
           {auth.needsBackup ? <>
-            <PressableScale disabled={busy || !viewed} onPress={() => setChecked(v => !v)} style={styles.checkbox}><Ionicons name={checked ? 'checkbox' : 'square-outline'} size={23} color={colors.brand} /><Text style={styles.copy}>Ya guardé mi respaldo en un lugar seguro</Text></PressableScale>
+            <PressableScale disabled={busy || !viewed} onPress={() => setChecked(v => !v)} style={styles.checkbox}><Ionicons name={checked ? 'checkbox' : 'square-outline'} size={23} color={colors.brand} /><Text style={[styles.copy, { flex: 1, marginTop: 0 }]}>Ya guardé mi respaldo en un lugar seguro</Text></PressableScale>
             <PressableScale disabled={busy || !checked || !viewed} onPress={() => void finish()} style={[styles.button, (!checked || !viewed || busy) && styles.disabled]}><Text style={styles.buttonText}>Continuar a Movya</Text></PressableScale>
             <PressableScale disabled={busy} onPress={() => void finish()} style={styles.secondary}><Text style={styles.secondaryText}>Lo haré más tarde desde Seguridad</Text></PressableScale>
-          </> : <PressableScale onPress={() => { hide(); router.back(); }} style={styles.secondary}><Text style={styles.secondaryText}>Volver a Seguridad</Text></PressableScale>}
+          </> : <PressableScale onPress={() => { hide(); router.replace('/security'); }} style={styles.secondary}><Text style={styles.secondaryText}>Volver a Seguridad</Text></PressableScale>}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -136,5 +134,5 @@ const styles = StyleSheet.create({
   button: { minHeight: 52, padding: 12, borderRadius: 16, backgroundColor: colors.brand, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14 }, buttonText: { color: 'white', fontSize: 14, fontWeight: '800' },
   secondary: { minHeight: 48, padding: 12, borderRadius: 16, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginTop: 12 }, secondaryText: { color: colors.brandDark, fontSize: 13, fontWeight: '700' }, disabled: { opacity: 0.45 },
   recovery: { marginTop: 22, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 20 }, words: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 }, word: { width: '47%', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 9, padding: 10, backgroundColor: '#EFF5FC', borderRadius: 12 }, number: { fontSize: 11, color: colors.muted, width: 18 }, wordText: { fontSize: 14, color: colors.ink, fontWeight: '700' },
-  secret: { fontSize: 14, lineHeight: 24, color: colors.ink, padding: 14, backgroundColor: '#EFF5FC', borderRadius: 12, marginTop: 16 }, checkbox: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
+  secret: { fontSize: 14, lineHeight: 24, color: colors.ink, padding: 14, backgroundColor: '#EFF5FC', borderRadius: 12, marginTop: 16 }, checkbox: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
 });

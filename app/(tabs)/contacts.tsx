@@ -5,14 +5,12 @@ import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, Vi
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
-import { BottomNavigation } from '@/components/BottomNavigation';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { PressableScale } from '@/components/PressableScale';
 import { useContacts } from '@/context/ContactsContext';
 import { contactDestination, type Contact } from '@/services/backend/contacts';
 import { KeyboardSheet } from '@/components/KeyboardSheet';
-import { KeyboardDismissButton } from '@/components/KeyboardDismissButton';
 import { colors, radius } from '@/theme/tokens';
 
 export default function ContactsScreen() {
@@ -80,12 +78,11 @@ export default function ContactsScreen() {
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <InternalScreenBackground />
-      <PageHeader subtitle="Envía dinero sin copiar direcciones" title="Contactos" />
-      <KeyboardDismissButton />
+      <PageHeader backTo="/(tabs)" subtitle="Envía dinero sin copiar direcciones" title="Contactos" />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={styles.search}>
           <Ionicons name="search" size={18} color={colors.muted} />
-          <TextInput value={search} onChangeText={setSearch} placeholder="Buscar personas" placeholderTextColor={colors.muted} style={styles.input} />
+          <TextInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} value={search} onChangeText={setSearch} placeholder="Buscar personas" placeholderTextColor={colors.muted} style={styles.input} />
         </View>
         <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Tus contactos</Text><PressableScale accessibilityLabel="Agregar contacto" onPress={() => setAdding(true)} pressedScale={0.9} style={styles.add}><Ionicons name="person-add-outline" size={18} color={colors.brand} /></PressableScale></View>
         {saved.loading ? <Text style={styles.handle}>Cargando tus contactos…</Text> : null}
@@ -118,7 +115,6 @@ export default function ContactsScreen() {
           />
         </View>
       </ScrollView>
-      <BottomNavigation active="contacts" />
 
       <KeyboardSheet onClose={() => setSelected(null)} visible={Boolean(selected)}>
         <View style={styles.sheet}>
@@ -162,7 +158,7 @@ export default function ContactsScreen() {
             <Pressable onPress={() => { setIdentifierType('address'); setIdentifier(''); }} style={[styles.segment, identifierType === 'address' && styles.segmentActive]}><Ionicons name="wallet-outline" size={17} color={identifierType === 'address' ? colors.brand : colors.muted} /><Text style={[styles.segmentText, identifierType === 'address' && styles.segmentTextActive]}>Dirección</Text></Pressable>
           </View>
           <Text style={styles.editLabel}>Nombre</Text>
-          <TextInput onChangeText={setNewName} placeholder="Ej. Andrea López" placeholderTextColor={colors.muted} style={styles.editInput} value={newName} />
+          <TextInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} onChangeText={setNewName} placeholder="Ej. Andrea López" placeholderTextColor={colors.muted} style={styles.editInput} value={newName} />
           <Text style={styles.editLabel}>{identifierType === 'email' ? 'Correo electrónico' : 'Dirección Stellar'}</Text>
           <TextInput autoCorrect={false} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} autoCapitalize={identifierType === 'email' ? 'none' : 'characters'} keyboardType={identifierType === 'email' ? 'email-address' : 'default'} onChangeText={setIdentifier} placeholder={identifierType === 'email' ? 'andrea@correo.com' : 'G...'} placeholderTextColor={colors.muted} style={styles.editInput} value={identifier} />
           <View style={styles.lookupInfo}><Ionicons name={identifierType === 'email' ? 'link-outline' : 'shield-checkmark-outline'} size={18} color={colors.brand} /><Text style={styles.lookupText}>{identifierType === 'email' ? 'Si ya usa Movya, vincularemos la dirección asociada a ese correo.' : 'Las wallets externas se guardan directamente por su dirección pública.'}</Text></View>

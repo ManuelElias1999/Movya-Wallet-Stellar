@@ -3,7 +3,6 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ActivityRow } from '@/components/ActivityRow';
-import { BottomNavigation } from '@/components/BottomNavigation';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { PageHeader } from '@/components/PageHeader';
 import { demoActivity } from '@/data/demo';
@@ -16,7 +15,7 @@ export default function ActivityScreen() {
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <InternalScreenBackground />
-      <PageHeader subtitle="Tus operaciones en un solo lugar" title="Movimientos" />
+      <PageHeader backTo="/(tabs)" subtitle="Tus operaciones en un solo lugar" title="Movimientos" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.statusCard}>
           <View style={styles.statusIcon}><Ionicons name="checkmark" color={colors.positive} size={18} /></View>
@@ -30,7 +29,6 @@ export default function ActivityScreen() {
           {wallet.publicKey ? <TestnetPaymentHistory /> : demoActivity.map((item) => <ActivityRow key={item.id} {...item} />)}
         </View>
       </ScrollView>
-      <BottomNavigation active="activity" />
     </SafeAreaView>
   );
 }

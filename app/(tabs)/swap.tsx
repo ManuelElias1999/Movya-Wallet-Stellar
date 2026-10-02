@@ -9,7 +9,6 @@ import { PageHeader } from '@/components/PageHeader';
 import { PressableScale } from '@/components/PressableScale';
 import { TokenSelector } from '@/components/TokenSelector';
 import { TokenIcon } from '@/components/TokenIcon';
-import { KeyboardDismissButton } from '@/components/KeyboardDismissButton';
 import { colors } from '@/theme/tokens';
 
 const tokenInfo: Record<string, { name: string; color: string }> = {
@@ -57,7 +56,6 @@ export default function SwapScreen() {
       <InternalScreenBackground />
       <PageHeader subtitle="Revisarás la cotización antes de confirmar" title="Cambiar dinero" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <KeyboardDismissButton />
       <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.label}>Tú entregas</Text>
         {assetSelector(from, () => setFromOpen(true))}

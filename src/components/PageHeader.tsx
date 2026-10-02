@@ -7,16 +7,21 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 import { PressableScale } from '@/components/PressableScale';
 import { colors } from '@/theme/tokens';
 
-type PageHeaderProps = { title: string; subtitle?: string };
+type PageHeaderProps = { title: string; subtitle?: string; backTo?: '/(tabs)' | '/settings' | '/security' };
 
-export function PageHeader({ title, subtitle }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, backTo }: PageHeaderProps) {
   const router = useRouter();
+  const back = () => {
+    if (backTo) router.replace(backTo);
+    else if (router.canGoBack()) router.back();
+    else router.replace('/(tabs)');
+  };
   return (
     <View style={styles.shell}>
       <BlurView intensity={54} tint="dark" style={[styles.header, Platform.OS === 'web' ? webGlass : null]}>
         <LinearGradient colors={['rgba(31,80,135,0.8)', 'rgba(60,127,150,0.64)']} end={{ x: 1, y: 0 }} pointerEvents="none" start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
         <View pointerEvents="none" style={styles.shine} />
-        <PressableScale onPress={() => router.back()} pressedScale={0.9} style={styles.back}>
+        <PressableScale accessibilityLabel="Volver" onPress={back} pressedScale={0.9} style={styles.back}>
           <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
         </PressableScale>
         <View style={styles.copy}>

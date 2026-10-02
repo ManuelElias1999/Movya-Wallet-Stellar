@@ -12,9 +12,11 @@ type AnimatedAccountCardProps = {
   onToggleAmounts: () => void;
   totalAmount?: string;
   balanceLabel?: string;
+  ownerName?: string;
+  currency?: string;
 };
 
-export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmount = '$1,629.24', balanceLabel = 'Saldo total en USD' }: AnimatedAccountCardProps) {
+export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmount = '$1,629.24', balanceLabel = 'Saldo total en USD', ownerName = 'Usuario', currency = 'USD' }: AnimatedAccountCardProps) {
   const movement = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
 
@@ -92,8 +94,8 @@ export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmou
         </View>
       </View>
       <View style={styles.footer}>
-        <Text style={styles.owner}>MANUEL ELIAS</Text>
-        <View style={styles.currencyPill}><Text style={styles.currencyText}>USD</Text></View>
+        <Text numberOfLines={1} style={[styles.owner, { flex: 1, marginRight: 12 }]}>{ownerName.toUpperCase()}</Text>
+        <View style={styles.currencyPill}><Text style={styles.currencyText}>{currency}</Text></View>
       </View>
     </LinearGradient>
     </Animated.View>
