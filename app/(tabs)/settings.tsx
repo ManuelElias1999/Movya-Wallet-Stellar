@@ -35,6 +35,11 @@ export default function SettingsScreen() {
           <View><Text style={styles.name}>{auth.user ? displayName : 'Manuel Elias'}</Text><Text style={styles.email}>{auth.user?.email ?? 'Wallet de pruebas'}</Text></View>
         </View>
         <Text style={styles.sectionTitle}>Cuenta</Text>
+        <PressableScale onPress={() => router.push('/wallet-backup')} style={[styles.card, styles.row]}>
+          <View style={[styles.rowIcon, { backgroundColor: '#E4F8F5' }]}><Ionicons name="key-outline" size={20} color="#008B83" /></View>
+          <View style={styles.rowCopy}><Text style={styles.rowTitle}>Respaldo y claves</Text><Text style={styles.rowSubtitle}>Frase de recuperación y clave privada</Text></View>
+          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+        </PressableScale>
         <PressableScale onPress={() => router.push('/testnet-wallet')} style={[styles.card, styles.row]}>
           <View style={[styles.rowIcon, { backgroundColor: colors.brandSoft }]}><Ionicons name="wallet-outline" size={20} color={colors.brand} /></View>
           <View style={styles.rowCopy}><Text style={styles.rowTitle}>Wallet de Testnet</Text><Text style={styles.rowSubtitle}>Activa tu cuenta y prueba envíos reales</Text></View>

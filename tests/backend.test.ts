@@ -16,6 +16,7 @@ test('Postgres enforces private contacts/backups, verified-email lookup and immu
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
       grant usage on schema auth, public to authenticated, anon; grant execute on function auth.uid() to authenticated, anon;`);
     await db.exec(await readFile('supabase/migrations/20261002010000_accounts_contacts.sql', 'utf8'));
+    await db.exec(await readFile('supabase/migrations/20261002020000_recovery_words.sql', 'utf8'));
     await db.query('insert into auth.users values ($1,$2,now(),$3),($4,$5,now(),$3),($6,$7,null,$3)', [alice, 'alice@movya.test', JSON.stringify({ display_name: 'Alice' }), bob, 'bob@movya.test', unverified, 'pending@movya.test']);
     const actingAs = async (id: string, role = 'authenticated') => {
       await db.exec('reset role'); await db.query("select set_config('request.jwt.claim.sub', $1, false)", [id]); await db.exec(`set role ${role}`);
@@ -30,7 +31,8 @@ test('Postgres enforces private contacts/backups, verified-email lookup and immu
     await actingAs(bob); await assert.rejects(register(bobKey, {}), /check constraint/);
     await assert.rejects(register(bobKey, { ...backup, salt: null }), /check constraint/);
     await assert.rejects(register(bobKey, { ...backup, secret: 'S-plaintext-is-forbidden' }), /check constraint/);
-    await register(bobKey);
+    await register(bobKey, { ...backup, version: 2, ciphertext: 'c'.repeat(400) });
+    assert.equal((await db.query<{ backup: { version: number } }>('select backup from public.wallet_backups')).rows[0].backup.version, 2);
     assert.equal((await db.query('select * from public.wallet_backups')).rows.length, 1);
     assert.equal((await db.query('select * from public.profiles')).rows.length, 1);
     const lookup = async (email: string) => (await db.query<{ key: string }>('select public.resolve_movya_email($1) as key', [email])).rows[0].key;

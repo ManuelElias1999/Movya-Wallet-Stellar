@@ -2,7 +2,7 @@ import { Buffer } from 'buffer';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-export type StoredWallet = { secret: string; oualiAddress: string };
+export type StoredWallet = { secret: string; mnemonic?: string; backupAcknowledged?: boolean; oualiAddress: string };
 const memory = new Map<string, string>();
 const walletKey = (userId?: string) => userId ? `movya.testnet.wallet.user.${userId}` : 'movya.testnet.wallet.v1';
 export async function readWallet(userId?: string): Promise<StoredWallet | null> {

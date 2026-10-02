@@ -2,6 +2,7 @@ import { Keypair, Networks, Transaction } from '@stellar/stellar-sdk/base';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { readWallet, writeWallet, type StoredWallet } from '@/services/backend/storage';
+import { createRecoveryWallet } from '@/services/stellar/recovery';
 
 import { assertTestnet, readTestnetAccount, validateAddress, type TestnetAccount } from '@/services/stellar/payments';
 
@@ -67,8 +68,9 @@ export function TestnetWalletProvider({ children }: { children: ReactNode }) {
     createLock.current = true;
     try {
       if (await readStored()) throw new Error('Ya tienes una wallet de pruebas en este dispositivo.');
-      const keypair = Keypair.random();
-      await writeStored({ secret: keypair.secret(), oualiAddress: '' });
+      const material = createRecoveryWallet();
+      const keypair = Keypair.fromSecret(material.secret);
+      await writeStored({ ...material, oualiAddress: '' });
       setPublicKey(keypair.publicKey()); setError(null);
     } finally { createLock.current = false; }
   };
