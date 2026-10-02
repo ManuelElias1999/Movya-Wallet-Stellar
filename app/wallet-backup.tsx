@@ -11,6 +11,7 @@ import { useAuth } from '@/context/AuthContext';
 import type { RecoveryMaterial } from '@/services/stellar/recovery';
 import { colors } from '@/theme/tokens';
 import { createSensitiveClipboard } from '@/services/sensitiveClipboard';
+import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
 
 const copySensitive = createSensitiveClipboard(Clipboard);
 
@@ -18,6 +19,7 @@ export default function WalletBackupScreen() {
   const auth = useAuth(); const router = useRouter(); const lock = useRef(false); const generation = useRef(0);
   const captureOwner = useRef<string | null>(null);
   const [password, setPassword] = useState(''); const [busy, setBusy] = useState(false);
+  const passwordVisibility = usePasswordVisibility(password, busy);
   const passwordInput = useRef<TextInput>(null);
   const [material, setMaterial] = useState<RecoveryMaterial | null>(null);
   const [mode, setMode] = useState<'phrase' | 'key'>('phrase'); const [message, setMessage] = useState('');
@@ -113,7 +115,10 @@ export default function WalletBackupScreen() {
             <PressableScale onPress={() => router.replace('/')} style={styles.button}><Text style={styles.buttonText}>Crear cuenta o ingresar</Text></PressableScale>
           </> : <>
             <Text style={styles.label}>Confirma tu contraseña para mostrar el respaldo</Text>
-            <TextInput ref={passwordInput} value={password} onChangeText={setPassword} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} placeholder="Tu contraseña de Movya" placeholderTextColor={colors.muted} secureTextEntry autoCapitalize="none" autoCorrect={false} editable={!busy} style={styles.input} />
+            <View style={styles.passwordField}>
+              <TextInput ref={passwordInput} value={password} onChangeText={setPassword} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} placeholder="Tu contraseña de Movya" placeholderTextColor={colors.muted} secureTextEntry={!passwordVisibility.visible} autoCapitalize="none" autoCorrect={false} editable={!busy} style={styles.input} />
+              <PasswordVisibilityButton visible={passwordVisibility.visible} onPress={passwordVisibility.toggle} disabled={busy} />
+            </View>
             <PressableScale disabled={busy || !password || !captureReady} onPress={() => void reveal('phrase')} style={[styles.button, (busy || !password || !captureReady) && styles.disabled]}><Ionicons name="key-outline" size={20} color="white" /><Text style={styles.buttonText}>Ver frase de recuperación</Text></PressableScale>
             <PressableScale disabled={busy || !password || !captureReady} onPress={() => void reveal('key')} style={[styles.button, (busy || !password || !captureReady) && styles.disabled]}><Ionicons name="lock-closed-outline" size={20} color="white" /><Text style={styles.buttonText}>Ver clave privada · opción avanzada</Text></PressableScale>
           </>}
@@ -140,7 +145,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#D8E1EB' }, content: { padding: 20, maxWidth: 760, width: '100%', alignSelf: 'center' }, card: { padding: 20, backgroundColor: colors.surface, borderRadius: 24 },
   icon: { width: 58, height: 58, borderRadius: 19, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }, title: { color: colors.ink, fontSize: 19, fontWeight: '800', lineHeight: 26 },
   copy: { color: colors.text, fontSize: 13, lineHeight: 21, marginTop: 10 }, notice: { color: colors.brandDark, fontSize: 12, lineHeight: 20, padding: 14, backgroundColor: colors.brandSoft, borderRadius: 14, marginTop: 16 },
-  label: { color: colors.ink, fontSize: 13, fontWeight: '700', marginTop: 22 }, input: { minHeight: 52, borderWidth: 1, borderColor: colors.border, borderRadius: 14, color: colors.ink, padding: 14, marginTop: 10 },
+  label: { color: colors.ink, fontSize: 13, fontWeight: '700', marginTop: 22 }, passwordField: { minHeight: 52, borderWidth: 1, borderColor: colors.border, borderRadius: 14, marginTop: 10, flexDirection: 'row', alignItems: 'center', paddingRight: 4 }, input: { flex: 1, minWidth: 0, minHeight: 52, color: colors.ink, padding: 14 },
   button: { minHeight: 52, padding: 12, borderRadius: 16, backgroundColor: colors.brand, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14 }, buttonText: { color: 'white', fontSize: 14, fontWeight: '800' },
   secondary: { minHeight: 48, padding: 12, borderRadius: 16, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginTop: 12 }, secondaryText: { color: colors.brandDark, fontSize: 13, fontWeight: '700' }, disabled: { opacity: 0.45 },
   recovery: { marginTop: 22, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 20 }, words: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 }, word: { width: '47%', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 9, padding: 10, backgroundColor: '#EFF5FC', borderRadius: 12 }, number: { fontSize: 11, color: colors.muted, width: 18 }, wordText: { fontSize: 14, color: colors.ink, fontWeight: '700' },
