@@ -12,12 +12,18 @@
 - En teclados numéricos que no ofrecen Listo, deslizar el formulario para ocultar el teclado. Revisar que confirmar y cerrar continúan accesibles.
 - Cerrar y volver a abrir sesión; no debe repetirse la guía. Probar también restauración en otro dispositivo y el acceso a claves con contraseña.
 
-## Latencia de creación: limitación pendiente
+## Creación y respaldo
+
+- Al crear una cuenta, Movya trabaja como herrero sobre una billetera. El texto refleja el paso real; al terminar se abre el respaldo sin una espera artificial. Cancelar o un error cierra la animación y permite volver al formulario.
+- Activar Reducir movimiento: el taller debe mostrarse estático con un indicador de actividad.
+- Antes de revelar el respaldo, tocar «Ya guardé mi respaldo». Aparece una advertencia para verificar la contraseña y la casilla permanece desmarcada. Escribir una contraseña sin verificarla tampoco habilita la confirmación. Después de revelar y guardar el respaldo, la casilla sí se puede marcar y desmarcar.
+
+## Latencia de creación
 
 El respaldo conserva PBKDF2-SHA256 con 600.000 iteraciones. Expo Go usa el cálculo JavaScript cuando no hay WebCrypto disponible. La primera creación y la recuperación en un dispositivo nuevo pueden tardar; cambiar el texto de progreso no acelera el cifrado.
 
 El acceso posterior en el mismo teléfono reutiliza la copia local protegida únicamente después de autenticar la contraseña y comprobar propietario, dirección y huella del respaldo. No se reduce la protección ni se regenera la wallet al fallar.
 
-Para acelerar de forma nativa la primera creación hace falta evaluar una implementación criptográfica nativa en un development build, fuera de Expo Go, verificar compatibilidad con los respaldos existentes y medir en teléfonos reales. Este cambio no añade dicho módulo ni afirma mejoras de tiempo no medidas.
+La app incluye un módulo local para acelerar el cálculo fuera de JavaScript en una compilación propia. Expo Go mantiene el motor portable. Seguir [NATIVE_WALLET_CREATION.md](NATIVE_WALLET_CREATION.md) para instalar la app desde Xcode, comprobar la recuperación y medir en el teléfono. No se afirman tiempos de creación sin esa medición.
 
 Las pruebas automatizadas cubren servicios, seguridad y selección de sección; la presentación visual y el comportamiento del teclado requieren esta revisión física.

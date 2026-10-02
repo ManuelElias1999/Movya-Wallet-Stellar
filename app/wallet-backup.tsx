@@ -3,7 +3,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
 import * as Clipboard from 'expo-clipboard';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, AppState, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PageHeader } from '@/components/PageHeader';
 import { PressableScale } from '@/components/PressableScale';
@@ -18,6 +18,7 @@ export default function WalletBackupScreen() {
   const auth = useAuth(); const router = useRouter(); const lock = useRef(false); const generation = useRef(0);
   const captureOwner = useRef<string | null>(null);
   const [password, setPassword] = useState(''); const [busy, setBusy] = useState(false);
+  const passwordInput = useRef<TextInput>(null);
   const [material, setMaterial] = useState<RecoveryMaterial | null>(null);
   const [mode, setMode] = useState<'phrase' | 'key'>('phrase'); const [message, setMessage] = useState('');
   const [captureReady, setCaptureReady] = useState(Platform.OS === 'web');
@@ -77,6 +78,15 @@ export default function WalletBackupScreen() {
     catch (e) { setMessage(e instanceof Error ? e.message : 'No se pudo continuar.'); }
     finally { lock.current = false; setBusy(false); }
   };
+  const acknowledge = () => {
+    if (!viewed) {
+      const warning = 'Primero ingresa tu contraseña y toca «Ver frase de recuperación» o «Ver clave privada». Después de guardar tu respaldo podrás marcar esta casilla.';
+      setMessage(warning);
+      Alert.alert('Primero verifica tu contraseña', warning, [{ text: 'Entendido', onPress: () => passwordInput.current?.focus() }]);
+      return;
+    }
+    setMessage(''); setChecked(value => !value);
+  };
   const copy = async () => {
     if (!material || !captureReady || lock.current) return;
     const current = generation.current;
@@ -103,7 +113,7 @@ export default function WalletBackupScreen() {
             <PressableScale onPress={() => router.replace('/')} style={styles.button}><Text style={styles.buttonText}>Crear cuenta o ingresar</Text></PressableScale>
           </> : <>
             <Text style={styles.label}>Confirma tu contraseña para mostrar el respaldo</Text>
-            <TextInput value={password} onChangeText={setPassword} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} placeholder="Tu contraseña de Movya" placeholderTextColor={colors.muted} secureTextEntry autoCapitalize="none" autoCorrect={false} editable={!busy} style={styles.input} />
+            <TextInput ref={passwordInput} value={password} onChangeText={setPassword} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} placeholder="Tu contraseña de Movya" placeholderTextColor={colors.muted} secureTextEntry autoCapitalize="none" autoCorrect={false} editable={!busy} style={styles.input} />
             <PressableScale disabled={busy || !password || !captureReady} onPress={() => void reveal('phrase')} style={[styles.button, (busy || !password || !captureReady) && styles.disabled]}><Ionicons name="key-outline" size={20} color="white" /><Text style={styles.buttonText}>Ver frase de recuperación</Text></PressableScale>
             <PressableScale disabled={busy || !password || !captureReady} onPress={() => void reveal('key')} style={[styles.button, (busy || !password || !captureReady) && styles.disabled]}><Ionicons name="lock-closed-outline" size={20} color="white" /><Text style={styles.buttonText}>Ver clave privada · opción avanzada</Text></PressableScale>
           </>}
@@ -117,7 +127,7 @@ export default function WalletBackupScreen() {
             <PressableScale onPress={hide} style={styles.secondary}><Text style={styles.secondaryText}>Ocultar ahora</Text></PressableScale>
           </View> : null}
           {auth.needsBackup ? <>
-            <PressableScale disabled={busy || !viewed} onPress={() => setChecked(v => !v)} style={styles.checkbox}><Ionicons name={checked ? 'checkbox' : 'square-outline'} size={23} color={colors.brand} /><Text style={[styles.copy, { flex: 1, marginTop: 0 }]}>Ya guardé mi respaldo en un lugar seguro</Text></PressableScale>
+            <PressableScale disabled={busy} accessibilityRole="checkbox" accessibilityState={{ checked }} accessibilityLabel="Ya guardé mi respaldo en un lugar seguro" onPress={acknowledge} style={styles.checkbox}><Ionicons name={checked ? 'checkbox' : 'square-outline'} size={23} color={colors.brand} /><Text style={[styles.copy, { flex: 1, marginTop: 0 }]}>Ya guardé mi respaldo en un lugar seguro</Text></PressableScale>
             <PressableScale disabled={busy || !checked || !viewed} onPress={() => void finish()} style={[styles.button, (!checked || !viewed || busy) && styles.disabled]}><Text style={styles.buttonText}>Continuar a Movya</Text></PressableScale>
             <PressableScale disabled={busy} onPress={() => void finish()} style={styles.secondary}><Text style={styles.secondaryText}>Lo haré más tarde desde Seguridad</Text></PressableScale>
           </> : <PressableScale onPress={() => { hide(); router.replace('/security'); }} style={styles.secondary}><Text style={styles.secondaryText}>Volver a Seguridad</Text></PressableScale>}

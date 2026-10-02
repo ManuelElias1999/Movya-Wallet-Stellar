@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackground';
 import { PressableScale } from '@/components/PressableScale';
 import { useAuth } from '@/context/AuthContext';
+import { WalletForge } from '@/components/WalletForge';
 import { colors } from '@/theme/tokens';
 
 type AuthMode = 'login' | 'register';
@@ -50,6 +51,7 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {busy && auth.accessStage && (authMode === 'register' || pendingEmail) ? <WalletForge stage={auth.accessStage} onCancel={auth.cancelAccess} /> : null}
       <AnimatedDashboardBackground />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
