@@ -2,16 +2,20 @@ import type { Session, User } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { backendConfigured, requireBackend, supabase } from '@/services/backend/client';
 import { unlockUserWallet } from '@/services/backend/accounts';
-import { readWallet, removeWallet } from '@/services/backend/storage';
+import { readWallet, removeWallet, writeWallet } from '@/services/backend/storage';
+import { revealRecovery } from '@/services/backend/revealRecovery';
+import type { RecoveryMaterial } from '@/services/stellar/recovery';
 
 type Auth = {
-  configured: boolean; initialized: boolean; user: User | null; ready: boolean; error: string; hasLegacyWallet: boolean;
+  configured: boolean; initialized: boolean; user: User | null; ready: boolean; error: string; hasLegacyWallet: boolean; needsBackup: boolean;
   register: (email: string, password: string, name: string, linkExisting: boolean) => Promise<boolean>;
   login: (email: string, password: string, linkExisting: boolean) => Promise<void>;
   verifyEmail: (email: string, token: string, password: string, linkExisting: boolean) => Promise<void>;
   resendEmail: (email: string) => Promise<void>;
   unlock: (password: string, linkExisting: boolean) => Promise<void>;
   logout: () => Promise<void>;
+  readRecovery: (password: string) => Promise<RecoveryMaterial>;
+  acknowledgeBackup: () => Promise<void>;
 };
 const Context = createContext<Auth | null>(null);
 
@@ -21,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const [hasLegacyWallet, setHasLegacyWallet] = useState(false);
+  const [needsBackup, setNeedsBackup] = useState(false);
   const operation = useRef(false);
   const revision = useRef(0);
   const sessionOwner = useRef<string | null>(null);
@@ -46,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const validated = await supabase.auth.getUser();
         if (validated.error) throw validated.error;
         const local = await readWallet(validated.data.user.id);
-        if (active) { setSession(result.data.session); setReady(Boolean(local)); }
+        if (active) { setSession(result.data.session); setNeedsBackup(Boolean(local && !local.backupAcknowledged)); setReady(Boolean(local)); }
       }
     })().catch(() => { if (active) { setError('No pudimos recuperar tu sesión. Vuelve a ingresar.'); setSession(null); setReady(false); } })
       .finally(() => { if (active) setInitialized(true); });
@@ -58,6 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setReady(false); setSession(next); setError('');
     await unlockUserWallet(next.user.id, password, linkExisting);
     if (current !== revision.current) throw new Error('La sesión cambió. Vuelve a ingresar.');
+    const local = await readWallet(next.user.id);
+    if (current !== revision.current) throw new Error('La sesión cambió. Vuelve a ingresar.');
+    setNeedsBackup(!local?.backupAcknowledged);
     setReady(true);
   };
   const login = async (email: string, password: string, linkExisting: boolean) => {
@@ -118,7 +126,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.error) throw result.error;
     }
   };
-  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, hasLegacyWallet, login, register, verifyEmail, resendEmail, unlock, logout }}>{children}</Context.Provider>;
+  const readRecovery = async (password: string) => {
+    if (!session || !ready || operation.current) throw new Error('Abre tu wallet antes de ver el respaldo.');
+    operation.current = true;
+    const owner = session.user.id; const current = revision.current;
+    try {
+      return await revealRecovery({
+        owner, password, stillCurrent: () => current === revision.current && sessionOwner.current === owner,
+        authenticate: async candidate => {
+          const result = await requireBackend().auth.signInWithPassword({ email: session.user.email!, password: candidate });
+          if (result.error) throw new Error('La contraseña no es correcta o no pudimos verificarla.');
+          return result.data.user.id;
+        },
+        read: () => readWallet(owner),
+      });
+    } finally { operation.current = false; }
+  };
+  const acknowledgeBackup = async () => {
+    if (!session || !ready || operation.current) throw new Error('Espera a que termine la verificación.');
+    operation.current = true;
+    try {
+      const current = revision.current; const owner = session.user.id;
+      const local = await readWallet(owner);
+      if (!local || current !== revision.current) throw new Error('La sesión cambió. Vuelve a ingresar.');
+      await writeWallet({ ...local, backupAcknowledged: true }, owner);
+      if (current !== revision.current) throw new Error('La sesión cambió. Vuelve a ingresar.');
+      setNeedsBackup(false);
+    } finally { operation.current = false; }
+  };
+  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, hasLegacyWallet, needsBackup, login, register, verifyEmail, resendEmail, unlock, logout, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
 }
 export function useAuth() {
   const value = useContext(Context);

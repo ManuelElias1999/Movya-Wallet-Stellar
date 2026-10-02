@@ -34,7 +34,7 @@ With a Testnet wallet active, `Envía 1 USDC a Ouali` opens the real payment scr
 
 Native keys are generated on the device and stored in Expo SecureStore with `WHEN_UNLOCKED_THIS_DEVICE_ONLY`. They are not sent to an agent, server, faucet, logs, or `EXPO_PUBLIC_*` variables. With email accounts enabled, a locally encrypted wallet backup is also stored in Supabase. The plaintext secret is not stored in the database; see [backend setup](BACKEND_SETUP.md) for the authentication-provider trust boundary.
 
-On web, the secret stays only in memory. Refreshing the page destroys the in-memory key. Email users can reopen their existing backup using their account password; developer wallets without a backend remain temporary. There is no secret-key import or export, and no production recovery flow yet. Use only test tokens.
+On web, the secret stays only in memory. Refreshing the page destroys the in-memory key. Email users can reopen their existing backup using their account password; developer wallets without a backend remain temporary. Registered users can reveal their mnemonic (new wallets) or private key under Cuenta → Respaldo y claves after password verification. Existing unseeded wallets retain their private key and do not acquire a new mnemonic. In-app import and production account recovery are not implemented yet. Use only test tokens.
 
 ## Validation
 

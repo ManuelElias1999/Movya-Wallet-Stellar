@@ -43,7 +43,9 @@ export default function WelcomeScreen() {
           return;
         }
       } else await auth.login(identity, password, linkExisting);
-      setPassword(''); router.replace(authMode === 'register' ? '/onboarding' : '/(tabs)');
+      // Protected routes open the backup step for a new account, or the
+      // dashboard for a returning account whose backup was acknowledged.
+      setPassword('');
     } catch (e) { setMessage(e instanceof Error ? e.message : 'No se pudo completar el acceso. Inténtalo nuevamente.'); }
     finally { lock.current = false; setBusy(false); }
   };

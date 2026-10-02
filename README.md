@@ -34,6 +34,7 @@ The goal is to build a wallet that feels familiar to everyday users and can beco
 - **Guided onboarding:** an interactive demo teaches the core wallet flow.
 - **Real Testnet payments:** locally sign and submit XLM and verified-issuer USDC transfers, with balances, history, and transaction receipts.
 - **Email accounts and persistent contacts:** Supabase integration with verified email, encrypted Testnet wallet backup, and private contact storage (requires backend configuration).
+- **Wallet backups:** 12-word Stellar-compatible recovery phrases for new wallets and password-protected private-key disclosure in Cuenta; existing wallets retain their address.
 - **Testnet funding shortcuts:** separate XLM and USDC buttons below the dashboard actions.
 - **Responsive premium UI:** optimized for mobile, web, and modern iPhone safe areas.
 
@@ -108,7 +109,7 @@ npm run web
 
 ## Guided demo flow
 
-1. With the backend configured, register and verify your email to open the guided onboarding. Without it, select **Continuar con mi wallet de pruebas** to keep testing the existing wallet.
+1. With the backend configured, register and verify your email, review the backup step, and open the guided onboarding. Without it, select **Continuar con mi wallet de pruebas** to keep testing the existing wallet.
 2. Tap the Movya logo in the center of the bottom navigation.
 3. Send the message: `Envía 20 USDC a Ouali`.
 4. Review the transaction summary.
