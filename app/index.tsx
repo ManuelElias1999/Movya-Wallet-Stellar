@@ -10,6 +10,7 @@ import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackg
 import { PressableScale } from '@/components/PressableScale';
 import { useAuth } from '@/context/AuthContext';
 import { WalletForge } from '@/components/WalletForge';
+import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
 import { colors } from '@/theme/tokens';
 
 type AuthMode = 'login' | 'register';
@@ -26,6 +27,7 @@ export default function WelcomeScreen() {
   const [name, setName] = useState('');
   const [identity, setIdentity] = useState(auth.user?.email ?? '');
   const [password, setPassword] = useState('');
+  const passwordVisibility = usePasswordVisibility(password, busy);
   useEffect(() => { if (auth.user?.email && !identity) setIdentity(auth.user.email); }, [auth.user?.email]);
   const canContinue = auth.configured && !busy && (!pendingEmail || /^\d{6,10}$/.test(code.trim())) && password.length >= (authMode === 'register' ? 12 : 1) && (pendingEmail || (/^\S+@\S+\.\S+$/.test(identity.trim()) && (authMode === 'login' || name.trim().length > 1)));
 
@@ -51,7 +53,7 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {busy && auth.accessStage && (authMode === 'register' || pendingEmail) ? <WalletForge stage={auth.accessStage} onCancel={auth.cancelAccess} /> : null}
+      {busy && (authMode === 'register' || (pendingEmail && auth.accessStage)) ? <WalletForge stage={auth.accessStage || 'Preparando la creación de tu wallet…'} onCancel={auth.cancelAccess} /> : null}
       <AnimatedDashboardBackground />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
@@ -109,8 +111,8 @@ export default function WelcomeScreen() {
               {pendingEmail ? <View style={styles.field}><Ionicons color={colors.brand} name="key-outline" size={19} /><TextInput editable={!busy} value={code} onChangeText={setCode} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} placeholder="Código del correo" placeholderTextColor="#71809B" style={styles.input} /></View> : null}
               <View style={styles.field}>
                 <Ionicons color={colors.brand} name="lock-closed-outline" size={19} />
-                <TextInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} editable={!busy} autoCapitalize="none" autoCorrect={false} onChangeText={setPassword} placeholder="Contraseña" placeholderTextColor="#71809B" secureTextEntry style={styles.input} value={password} />
-                <Ionicons color={colors.muted} name="eye-outline" size={19} />
+                <TextInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} editable={!busy} autoCapitalize="none" autoCorrect={false} onChangeText={setPassword} placeholder="Contraseña" placeholderTextColor="#71809B" secureTextEntry={!passwordVisibility.visible} style={styles.input} value={password} />
+                <PasswordVisibilityButton visible={passwordVisibility.visible} onPress={passwordVisibility.toggle} disabled={busy} />
               </View>
 
               <Text style={styles.terms}>Tu contraseña también permite recuperar tu wallet. Consérvala en un lugar seguro. {authMode === 'register' ? 'Usa al menos 12 caracteres.' : ''}</Text>

@@ -14,6 +14,7 @@
 
 ## Creación y respaldo
 
+- En Ingresar, Crear cuenta y Respaldo y claves, tocar el ojo muestra y oculta la contraseña sin cambiar su valor. Debe volver a ocultarse al comenzar una operación, borrar el campo o poner la app en segundo plano.
 - Al crear una cuenta, Movya trabaja como herrero sobre una billetera. El texto refleja el paso real; al terminar se abre el respaldo sin una espera artificial. Cancelar o un error cierra la animación y permite volver al formulario.
 - Activar Reducir movimiento: el taller debe mostrarse estático con un indicador de actividad.
 - Antes de revelar el respaldo, tocar «Ya guardé mi respaldo». Aparece una advertencia para verificar la contraseña y la casilla permanece desmarcada. Escribir una contraseña sin verificarla tampoco habilita la confirmación. Después de revelar y guardar el respaldo, la casilla sí se puede marcar y desmarcar.
