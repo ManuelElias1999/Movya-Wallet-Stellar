@@ -7,10 +7,11 @@ import { revealRecovery } from '@/services/backend/revealRecovery';
 import type { RecoveryMaterial } from '@/services/stellar/recovery';
 import { assertAccessActive, withAccessDeadline } from '@/services/backend/accessOperation';
 import type { RecoveryProgress } from '@/services/backend/walletRecovery';
+import { accessSteps } from '@/services/backend/accessFlow';
 
 type Auth = {
   configured: boolean; initialized: boolean; user: User | null; ready: boolean; error: string; needsBackup: boolean;
-  accessStage: string; cancelAccess: () => void;
+  accessStage: string; cancelAccess: () => void; needsOnboarding: boolean; finishOnboarding: () => void;
   register: (email: string, password: string, name: string) => Promise<boolean>;
   login: (email: string, password: string) => Promise<void>;
   verifyEmail: (email: string, token: string, password: string) => Promise<void>;
@@ -28,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const [needsBackup, setNeedsBackup] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [accessStage, setAccessStage] = useState('');
   const accessController = useRef<AbortController | null>(null);
   const operation = useRef(false);
@@ -50,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const validated = await supabase.auth.getUser();
         if (validated.error) throw validated.error;
         const local = await readWallet(validated.data.user.id);
-        if (active) { setSession(result.data.session); setNeedsBackup(Boolean(local && !local.backupAcknowledged)); setReady(Boolean(local)); }
+        if (active) { setSession(result.data.session); setNeedsBackup(false); setNeedsOnboarding(false); setReady(Boolean(local)); }
       }
     })().catch(() => { if (active) { setError('No pudimos recuperar tu sesión. Vuelve a ingresar.'); setSession(null); setReady(false); } })
       .finally(() => { if (active) setInitialized(true); });
@@ -69,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const cancelAccess = () => accessController.current?.abort(new Error('Se canceló el acceso. Tu cuenta se conserva; vuelve a ingresar con la misma contraseña.'));
   useEffect(() => () => { accessController.current?.abort(); }, []);
 
-  const complete = async (next: Session, password: string, signal: AbortSignal) => {
+  const complete = async (next: Session, password: string, signal: AbortSignal, newAccount = false) => {
     assertAccessActive(signal);
     const current = revision.current;
     setReady(false); setSession(next); setError('');
@@ -78,13 +80,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       encrypting: 'Protegiendo tu respaldo. Esto puede tardar un momento…', registering: 'Guardando tu respaldo cifrado…',
       decrypting: 'Abriendo tu respaldo. Esto puede tardar un momento…', local: 'Abriendo la wallet guardada en tu teléfono…', saving: 'Guardando tu wallet en este dispositivo…',
     };
-    await unlockUserWallet(next.user.id, password, { signal, onProgress: stage => setAccessStage(stages[stage]) });
+    const local = await unlockUserWallet(next.user.id, password, { signal, onProgress: stage => setAccessStage(stages[stage]) });
     assertAccessActive(signal);
     if (current !== revision.current) throw new Error('La sesión cambió. Vuelve a ingresar.');
-    const local = await readWallet(next.user.id);
-    assertAccessActive(signal);
-    if (current !== revision.current) throw new Error('La sesión cambió. Vuelve a ingresar.');
-    setNeedsBackup(!local?.backupAcknowledged);
+    const steps = accessSteps(newAccount, Boolean(local.backupAcknowledged));
+    setNeedsBackup(steps.needsBackup); setNeedsOnboarding(steps.needsOnboarding);
     setReady(true);
   };
   const login = async (email: string, password: string) => {
@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.error) throw result.error;
       assertAccessActive(signal);
       if (!result.data.session) return false;
-      await complete(result.data.session, password, signal);
+      await complete(result.data.session, password, signal, true);
       return true;
     });
   };
@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Verify the password too before encrypting a new wallet with it.
       const result = await db.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
       if (result.error) throw result.error;
-      await complete(result.data.session, password, signal);
+      await complete(result.data.session, password, signal, true);
     });
   };
   const resendEmail = async (email: string) => {
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     if (operation.current) throw new Error('Espera a que termine el acceso a tu wallet.');
     const id = session?.user.id;
-    revision.current++; setReady(false); setSession(null); sessionOwner.current = null;
+    revision.current++; setReady(false); setNeedsBackup(false); setNeedsOnboarding(false); setSession(null); sessionOwner.current = null;
     // Keep the native per-user wallet protected; all routes/signing stay locked.
     // Web private keys leave memory, and auth tokens are removed on both platforms.
     try { if (id) await clearWalletOnLogout(id); }
@@ -169,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNeedsBackup(false);
     } finally { operation.current = false; }
   };
-  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, accessStage, cancelAccess, login, register, verifyEmail, resendEmail, unlock, logout, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, needsOnboarding, finishOnboarding: () => setNeedsOnboarding(false), accessStage, cancelAccess, login, register, verifyEmail, resendEmail, unlock, logout, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
 }
 export function useAuth() {
   const value = useContext(Context);

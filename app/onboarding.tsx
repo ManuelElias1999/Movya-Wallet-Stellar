@@ -10,6 +10,8 @@ import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackg
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
 import { PressableScale } from '@/components/PressableScale';
 import { colors } from '@/theme/tokens';
+import { useAuth } from '@/context/AuthContext';
+import { displayName } from '@/services/presentation';
 
 const steps = [
   { eyebrow: 'PASO 1', title: 'Abre el chat de Movya', description: 'En tu wallet, toca el logo de Movya ubicado en el centro del menú inferior.' },
@@ -20,22 +22,24 @@ const steps = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const auth = useAuth();
   const [step, setStep] = useState(0);
   const current = steps[step];
 
   const next = () => {
-    if (step === steps.length - 1) router.push('/entering-wallet');
+    if (step === steps.length - 1) finish();
     else setStep((value) => value + 1);
   };
 
   const previous = () => setStep((value) => Math.max(0, value - 1));
+  const finish = () => { auth.finishOnboarding(); if (!auth.configured) router.replace('/(tabs)'); };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <AnimatedDashboardBackground />
       <View style={styles.header}>
         <View style={styles.miniBrand}><Image source={require('../assets/movya-logo.png')} style={styles.miniLogo} /><Text style={styles.miniBrandText}>Movya</Text></View>
-        <PressableScale onPress={() => router.replace('/(tabs)')} style={styles.skip}><Text style={styles.skipText}>Omitir</Text></PressableScale>
+        <PressableScale onPress={finish} style={styles.skip}><Text style={styles.skipText}>Omitir</Text></PressableScale>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -105,11 +109,13 @@ function OpenMovyaPreview() {
 }
 
 function ChatPreview() {
+  const auth = useAuth();
+  const name = displayName(auth.user?.user_metadata).split(/\s+/)[0];
   return (
     <View style={styles.phoneDemo}>
       <View style={styles.chatHeader}><View style={[styles.chatLogo, { borderWidth: 0 }]}><DemoAnimatedLogo size={39} /></View><View><Text style={styles.chatName}>Movya</Text><Text style={styles.chatStatus}>En línea</Text></View></View>
       <View style={styles.demoBadge}><Ionicons color={colors.brand} name="sparkles" size={12} /><Text style={styles.demoBadgeText}>DEMO · ENVÍO A OUALI</Text></View>
-      <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>Hola, Manuel. Escribe el envío que quieres hacer.</Text></View></View>
+      <View style={styles.movyaRow}><DemoMessageLogo /><View style={styles.movyaMessage}><Text style={styles.movyaMessageText}>Hola, {name}. Escribe el envío que quieres hacer.</Text></View></View>
       <View style={styles.userMessage}><Text style={styles.userMessageText}>Envía 20 USDC a Ouali</Text></View>
       <DemoComposer />
     </View>

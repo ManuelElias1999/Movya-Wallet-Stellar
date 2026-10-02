@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
@@ -11,6 +11,8 @@ import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { PressableScale } from '@/components/PressableScale';
 import { useContacts } from '@/context/ContactsContext';
 import { contactDestination, type Contact } from '@/services/backend/contacts';
+import { KeyboardSheet } from '@/components/KeyboardSheet';
+import { KeyboardDismissButton } from '@/components/KeyboardDismissButton';
 import { colors, radius } from '@/theme/tokens';
 
 export default function ContactsScreen() {
@@ -57,6 +59,7 @@ export default function ContactsScreen() {
     ]);
   };
   const addContact = () => void run(async () => {
+    Keyboard.dismiss();
     await saved.add({ name: newName, identifier, type: identifierType });
     setAdding(false); setNewName(''); setIdentifier('');
   });
@@ -78,12 +81,13 @@ export default function ContactsScreen() {
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <InternalScreenBackground />
       <PageHeader subtitle="Envía dinero sin copiar direcciones" title="Contactos" />
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardDismissButton />
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={styles.search}>
           <Ionicons name="search" size={18} color={colors.muted} />
           <TextInput value={search} onChangeText={setSearch} placeholder="Buscar personas" placeholderTextColor={colors.muted} style={styles.input} />
         </View>
-        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Tus contactos</Text><PressableScale onPress={() => setAdding(true)} pressedScale={0.9} style={styles.add}><Ionicons name="person-add-outline" size={18} color={colors.brand} /></PressableScale></View>
+        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Tus contactos</Text><PressableScale accessibilityLabel="Agregar contacto" onPress={() => setAdding(true)} pressedScale={0.9} style={styles.add}><Ionicons name="person-add-outline" size={18} color={colors.brand} /></PressableScale></View>
         {saved.loading ? <Text style={styles.handle}>Cargando tus contactos…</Text> : null}
         {saved.error ? <Pressable onPress={() => void saved.refresh()}><Text style={styles.handle}>{saved.error} · Reintentar</Text></Pressable> : null}
         {!saved.persistent ? <Text style={styles.addDescription}>Estos contactos son de demostración. Ingresa con tu correo para guardar personas.</Text> : null}
@@ -116,15 +120,14 @@ export default function ContactsScreen() {
       </ScrollView>
       <BottomNavigation active="contacts" />
 
-      <Modal animationType="slide" onRequestClose={() => setSelected(null)} transparent visible={Boolean(selected)}>
-        <Pressable onPress={() => setSelected(null)} style={styles.backdrop} />
+      <KeyboardSheet onClose={() => setSelected(null)} visible={Boolean(selected)}>
         <View style={styles.sheet}>
           <View style={styles.handleBar} />
           {selected ? editing ? (
             <View>
               <Text style={styles.sheetTitle}>Editar contacto</Text>
               <Text style={styles.editLabel}>Nombre</Text>
-              <TextInput onChangeText={setEditName} style={styles.editInput} value={editName} />
+              <TextInput returnKeyType="done" onSubmitEditing={Keyboard.dismiss} onChangeText={setEditName} style={styles.editInput} value={editName} />
               <Text style={styles.editLabel}>Correo o dirección vinculada</Text>
               <Text selectable style={styles.sheetHandle}>{selected.handle}</Text>
               <Pressable disabled={busy} onPress={saveContact} style={styles.sendButton}><Text style={styles.sendText}>Guardar cambios</Text></Pressable>
@@ -147,10 +150,9 @@ export default function ContactsScreen() {
             </View>
           ) : null}
         </View>
-      </Modal>
+      </KeyboardSheet>
 
-      <Modal animationType="slide" onRequestClose={() => setAdding(false)} transparent visible={adding}>
-        <Pressable onPress={() => setAdding(false)} style={styles.backdrop} />
+      <KeyboardSheet onClose={() => setAdding(false)} visible={adding}>
         <View style={styles.sheet}>
           <View style={styles.handleBar} />
           <Text style={styles.sheetTitle}>Nuevo contacto</Text>
@@ -162,12 +164,12 @@ export default function ContactsScreen() {
           <Text style={styles.editLabel}>Nombre</Text>
           <TextInput onChangeText={setNewName} placeholder="Ej. Andrea López" placeholderTextColor={colors.muted} style={styles.editInput} value={newName} />
           <Text style={styles.editLabel}>{identifierType === 'email' ? 'Correo electrónico' : 'Dirección Stellar'}</Text>
-          <TextInput autoCapitalize={identifierType === 'email' ? 'none' : 'characters'} keyboardType={identifierType === 'email' ? 'email-address' : 'default'} onChangeText={setIdentifier} placeholder={identifierType === 'email' ? 'andrea@correo.com' : 'G...'} placeholderTextColor={colors.muted} style={styles.editInput} value={identifier} />
+          <TextInput autoCorrect={false} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} autoCapitalize={identifierType === 'email' ? 'none' : 'characters'} keyboardType={identifierType === 'email' ? 'email-address' : 'default'} onChangeText={setIdentifier} placeholder={identifierType === 'email' ? 'andrea@correo.com' : 'G...'} placeholderTextColor={colors.muted} style={styles.editInput} value={identifier} />
           <View style={styles.lookupInfo}><Ionicons name={identifierType === 'email' ? 'link-outline' : 'shield-checkmark-outline'} size={18} color={colors.brand} /><Text style={styles.lookupText}>{identifierType === 'email' ? 'Si ya usa Movya, vincularemos la dirección asociada a ese correo.' : 'Las wallets externas se guardan directamente por su dirección pública.'}</Text></View>
           <Pressable disabled={busy} onPress={addContact} style={styles.sendButton}><Text style={styles.sendText}>Agregar contacto</Text></Pressable>
           <Pressable onPress={() => setAdding(false)} style={styles.cancelButton}><Text style={styles.cancelText}>Cancelar</Text></Pressable>
         </View>
-      </Modal>
+      </KeyboardSheet>
     </SafeAreaView>
   );
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { env } from '@/config/env';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
+import { useAuth } from '@/context/AuthContext';
 import { getAccountSnapshot } from '@/services/stellar/horizon';
 import type { StellarAccountSnapshot } from '@/services/stellar/types';
 
@@ -13,6 +14,7 @@ type AccountState = {
 
 export function useStellarAccount() {
   const wallet = useTestnetWallet();
+  const auth = useAuth();
   const [state, setState] = useState<AccountState>({
     data: null,
     loading: Boolean(env.demoAccount),
@@ -20,7 +22,7 @@ export function useStellarAccount() {
   });
 
   const refresh = useCallback(async () => {
-    if (!env.demoAccount) return;
+    if (auth.configured || !env.demoAccount) return;
 
     setState((current) => ({ ...current, loading: true, error: null }));
     try {
@@ -33,15 +35,15 @@ export function useStellarAccount() {
         error: error instanceof Error ? error.message : 'Could not load the account.',
       });
     }
-  }, []);
+  }, [auth.configured]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
-  if (wallet.publicKey) return {
+  if (auth.configured || wallet.publicKey) return {
     data: wallet.account ? { publicKey: wallet.publicKey, sequence: wallet.account.sequence, balances: wallet.account.balances.map((balance) => ({ assetCode: balance.asset_type === 'native' ? 'XLM' : balance.asset_code ?? 'ASSET', assetIssuer: balance.asset_issuer, balance: balance.balance })) } : null,
-    loading: wallet.loading, error: wallet.error, refresh: wallet.refresh, isDemo: false,
+    loading: wallet.loading || !wallet.initialized, error: wallet.error, refresh: wallet.refresh, isDemo: false,
   };
   return { ...state, refresh, isDemo: !env.demoAccount };
 }

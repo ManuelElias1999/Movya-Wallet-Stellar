@@ -22,6 +22,7 @@ import { useAuth } from '@/context/AuthContext';
 import { TestnetFundingButtons } from '@/components/TestnetFundingButtons';
 import { TestnetPaymentHistory } from '@/components/TestnetPaymentHistory';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
+import { displayName as getDisplayName, formatXlmBalance } from '@/services/presentation';
 import { colors } from '@/theme/tokens';
 
 const quickActions = [
@@ -34,7 +35,7 @@ const quickActions = [
 export default function HomeScreen() {
   const router = useRouter();
   const auth = useAuth();
-  const displayName = typeof auth.user?.user_metadata.display_name === 'string' ? auth.user.user_metadata.display_name : 'Usuario';
+  const displayName = getDisplayName(auth.user?.user_metadata);
   const insets = useSafeAreaInsets();
   const [amountsVisible, setAmountsVisible] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
@@ -44,7 +45,7 @@ export default function HomeScreen() {
     code: item.assetCode,
     name: item.assetCode === 'XLM' ? 'Stellar' : item.assetCode === 'USDC' ? 'USD Coin' : item.assetCode,
     amount: Number(item.balance).toLocaleString(undefined, { maximumFractionDigits: 4 }),
-    value: 'Cuenta Testnet',
+    value: item.assetCode === 'XLM' ? 'Stellar' : item.assetCode === 'USDC' ? 'USD Coin' : item.assetCode,
     color: item.assetCode === 'XLM' ? colors.navy : colors.brand,
   })) ?? (account.isDemo ? demoAssets : []);
   const privateValue = (value: string) => amountsVisible ? value : '••••••';
@@ -60,7 +61,7 @@ export default function HomeScreen() {
         <View style={styles.profileRow}>
           <View style={styles.avatar}>{auth.user ? <Text style={styles.hello}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={40} />}</View>
           <View>
-            <Text style={styles.hello}>Hola, {auth.user ? displayName.split(' ')[0] : 'Manuel'}</Text>
+            <Text style={styles.hello}>Hola, {displayName.split(/\s+/)[0]}</Text>
             <Text style={styles.welcome}>Bienvenido a tu wallet</Text>
           </View>
         </View>
@@ -76,7 +77,7 @@ export default function HomeScreen() {
       </BlurView>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AnimatedAccountCard amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : 'Stellar Testnet'} balanceLabel={account.isDemo ? 'Saldo total en USD' : 'Cuenta de pruebas · sin valor real'} />
+        <AnimatedAccountCard amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : formatXlmBalance(account.data?.balances)} balanceLabel={account.isDemo ? 'Saldo total en USD' : 'Saldo en Stellar'} />
 
         <View style={styles.actionsRow}>
           {quickActions.map((action) => (

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
@@ -9,6 +9,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { PressableScale } from '@/components/PressableScale';
 import { TokenSelector } from '@/components/TokenSelector';
 import { TokenIcon } from '@/components/TokenIcon';
+import { KeyboardDismissButton } from '@/components/KeyboardDismissButton';
 import { colors } from '@/theme/tokens';
 
 const tokenInfo: Record<string, { name: string; color: string }> = {
@@ -55,7 +56,9 @@ export default function SwapScreen() {
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <InternalScreenBackground />
       <PageHeader subtitle="Revisarás la cotización antes de confirmar" title="Cambiar dinero" />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <KeyboardDismissButton />
+      <ScrollView keyboardDismissMode="on-drag" contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.label}>Tú entregas</Text>
         {assetSelector(from, () => setFromOpen(true))}
         <View style={styles.amountBox}>
@@ -88,6 +91,7 @@ export default function SwapScreen() {
           />
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <Modal animationType="slide" onRequestClose={() => setFromOpen(false)} transparent visible={fromOpen}>
         <Pressable onPress={() => setFromOpen(false)} style={styles.backdrop} />
