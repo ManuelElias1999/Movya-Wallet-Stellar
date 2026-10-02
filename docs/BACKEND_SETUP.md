@@ -28,6 +28,8 @@ The code is implemented; a Supabase project must be configured before email regi
    A legacy anon key also works. Never use a `service_role` JWT or `sb_secret_*` key. Do not overwrite the existing Stellar configuration.
 7. Restart Metro with `npx expo start --go --clear`.
 
+For a private Testnet session without SMTP, you may temporarily disable **Confirm email**. Supabase then auto-confirms new users and Movya goes straight to wallet creation. Such an email has not been proven to belong to the registrant: email contacts are only test identities in this mode. Enable confirmation and configure SMTP before admitting real users. In the current hosted dashboard, editing the confirmation template may require custom SMTP first.
+
 ## User flow
 
 - Register with name, email and a password of at least 12 characters.
@@ -36,6 +38,7 @@ The code is implemented; a Supabase project must be configured before email regi
 - In **Cuenta → Respaldo y claves**, confirm your password to view the phrase or the Stellar private key (S...). The screen hides its contents after a minute, on navigation and when the app leaves the foreground. Native capture prevention and iOS app-switcher protection are requested before disclosure. Web cannot block operating-system screenshots.
 - Wallets generated before mnemonic support keep their existing address and private key. They have no 12-word phrase and the app says so; it never fabricates words for an unrelated address.
 - Returning native users retain their session and device wallet. After logout, or on another device, login with the same email/password decrypts the existing backup and restores the same address. Web private keys remain in memory; on a reload the app asks for the password to unlock them.
+- Registration/unlock shows its current stage and a spinner instead of prematurely asking for the password again. You can cancel and retry with the same account. Requests have a 30-second deadline and the whole access attempt has a two-minute deadline. Cancellation stops pending network requests and prevents a late recovery result from opening the wallet. A server registration that already committed remains immutable and is recovered on retry. The first registration reuses its just-encrypted material only if the server returns the exact same backup; a concurrent winner and existing backups are decrypted normally with all 600,000 PBKDF2 rounds intact.
 - Add a contact by a complete Stellar address (checksum verified) or a verified Movya email. Unknown/unverified emails are rejected. Duplicate addresses are rejected per owner.
 - Favorite, rename, search and delete contacts. Send and chat use the same saved list. `Envía 0.1 XLM a Juan` opens the real review screen when Juan is saved. Duplicate names require choosing a contact. Email destinations are resolved again before review.
 - **Pedir fondos en XLM** calls Friendbot and refreshes the balance. Friendbot determines eligibility; it is not an unlimited refill service.

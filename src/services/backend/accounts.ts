@@ -1,8 +1,8 @@
 import { requireBackend } from './client';
 import { readWallet, writeWallet } from './storage';
-import { recoverWallet, type WalletRecord } from './walletRecovery';
+import { recoverWallet, type RecoveryProgress, type WalletRecord } from './walletRecovery';
 
-export async function unlockUserWallet(userId: string, password: string, linkExisting: boolean) {
+export async function unlockUserWallet(userId: string, password: string, linkExisting: boolean, options: { signal?: AbortSignal; onProgress?: (stage: RecoveryProgress) => void } = {}) {
   const db = requireBackend();
   return recoverWallet({
     getBackup: async () => {
@@ -16,5 +16,5 @@ export async function unlockUserWallet(userId: string, password: string, linkExi
       return result.data as WalletRecord;
     },
     readLocal: readWallet, writeLocal: writeWallet,
-  }, userId, password, linkExisting);
+  }, userId, password, linkExisting, options);
 }

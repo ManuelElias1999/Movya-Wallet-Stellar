@@ -3,7 +3,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackground';
@@ -27,7 +27,7 @@ export default function WelcomeScreen() {
   const [name, setName] = useState('');
   const [identity, setIdentity] = useState('');
   const [password, setPassword] = useState('');
-  const canContinue = auth.configured && !busy && (!pendingEmail || unlocking || /^\d{6,10}$/.test(code.trim())) && password.length >= (authMode === 'register' ? 12 : 1) && (unlocking || (/^\S+@\S+\.\S+$/.test(identity.trim()) && (authMode === 'login' || name.trim().length > 1)));
+  const canContinue = auth.configured && !busy && (!pendingEmail || unlocking || /^\d{6,10}$/.test(code.trim())) && password.length >= (!unlocking && authMode === 'register' ? 12 : 1) && (unlocking || (/^\S+@\S+\.\S+$/.test(identity.trim()) && (authMode === 'login' || name.trim().length > 1)));
 
   const continueToApp = async () => {
     if (!canContinue || lock.current) return;
@@ -46,7 +46,7 @@ export default function WelcomeScreen() {
       // Protected routes open the backup step for a new account, or the
       // dashboard for a returning account whose backup was acknowledged.
       setPassword('');
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'No se pudo completar el acceso. Inténtalo nuevamente.'); }
+    } catch (e) { setMessage(e && typeof e === 'object' && 'message' in e && typeof e.message === 'string' ? e.message : 'No se pudo completar el acceso. Inténtalo nuevamente.'); }
     finally { lock.current = false; setBusy(false); }
   };
 
@@ -66,7 +66,7 @@ export default function WelcomeScreen() {
 
             <BlurView intensity={72} tint="light" style={[styles.authCard, Platform.OS === 'web' ? webGlass : null]}>
               <View pointerEvents="none" style={styles.cardShine} />
-              {!unlocking && !pendingEmail ? <View style={styles.modeTabs}>
+              {!busy && !unlocking && !pendingEmail ? <View style={styles.modeTabs}>
                 <PressableScale onPress={() => setAuthMode('login')} style={[styles.modeTab, authMode === 'login' && styles.modeTabActive]}>
                   <Text style={[styles.modeText, authMode === 'login' && styles.modeTextActive]}>Ingresar</Text>
                 </PressableScale>
@@ -76,8 +76,8 @@ export default function WelcomeScreen() {
               </View> : null}
 
               <View style={styles.cardHeading}>
-                <Text style={styles.title}>{unlocking ? 'Abre tu wallet' : pendingEmail ? 'Confirma tu correo' : authMode === 'login' ? 'Bienvenido de nuevo' : 'Crea tu cuenta Movya'}</Text>
-                <Text style={styles.description}>{unlocking ? `Ingresa tu contraseña para recuperar la wallet de ${auth.user?.email}.` : pendingEmail ? `Escribe el código que enviamos a ${pendingEmail}.` : authMode === 'login' ? 'Tu cuenta, tus contactos y tu wallet te esperan.' : 'Confirma tu correo y tendrás tu propia wallet de pruebas.'}</Text>
+                <Text style={styles.title}>{busy && auth.accessStage ? 'Estamos abriendo tu wallet' : unlocking ? 'Abre tu wallet' : pendingEmail ? 'Confirma tu correo' : authMode === 'login' ? 'Bienvenido de nuevo' : 'Crea tu cuenta Movya'}</Text>
+                <Text accessibilityLiveRegion="polite" style={styles.description}>{busy && auth.accessStage ? auth.accessStage : unlocking ? `Ingresa tu contraseña para recuperar la wallet de ${auth.user?.email}.` : pendingEmail ? `Escribe el código que enviamos a ${pendingEmail}.` : authMode === 'login' ? 'Tu cuenta, tus contactos y tu wallet te esperan.' : 'Ingresa tus datos y tendrás tu propia wallet de pruebas.'}</Text>
               </View>
 
               {!unlocking && authMode === 'register' ? (
@@ -105,11 +105,11 @@ export default function WelcomeScreen() {
               {pendingEmail && !unlocking ? <View style={styles.field}><Ionicons color={colors.brand} name="key-outline" size={19} /><TextInput value={code} onChangeText={setCode} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} placeholder="Código del correo" placeholderTextColor="#71809B" style={styles.input} /></View> : null}
               <View style={styles.field}>
                 <Ionicons color={colors.brand} name="lock-closed-outline" size={19} />
-                <TextInput onChangeText={setPassword} placeholder="Contraseña" placeholderTextColor="#71809B" secureTextEntry style={styles.input} value={password} />
+                <TextInput editable={!busy} autoCapitalize="none" autoCorrect={false} onChangeText={setPassword} placeholder="Contraseña" placeholderTextColor="#71809B" secureTextEntry style={styles.input} value={password} />
                 <Ionicons color={colors.muted} name="eye-outline" size={19} />
               </View>
 
-              <Text style={styles.terms}>Tu contraseña también permite recuperar tu wallet. Consérvala en un lugar seguro. {authMode === 'register' ? 'Usa al menos 12 caracteres.' : ''}</Text>
+              <Text style={styles.terms}>Tu contraseña también permite recuperar tu wallet. Consérvala en un lugar seguro. {!unlocking && authMode === 'register' ? 'Usa al menos 12 caracteres.' : ''}</Text>
               {auth.hasLegacyWallet ? <PressableScale disabled={busy} onPress={() => setLinkExisting(v => !v)} style={styles.demoButton}>
                 <Ionicons name={linkExisting ? 'checkbox' : 'square-outline'} size={20} color={colors.brand} />
                 <Text style={[styles.demoText, { flex: 1 }]}>Vincular mi wallet de pruebas anterior, si aún no tengo una asociada</Text>
@@ -120,9 +120,10 @@ export default function WelcomeScreen() {
               <PressableScale disabled={!canContinue} onPress={continueToApp} style={[styles.primaryButton, !canContinue && styles.primaryButtonDisabled]}>
                 <LinearGradient colors={canContinue ? ['#287CFF', '#0755D8'] : ['#AEBBCD', '#97A6BA']} end={{ x: 1, y: 1 }} style={styles.primaryGradient}>
                   <Text style={styles.primaryText}>{busy ? 'Abriendo tu cuenta…' : unlocking ? 'Abrir mi wallet' : pendingEmail ? 'Confirmar y abrir mi wallet' : authMode === 'login' ? 'Ingresar a Movya' : 'Crear mi cuenta'}</Text>
-                  <Ionicons color="#FFFFFF" name="arrow-forward" size={19} />
+                  {busy ? <ActivityIndicator color="#FFFFFF" /> : <Ionicons color="#FFFFFF" name="arrow-forward" size={19} />}
                 </LinearGradient>
               </PressableScale>
+              {busy && auth.accessStage ? <PressableScale onPress={auth.cancelAccess} style={styles.demoButton}><Text style={styles.demoText}>Cancelar y volver a intentar</Text></PressableScale> : null}
 
               {pendingEmail && !unlocking ? <>
                 <PressableScale disabled={busy} onPress={() => { setBusy(true); void auth.resendEmail(pendingEmail).then(() => setMessage('Enviamos otro código. Revisa tu correo.')).catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}><Text style={styles.demoText}>Reenviar código</Text></PressableScale>
