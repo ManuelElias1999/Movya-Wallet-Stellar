@@ -2,29 +2,50 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackground';
 import { PressableScale } from '@/components/PressableScale';
+import { useAuth } from '@/context/AuthContext';
 import { colors } from '@/theme/tokens';
 
 type AuthMode = 'login' | 'register';
-type IdentityMode = 'email' | 'phone';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const [authMode, setAuthMode] = useState<AuthMode>('login');
-  const [identityMode, setIdentityMode] = useState<IdentityMode>('email');
+  const auth = useAuth();
+  const lock = useRef(false);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [linkExisting, setLinkExisting] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [code, setCode] = useState('');
+  const unlocking = Boolean(auth.user && !auth.ready);
   const [name, setName] = useState('');
   const [identity, setIdentity] = useState('');
   const [password, setPassword] = useState('');
-  const canContinue = identity.trim().length > 3 && password.length >= 4 && (authMode === 'login' || name.trim().length > 1);
+  const canContinue = auth.configured && !busy && (!pendingEmail || unlocking || /^\d{6,10}$/.test(code.trim())) && password.length >= (authMode === 'register' ? 12 : 1) && (unlocking || (/^\S+@\S+\.\S+$/.test(identity.trim()) && (authMode === 'login' || name.trim().length > 1)));
 
-  const continueToApp = () => {
-    if (!canContinue) return;
-    router.replace(authMode === 'register' ? '/onboarding' : '/(tabs)');
+  const continueToApp = async () => {
+    if (!canContinue || lock.current) return;
+    lock.current = true; setBusy(true); setMessage('');
+    try {
+      if (unlocking) await auth.unlock(password, linkExisting);
+      else if (pendingEmail) await auth.verifyEmail(pendingEmail, code, password, linkExisting);
+      else if (authMode === 'register') {
+        const ready = await auth.register(identity, password, name, linkExisting);
+        if (!ready) {
+          setPendingEmail(identity.trim().toLowerCase()); setAuthMode('login');
+          setMessage('Te enviamos un código. Escríbelo aquí para confirmar tu correo y crear tu wallet. Si tu correo incluye un enlace, también puedes abrirlo y luego ingresar.');
+          return;
+        }
+      } else await auth.login(identity, password, linkExisting);
+      setPassword(''); router.replace(authMode === 'register' ? '/onboarding' : '/(tabs)');
+    } catch (e) { setMessage(e instanceof Error ? e.message : 'No se pudo completar el acceso. Inténtalo nuevamente.'); }
+    finally { lock.current = false; setBusy(false); }
   };
 
   return (
@@ -43,66 +64,70 @@ export default function WelcomeScreen() {
 
             <BlurView intensity={72} tint="light" style={[styles.authCard, Platform.OS === 'web' ? webGlass : null]}>
               <View pointerEvents="none" style={styles.cardShine} />
-              <View style={styles.modeTabs}>
+              {!unlocking && !pendingEmail ? <View style={styles.modeTabs}>
                 <PressableScale onPress={() => setAuthMode('login')} style={[styles.modeTab, authMode === 'login' && styles.modeTabActive]}>
                   <Text style={[styles.modeText, authMode === 'login' && styles.modeTextActive]}>Ingresar</Text>
                 </PressableScale>
                 <PressableScale onPress={() => setAuthMode('register')} style={[styles.modeTab, authMode === 'register' && styles.modeTabActive]}>
                   <Text style={[styles.modeText, authMode === 'register' && styles.modeTextActive]}>Crear cuenta</Text>
                 </PressableScale>
-              </View>
+              </View> : null}
 
               <View style={styles.cardHeading}>
-                <Text style={styles.title}>{authMode === 'login' ? 'Bienvenido de nuevo' : 'Crea tu cuenta Movya'}</Text>
-                <Text style={styles.description}>{authMode === 'login' ? 'Ingresa para acceder a tu wallet.' : 'Te mostraremos cómo usar el chat antes de comenzar.'}</Text>
+                <Text style={styles.title}>{unlocking ? 'Abre tu wallet' : pendingEmail ? 'Confirma tu correo' : authMode === 'login' ? 'Bienvenido de nuevo' : 'Crea tu cuenta Movya'}</Text>
+                <Text style={styles.description}>{unlocking ? `Ingresa tu contraseña para recuperar la wallet de ${auth.user?.email}.` : pendingEmail ? `Escribe el código que enviamos a ${pendingEmail}.` : authMode === 'login' ? 'Tu cuenta, tus contactos y tu wallet te esperan.' : 'Confirma tu correo y tendrás tu propia wallet de pruebas.'}</Text>
               </View>
 
-              {authMode === 'register' ? (
+              {!unlocking && authMode === 'register' ? (
                 <View style={styles.field}>
                   <Ionicons color={colors.brand} name="person-outline" size={19} />
                   <TextInput autoCapitalize="words" onChangeText={setName} placeholder="Tu nombre" placeholderTextColor="#71809B" style={styles.input} value={name} />
                 </View>
               ) : null}
 
-              <View style={styles.identityTabs}>
-                <PressableScale onPress={() => { setIdentityMode('email'); setIdentity(''); }} style={[styles.identityTab, identityMode === 'email' && styles.identityTabActive]}>
-                  <Ionicons color={identityMode === 'email' ? colors.brand : colors.muted} name="mail-outline" size={16} />
-                  <Text style={[styles.identityText, identityMode === 'email' && styles.identityTextActive]}>Correo</Text>
-                </PressableScale>
-                <PressableScale onPress={() => { setIdentityMode('phone'); setIdentity(''); }} style={[styles.identityTab, identityMode === 'phone' && styles.identityTabActive]}>
-                  <Ionicons color={identityMode === 'phone' ? colors.brand : colors.muted} name="phone-portrait-outline" size={16} />
-                  <Text style={[styles.identityText, identityMode === 'phone' && styles.identityTextActive]}>Celular</Text>
-                </PressableScale>
-              </View>
-
+              {!unlocking && !pendingEmail ? (
               <View style={styles.field}>
-                <Ionicons color={colors.brand} name={identityMode === 'email' ? 'mail-outline' : 'phone-portrait-outline'} size={19} />
+                <Ionicons color={colors.brand} name="mail-outline" size={19} />
                 <TextInput
                   autoCapitalize="none"
-                  keyboardType={identityMode === 'email' ? 'email-address' : 'phone-pad'}
+                  keyboardType="email-address"
                   onChangeText={setIdentity}
-                  placeholder={identityMode === 'email' ? 'tu@correo.com' : '+591 70000000'}
+                  placeholder="tu@correo.com"
                   placeholderTextColor="#71809B"
                   style={styles.input}
                   value={identity}
                 />
               </View>
+              ) : null}
 
+              {pendingEmail && !unlocking ? <View style={styles.field}><Ionicons color={colors.brand} name="key-outline" size={19} /><TextInput value={code} onChangeText={setCode} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} placeholder="Código del correo" placeholderTextColor="#71809B" style={styles.input} /></View> : null}
               <View style={styles.field}>
                 <Ionicons color={colors.brand} name="lock-closed-outline" size={19} />
                 <TextInput onChangeText={setPassword} placeholder="Contraseña" placeholderTextColor="#71809B" secureTextEntry style={styles.input} value={password} />
                 <Ionicons color={colors.muted} name="eye-outline" size={19} />
               </View>
 
-              {authMode === 'login' ? <Text style={styles.forgot}>¿Olvidaste tu contraseña?</Text> : <Text style={styles.terms}>Al continuar aceptas los términos y la política de privacidad de Movya.</Text>}
+              <Text style={styles.terms}>Tu contraseña también permite recuperar tu wallet. Consérvala en un lugar seguro. {authMode === 'register' ? 'Usa al menos 12 caracteres.' : ''}</Text>
+              {auth.hasLegacyWallet ? <PressableScale disabled={busy} onPress={() => setLinkExisting(v => !v)} style={styles.demoButton}>
+                <Ionicons name={linkExisting ? 'checkbox' : 'square-outline'} size={20} color={colors.brand} />
+                <Text style={[styles.demoText, { flex: 1 }]}>Vincular mi wallet de pruebas anterior, si aún no tengo una asociada</Text>
+              </PressableScale> : null}
+              {!auth.configured ? <Text style={styles.terms}>El acceso por correo se activará pronto. Puedes continuar probando tu wallet actual.</Text> : null}
+              {message || auth.error ? <Text accessibilityLiveRegion="polite" style={[styles.description, { marginTop: 12 }]}>{message || auth.error}</Text> : null}
 
               <PressableScale disabled={!canContinue} onPress={continueToApp} style={[styles.primaryButton, !canContinue && styles.primaryButtonDisabled]}>
                 <LinearGradient colors={canContinue ? ['#287CFF', '#0755D8'] : ['#AEBBCD', '#97A6BA']} end={{ x: 1, y: 1 }} style={styles.primaryGradient}>
-                  <Text style={styles.primaryText}>{authMode === 'login' ? 'Ingresar a Movya' : 'Crear cuenta y ver demo'}</Text>
+                  <Text style={styles.primaryText}>{busy ? 'Abriendo tu cuenta…' : unlocking ? 'Abrir mi wallet' : pendingEmail ? 'Confirmar y abrir mi wallet' : authMode === 'login' ? 'Ingresar a Movya' : 'Crear mi cuenta'}</Text>
                   <Ionicons color="#FFFFFF" name="arrow-forward" size={19} />
                 </LinearGradient>
               </PressableScale>
 
+              {pendingEmail && !unlocking ? <>
+                <PressableScale disabled={busy} onPress={() => { setBusy(true); void auth.resendEmail(pendingEmail).then(() => setMessage('Enviamos otro código. Revisa tu correo.')).catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}><Text style={styles.demoText}>Reenviar código</Text></PressableScale>
+                <PressableScale disabled={busy} onPress={() => { setPendingEmail(''); setCode(''); setMessage(''); }} style={styles.demoButton}><Text style={styles.demoText}>Ya confirmé mi correo · Ingresar</Text></PressableScale>
+              </> : null}
+              {!auth.configured ? <PressableScale onPress={() => router.replace('/(tabs)')} style={styles.demoButton}><Text style={styles.demoText}>Continuar con mi wallet de pruebas</Text></PressableScale> : null}
+              {unlocking ? <PressableScale disabled={busy} onPress={() => { setBusy(true); void auth.logout().catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}><Text style={styles.demoText}>Ingresar con otra cuenta</Text></PressableScale> : null}
             </BlurView>
 
             <View style={styles.stellarFooter}>

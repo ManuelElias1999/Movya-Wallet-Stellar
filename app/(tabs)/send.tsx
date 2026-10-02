@@ -14,26 +14,29 @@ import { TokenIcon } from '@/components/TokenIcon';
 import { PaymentReviewSheet } from '@/components/PaymentReviewSheet';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance, preparePayment, type PaymentAsset, type PaymentReceipt, type PaymentReview } from '@/services/stellar/payments';
-import { demoContacts } from '@/data/demo';
+import { useContacts } from '@/context/ContactsContext';
+import { contactDestination } from '@/services/backend/contacts';
 import { colors, radius } from '@/theme/tokens';
 
 export default function SendScreen() {
-  const params = useLocalSearchParams<{ contact?: string; address?: string; amount?: string; token?: string }>();
+  const params = useLocalSearchParams<{ contact?: string; contactId?: string; address?: string; amount?: string; token?: string }>();
   const wallet = useTestnetWallet();
+  const saved = useContacts();
+  const { contacts } = saved;
   const router = useRouter();
   const lock = useRef(false);
   const [preparing, setPreparing] = useState(false);
   const [error, setError] = useState('');
   const [review, setReview] = useState<PaymentReview | null>(null);
   const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
-  const initialContact = useMemo(() => demoContacts.find((item) => item.name === params.contact), [params.contact]);
-  const [selectedContactId, setSelectedContactId] = useState(initialContact?.id ?? '');
+  const initialContact = useMemo(() => contacts.find((item) => item.name === params.contact), [params.contact, contacts]);
+  const [selectedContactId, setSelectedContactId] = useState(params.contactId ?? initialContact?.id ?? '');
   const [address, setAddress] = useState(params.address ?? '');
   const [token, setToken] = useState<PaymentAsset>(params.token === 'XLM' ? 'XLM' : 'USDC');
   const [amount, setAmount] = useState(params.amount ?? '');
   const [contactsOpen, setContactsOpen] = useState(false);
   const [tokensOpen, setTokensOpen] = useState(false);
-  const selected = demoContacts.find((item) => item.id === selectedContactId);
+  const selected = contacts.find((item) => item.id === selectedContactId);
   const ready = Boolean(wallet.publicKey && wallet.account && amount && (selected || address.trim()) && !preparing && !receipt && !wallet.loading);
   const balance = wallet.account ? assetBalance(wallet.account, token)?.balance ?? '0' : '—';
   const tokenColors: Record<string, string> = { USDC: '#2775CA', XLM: colors.navy, EURC: '#6857E5', AQUA: '#00A6A6' };
@@ -48,7 +51,7 @@ export default function SendScreen() {
     if (lock.current || !wallet.publicKey) return;
     lock.current = true; setPreparing(true); setError('');
     try {
-      const destination = selected?.name === 'Ouali' ? wallet.oualiAddress : selected?.address ?? address.trim();
+      const destination = selected ? saved.persistent ? await contactDestination(selected) : selected.name === 'Ouali' ? wallet.oualiAddress : selected.address ?? '' : address.trim();
       if (selected && !destination) throw new Error('Este contacto todavía no tiene una dirección vinculada. Configura Ouali en tu Wallet de Testnet o pega una dirección.');
       const next = await preparePayment({ source: wallet.publicKey, destination, amount, asset: token });
       setReview(next);
@@ -122,7 +125,8 @@ export default function SendScreen() {
         <Pressable onPress={() => setContactsOpen(false)} style={styles.backdrop} />
         <View style={styles.sheet}>
           <View style={styles.sheetHandle} /><Text style={styles.sheetTitle}>Elegir contacto</Text>
-          {demoContacts.map((contact) => (
+          {!contacts.length ? <Pressable onPress={() => { setContactsOpen(false); router.push('/contacts'); }}><Text style={styles.help}>Agrega tu primer contacto →</Text></Pressable> : null}
+          {contacts.map((contact) => (
             <Pressable key={contact.id} onPress={() => pickContact(contact.id)} style={styles.contactRow}>
               <View style={[styles.avatar, { backgroundColor: contact.color }]}><Text style={styles.avatarText}>{contact.initials}</Text></View>
               <View style={styles.contactCopy}><Text style={styles.contactName}>{contact.name}</Text><Text style={styles.handle}>{contact.handle}</Text></View>

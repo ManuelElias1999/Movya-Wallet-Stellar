@@ -2,17 +2,20 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
 import { PressableScale } from '@/components/PressableScale';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
-import { assetBalance, enableUSDC, fundTestnetAccount, SubmissionUnknownError } from '@/services/stellar/payments';
+import { assetBalance, SubmissionUnknownError } from '@/services/stellar/payments';
+import { useAuth } from '@/context/AuthContext';
+import { TestnetFundingButtons } from '@/components/TestnetFundingButtons';
 import { colors } from '@/theme/tokens';
 
 export default function TestnetWalletScreen() {
   const wallet = useTestnetWallet();
+  const auth = useAuth();
   const router = useRouter();
   const lock = useRef(false);
   const [busy, setBusy] = useState(false);
@@ -38,15 +41,12 @@ export default function TestnetWalletScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>Tu primera transferencia</Text>
           <Text style={styles.copy}>Crea una cuenta de pruebas, actívala con XLM y habilita USDC. Las operaciones se firman en tu dispositivo.</Text>
-          {Platform.OS === 'web' ? <Text style={styles.notice}>En web, la wallet es temporal y se pierde al recargar. En tu iPhone queda guardada de forma segura. Usa únicamente tokens de prueba.</Text> : <Text style={styles.notice}>Esta wallet sirve para pruebas. La recuperación y el acceso con correo se implementarán en una siguiente etapa.</Text>}
+          <Text style={styles.notice}>{auth.user ? 'Tu wallet está vinculada a tu correo. Al ingresar en otro dispositivo, usa tu contraseña para recuperarla.' : 'Tu wallet de pruebas se guarda en este dispositivo. Podrás vincularla a tu correo al crear tu cuenta.'} {Platform.OS === 'web' ? 'En web tendrás que ingresar nuevamente para abrirla después de recargar.' : ''}</Text>
           {!wallet.publicKey ? <PressableScale disabled={disabled || Boolean(wallet.error)} onPress={() => void run(wallet.create, 'Cuenta creada. Ahora solicita XLM de prueba.')} style={styles.button}><Text style={styles.buttonText}>1. Crear wallet de Testnet</Text></PressableScale> : <>
             <Text selectable style={styles.address}>{wallet.publicKey}</Text>
             <PressableScale disabled={disabled} onPress={() => void run(() => Clipboard.setStringAsync(wallet.publicKey!), 'Dirección copiada.')} style={styles.secondary}><Text style={styles.secondaryText}>Copiar mi dirección</Text></PressableScale>
             <View style={styles.balances}><Text style={styles.copy}>XLM: {wallet.account ? assetBalance(wallet.account, 'XLM')?.balance ?? '0' : '—'}</Text><Text style={styles.copy}>USDC: {usdc?.balance ?? 'Sin habilitar'}</Text></View>
-            <PressableScale disabled={disabled || Boolean(wallet.account)} onPress={() => void run(() => fundTestnetAccount(wallet.publicKey!), 'XLM de prueba solicitados.')} style={[styles.button, wallet.account && styles.disabled]}><Text style={styles.buttonText}>2. Solicitar XLM de prueba</Text></PressableScale>
-            <PressableScale disabled={disabled || !wallet.account || Boolean(usdc)} onPress={() => void run(() => enableUSDC(wallet.publicKey!, wallet.sign), 'USDC habilitado. Ya puedes recibirlo.')} style={[styles.button, (!wallet.account || usdc) && styles.disabled]}><Text style={styles.buttonText}>{usdc ? 'USDC habilitado' : '3. Habilitar USDC'}</Text></PressableScale>
-            <PressableScale disabled={disabled || !usdc} onPress={() => void run(async () => { await Clipboard.setStringAsync(wallet.publicKey!); await Linking.openURL('https://faucet.circle.com/'); }, 'Selecciona USDC y Stellar Testnet; pega tu dirección. Después vuelve y actualiza.')} style={[styles.secondary, !usdc && styles.disabled]}><Text style={styles.secondaryText}>4. Obtener USDC de prueba</Text></PressableScale>
-            <Text style={styles.copy}>En Circle, selecciona Stellar Testnet y pega tu dirección. Ambos participantes necesitan habilitar el mismo USDC antes de recibirlo.</Text>
+            <TestnetFundingButtons />
             <PressableScale disabled={disabled} onPress={() => void run(wallet.refresh, 'Balance actualizado.')} style={styles.secondary}><Text style={styles.secondaryText}>Actualizar balance</Text></PressableScale>
           </>}
           {busy || wallet.loading ? <ActivityIndicator color={colors.brand} style={{ marginTop: 14 }} /> : null}

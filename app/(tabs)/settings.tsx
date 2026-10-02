@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
@@ -9,6 +9,7 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { PressableScale } from '@/components/PressableScale';
 import { ProfilePhoto } from '@/components/ProfilePhoto';
+import { useAuth } from '@/context/AuthContext';
 import { colors, radius } from '@/theme/tokens';
 
 const rows = [
@@ -20,6 +21,9 @@ const rows = [
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const auth = useAuth();
+  const displayName = typeof auth.user?.user_metadata.display_name === 'string' ? auth.user.user_metadata.display_name : 'Usuario';
+  const [busy, setBusy] = useState(false);
   const [notifications, setNotifications] = useState(true);
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -27,8 +31,8 @@ export default function SettingsScreen() {
       <PageHeader subtitle="Preferencias de tu cuenta" title="Ajustes" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profile}>
-          <View style={styles.avatar}><ProfilePhoto size={54} /></View>
-          <View><Text style={styles.name}>Manuel Elias</Text><Text style={styles.email}>Cuenta personal</Text></View>
+          <View style={styles.avatar}>{auth.user ? <Text style={styles.name}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={54} />}</View>
+          <View><Text style={styles.name}>{auth.user ? displayName : 'Manuel Elias'}</Text><Text style={styles.email}>{auth.user?.email ?? 'Wallet de pruebas'}</Text></View>
         </View>
         <Text style={styles.sectionTitle}>Cuenta</Text>
         <PressableScale onPress={() => router.push('/testnet-wallet')} style={[styles.card, styles.row]}>
@@ -53,6 +57,7 @@ export default function SettingsScreen() {
             <Switch onValueChange={setNotifications} trackColor={{ false: '#CED5E0', true: colors.brandIce }} thumbColor={notifications ? colors.brand : '#FFFFFF'} value={notifications} />
           </View>
         </View>
+        {auth.user ? <PressableScale disabled={busy} onPress={() => { setBusy(true); void auth.logout().then(() => router.replace('/')).catch(e => Alert.alert('No se pudo cerrar sesión', e.message)).finally(() => setBusy(false)); }} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>{busy ? 'Cerrando sesión…' : 'Cerrar sesión'}</Text></PressableScale> : <PressableScale onPress={() => router.replace('/')} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>Crear cuenta o ingresar con correo</Text></PressableScale>}
       </ScrollView>
       <BottomNavigation active="account" />
     </SafeAreaView>
