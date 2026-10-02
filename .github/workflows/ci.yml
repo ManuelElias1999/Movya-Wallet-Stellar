@@ -22,3 +22,23 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npx expo export --platform ios --platform web
+
+  native-vectors:
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Compile and verify CommonCrypto backup compatibility
+        run: |
+          swiftc modules/movya-password-key/ios/MovyaPasswordKey.swift tests/native-password-key/main.swift -o /tmp/movya-key-test
+          /tmp/movya-key-test
+      - name: Install Kotlin compiler if needed
+        run: command -v kotlinc || brew install kotlin
+      - name: Compile and verify JCA backup compatibility
+        run: |
+          kotlinc modules/movya-password-key/android/src/main/java/expo/modules/movyapasswordkey/MovyaPasswordKey.kt tests/native-password-key/NativePasswordKeyTest.kt -include-runtime -d /tmp/movya-key-test.jar
+          java -jar /tmp/movya-key-test.jar

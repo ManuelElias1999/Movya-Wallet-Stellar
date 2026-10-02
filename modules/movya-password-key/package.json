@@ -1,0 +1,8 @@
+{
+  "name": "movya-password-key",
+  "version": "1.0.0",
+  "description": "Native PBKDF2-SHA256 for Movya wallet backups",
+  "license": "MIT",
+  "author": "Movya",
+  "homepage": "https://github.com/ManuelElias1999/Movya-Wallet-Stellar"
+}
