@@ -20,7 +20,6 @@ export default function WelcomeScreen() {
   const lock = useRef(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  const [linkExisting, setLinkExisting] = useState(false);
   const [pendingEmail, setPendingEmail] = useState('');
   const [code, setCode] = useState('');
   const unlocking = Boolean(auth.user && !auth.ready);
@@ -33,16 +32,16 @@ export default function WelcomeScreen() {
     if (!canContinue || lock.current) return;
     lock.current = true; setBusy(true); setMessage('');
     try {
-      if (unlocking) await auth.unlock(password, linkExisting);
-      else if (pendingEmail) await auth.verifyEmail(pendingEmail, code, password, linkExisting);
+      if (unlocking) await auth.unlock(password);
+      else if (pendingEmail) await auth.verifyEmail(pendingEmail, code, password);
       else if (authMode === 'register') {
-        const ready = await auth.register(identity, password, name, linkExisting);
+        const ready = await auth.register(identity, password, name);
         if (!ready) {
           setPendingEmail(identity.trim().toLowerCase()); setAuthMode('login');
           setMessage('Te enviamos un código. Escríbelo aquí para confirmar tu correo y crear tu wallet. Si tu correo incluye un enlace, también puedes abrirlo y luego ingresar.');
           return;
         }
-      } else await auth.login(identity, password, linkExisting);
+      } else await auth.login(identity, password);
       // Protected routes open the backup step for a new account, or the
       // dashboard for a returning account whose backup was acknowledged.
       setPassword('');
@@ -110,10 +109,6 @@ export default function WelcomeScreen() {
               </View>
 
               <Text style={styles.terms}>Tu contraseña también permite recuperar tu wallet. Consérvala en un lugar seguro. {!unlocking && authMode === 'register' ? 'Usa al menos 12 caracteres.' : ''}</Text>
-              {auth.hasLegacyWallet ? <PressableScale disabled={busy} onPress={() => setLinkExisting(v => !v)} style={styles.demoButton}>
-                <Ionicons name={linkExisting ? 'checkbox' : 'square-outline'} size={20} color={colors.brand} />
-                <Text style={[styles.demoText, { flex: 1 }]}>Vincular mi wallet de pruebas anterior, si aún no tengo una asociada</Text>
-              </PressableScale> : null}
               {!auth.configured ? <Text style={styles.terms}>El acceso por correo se activará pronto. Puedes continuar probando tu wallet actual.</Text> : null}
               {message || auth.error ? <Text accessibilityLiveRegion="polite" style={[styles.description, { marginTop: 12 }]}>{message || auth.error}</Text> : null}
 

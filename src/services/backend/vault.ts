@@ -1,11 +1,10 @@
 import { gcm } from '@noble/ciphers/aes.js';
-import { pbkdf2Async } from '@noble/hashes/pbkdf2.js';
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex, hexToBytes, randomBytes } from '@noble/hashes/utils.js';
 import { Buffer } from 'buffer';
 import { validateRecoveryMaterial, type RecoveryMaterial } from '../stellar/recovery';
+import { deriveBackupKey } from './passwordKey';
 
-const ITERATIONS = 600_000;
 export type WalletBackup = { version: 1 | 2; salt: string; nonce: string; ciphertext: string };
 const bytes = (text: string) => Uint8Array.from(Buffer.from(text, 'utf8'));
 const aad = (version: number, userId: string, publicKey: string) => bytes(`movya:testnet:v${version}:${userId}:${publicKey}`);
@@ -14,7 +13,7 @@ async function encrypt(material: RecoveryMaterial, version: 1 | 2, password: str
   if (password.length < 12) throw new Error('Usa una contraseña de al menos 12 caracteres.');
   const publicKey = validateRecoveryMaterial(material);
   const salt = randomBytes(16); const nonce = randomBytes(12); const passwordBytes = bytes(password);
-  const key = await pbkdf2Async(sha256, passwordBytes, salt, { c: ITERATIONS, dkLen: 32 });
+  const key = await deriveBackupKey(passwordBytes, salt);
   // Build an explicit payload: do not serialize arbitrary local wallet fields.
   const plaintext = bytes(version === 1 ? material.secret : JSON.stringify({ secret: material.secret, ...(material.mnemonic ? { mnemonic: material.mnemonic } : {}) }));
   try { return { version, salt: bytesToHex(salt), nonce: bytesToHex(nonce), ciphertext: bytesToHex(gcm(key, nonce, aad(version, userId, publicKey)).encrypt(plaintext)) }; }
@@ -26,12 +25,16 @@ export function encryptWallet(secret: string, password: string, userId: string) 
 export function encryptRecovery(material: RecoveryMaterial, password: string, userId: string) {
   return encrypt(material, 2, password, userId);
 }
-export async function decryptRecovery(backup: WalletBackup, password: string, userId: string, publicKey: string): Promise<RecoveryMaterial> {
+export function fingerprintBackup(backup: WalletBackup, userId: string, publicKey: string): string {
   if ((backup?.version !== 1 && backup?.version !== 2) || !/^[a-f0-9]{32}$/.test(backup.salt) || !/^[a-f0-9]{24}$/.test(backup.nonce)
     || !/^[a-f0-9]+$/.test(backup.ciphertext) || backup.ciphertext.length % 2 || backup.ciphertext.length < 144 || backup.ciphertext.length > 2048
     || (backup.version === 1 && backup.ciphertext.length !== 144)) throw new Error('El respaldo de esta wallet no es válido.');
+  return bytesToHex(sha256(bytes(JSON.stringify([userId, publicKey, backup.version, backup.salt, backup.nonce, backup.ciphertext]))));
+}
+export async function decryptRecovery(backup: WalletBackup, password: string, userId: string, publicKey: string): Promise<RecoveryMaterial> {
+  fingerprintBackup(backup, userId, publicKey);
   const passwordBytes = bytes(password);
-  const key = await pbkdf2Async(sha256, passwordBytes, hexToBytes(backup.salt), { c: ITERATIONS, dkLen: 32 });
+  const key = await deriveBackupKey(passwordBytes, hexToBytes(backup.salt));
   let plaintext: Uint8Array | undefined;
   try {
     plaintext = gcm(key, hexToBytes(backup.nonce), aad(backup.version, userId, publicKey)).decrypt(hexToBytes(backup.ciphertext));
