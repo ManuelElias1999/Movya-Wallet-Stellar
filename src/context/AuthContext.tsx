@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setReady(false); setSession(next); setError('');
     const stages: Record<RecoveryProgress, string> = {
       reading: 'Buscando el respaldo de tu wallet…', creating: 'Preparando tu wallet…',
-      encrypting: 'Protegiendo tu respaldo. Esto puede tardar un momento…', registering: 'Guardando tu respaldo cifrado…',
+      encrypting: 'Cifrando tu respaldo por primera vez. En este dispositivo puede tardar; no cierres la app…', registering: 'Guardando tu respaldo cifrado…',
       decrypting: 'Abriendo tu respaldo. Esto puede tardar un momento…', local: 'Abriendo la wallet guardada en tu teléfono…', saving: 'Guardando tu wallet en este dispositivo…',
     };
     const local = await unlockUserWallet(next.user.id, password, { signal, onProgress: stage => setAccessStage(stages[stage]) });

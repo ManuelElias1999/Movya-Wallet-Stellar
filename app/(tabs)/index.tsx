@@ -11,8 +11,6 @@ import { ActivityRow } from '@/components/ActivityRow';
 import { AssetDetail, AssetDetailSheet } from '@/components/AssetDetailSheet';
 import { AnimatedAccountCard } from '@/components/AnimatedAccountCard';
 import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackground';
-import { BottomNavigation } from '@/components/BottomNavigation';
-import { MovyaChatSheet } from '@/components/MovyaChatSheet';
 import { PoweredByStellarFooter } from '@/components/PoweredByStellarFooter';
 import { PressableScale } from '@/components/PressableScale';
 import { ProfilePhoto } from '@/components/ProfilePhoto';
@@ -38,7 +36,6 @@ export default function HomeScreen() {
   const displayName = getDisplayName(auth.user?.user_metadata);
   const insets = useSafeAreaInsets();
   const [amountsVisible, setAmountsVisible] = useState(true);
-  const [chatOpen, setChatOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<AssetDetail | null>(null);
   const account = useStellarAccount();
   const assets = account.data?.balances.map((item) => ({
@@ -77,7 +74,7 @@ export default function HomeScreen() {
       </BlurView>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AnimatedAccountCard amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : formatXlmBalance(account.data?.balances)} balanceLabel={account.isDemo ? 'Saldo total en USD' : 'Saldo en Stellar'} />
+        <AnimatedAccountCard ownerName={displayName} currency={account.isDemo ? 'USD' : 'XLM'} amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : formatXlmBalance(account.data?.balances)} balanceLabel={account.isDemo ? 'Saldo total en USD' : 'Saldo en Stellar'} />
 
         <View style={styles.actionsRow}>
           {quickActions.map((action) => (
@@ -119,9 +116,6 @@ export default function HomeScreen() {
         {account.error ? <Text style={styles.syncError}>No pudimos sincronizar Testnet: {account.error}</Text> : null}
         <PoweredByStellarFooter />
       </ScrollView>
-
-      <BottomNavigation active="home" onMovyaPress={() => setChatOpen(true)} />
-      <MovyaChatSheet onClose={() => setChatOpen(false)} open={chatOpen} />
       <AssetDetailSheet asset={selectedAsset} onClose={() => setSelectedAsset(null)} />
     </SafeAreaView>
   );

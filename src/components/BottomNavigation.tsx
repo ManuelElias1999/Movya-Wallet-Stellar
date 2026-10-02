@@ -9,7 +9,7 @@ import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
 import { PressableScale } from '@/components/PressableScale';
 import { colors } from '@/theme/tokens';
 
-import { tabDirection, type NavigationTab } from '@/services/presentation';
+import { type NavigationTab } from '@/services/presentation';
 type BottomNavigationProps = { active: NavigationTab; onMovyaPress?: () => void };
 
 export function BottomNavigation({ active, onMovyaPress }: BottomNavigationProps) {
@@ -20,7 +20,7 @@ export function BottomNavigation({ active, onMovyaPress }: BottomNavigationProps
   const navigate = (target: NavigationTab) => {
     if (target === active) return;
     const routes = { home: '/(tabs)', activity: '/activity', contacts: '/contacts', account: '/settings' } as const;
-    router.replace({ pathname: routes[target], params: { tabDirection: tabDirection(active, target) } });
+    router.replace(routes[target]);
   };
   const openMovya = () => {
     if (onMovyaPress) onMovyaPress();

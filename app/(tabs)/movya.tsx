@@ -11,7 +11,7 @@ export default function MovyaScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <MovyaChatSheet initialPrompt={prompt} onClose={() => router.back()} open />
+      <MovyaChatSheet initialPrompt={prompt} onClose={() => { if (router.canGoBack()) router.back(); else router.replace('/(tabs)'); }} open />
     </SafeAreaView>
   );
 }

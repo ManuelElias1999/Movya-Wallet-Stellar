@@ -1,7 +1,8 @@
 export const tabOrder = ['home', 'activity', 'contacts', 'account'] as const;
 export type NavigationTab = typeof tabOrder[number];
-export function tabDirection(from: NavigationTab, to: NavigationTab) {
-  return tabOrder.indexOf(to) < tabOrder.indexOf(from) ? 'backward' : 'forward';
+export function tabForPath(path: string): NavigationTab | undefined {
+  const pathname = path.split('?')[0].replace(/\/$/, '') || '/';
+  return ({ '/': 'home', '/(tabs)': 'home', '/activity': 'activity', '/contacts': 'contacts', '/settings': 'account' } as Record<string, NavigationTab>)[pathname];
 }
 export function displayName(metadata?: Record<string, unknown>) {
   const value = metadata?.display_name;

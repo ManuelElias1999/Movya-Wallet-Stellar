@@ -9,7 +9,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackground';
 import { PressableScale } from '@/components/PressableScale';
 import { useAuth } from '@/context/AuthContext';
-import { KeyboardDismissButton } from '@/components/KeyboardDismissButton';
 import { colors } from '@/theme/tokens';
 
 type AuthMode = 'login' | 'register';
@@ -53,7 +52,6 @@ export default function WelcomeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <AnimatedDashboardBackground />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <KeyboardDismissButton />
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
           <View style={styles.page}>
             <View style={styles.brandArea}>
@@ -83,7 +81,7 @@ export default function WelcomeScreen() {
               {authMode === 'register' ? (
                 <View style={styles.field}>
                   <Ionicons color={colors.brand} name="person-outline" size={19} />
-                  <TextInput editable={!busy} autoCapitalize="words" onChangeText={setName} placeholder="Tu nombre" placeholderTextColor="#71809B" style={styles.input} value={name} />
+                  <TextInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} editable={!busy} autoCapitalize="words" onChangeText={setName} placeholder="Tu nombre" placeholderTextColor="#71809B" style={styles.input} value={name} />
                 </View>
               ) : null}
 
@@ -91,6 +89,9 @@ export default function WelcomeScreen() {
               <View style={styles.field}>
                 <Ionicons color={colors.brand} name="mail-outline" size={19} />
                 <TextInput
+                  returnKeyType="done"
+                  submitBehavior="blurAndSubmit"
+                  onSubmitEditing={Keyboard.dismiss}
                   editable={!busy}
                   autoCapitalize="none"
                   keyboardType="email-address"
@@ -106,7 +107,7 @@ export default function WelcomeScreen() {
               {pendingEmail ? <View style={styles.field}><Ionicons color={colors.brand} name="key-outline" size={19} /><TextInput editable={!busy} value={code} onChangeText={setCode} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} placeholder="Código del correo" placeholderTextColor="#71809B" style={styles.input} /></View> : null}
               <View style={styles.field}>
                 <Ionicons color={colors.brand} name="lock-closed-outline" size={19} />
-                <TextInput editable={!busy} autoCapitalize="none" autoCorrect={false} onChangeText={setPassword} placeholder="Contraseña" placeholderTextColor="#71809B" secureTextEntry style={styles.input} value={password} />
+                <TextInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} editable={!busy} autoCapitalize="none" autoCorrect={false} onChangeText={setPassword} placeholder="Contraseña" placeholderTextColor="#71809B" secureTextEntry style={styles.input} value={password} />
                 <Ionicons color={colors.muted} name="eye-outline" size={19} />
               </View>
 

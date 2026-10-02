@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Linking, Modal, Platform, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
@@ -16,7 +16,6 @@ import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance, preparePayment, type PaymentAsset, type PaymentReceipt, type PaymentReview } from '@/services/stellar/payments';
 import { useContacts } from '@/context/ContactsContext';
 import { contactDestination } from '@/services/backend/contacts';
-import { KeyboardDismissButton } from '@/components/KeyboardDismissButton';
 import { colors, radius } from '@/theme/tokens';
 
 export default function SendScreen() {
@@ -65,7 +64,6 @@ export default function SendScreen() {
       <InternalScreenBackground />
       <PageHeader subtitle="Revisarás todo antes de confirmar" title="Enviar" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <KeyboardDismissButton />
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
           <View style={styles.networkBadge}><StellarNetworkBadge label="Todos los envíos se realizan en Stellar · Testnet" /></View>
           {!wallet.publicKey || !wallet.account ? <PressableScale onPress={() => router.push('/testnet-wallet')} style={styles.summary}><Text style={styles.summaryTitle}>Configurar mi wallet de pruebas →</Text></PressableScale> : null}
@@ -92,7 +90,7 @@ export default function SendScreen() {
             <View style={styles.recipientRow}>
               <View style={styles.addressBox}>
                 <Ionicons name="wallet-outline" size={19} color={colors.muted} />
-                <TextInput autoCapitalize="characters" onChangeText={setAddress} placeholder="Pegar dirección G..." placeholderTextColor={colors.muted} style={styles.addressInput} value={address} />
+                <TextInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} autoCapitalize="characters" onChangeText={setAddress} placeholder="Pegar dirección G..." placeholderTextColor={colors.muted} style={styles.addressInput} value={address} />
               </View>
               <PressableScale onPress={() => setContactsOpen(true)} pressedScale={0.94} style={styles.contactsButton}><Ionicons name="people" size={21} color={colors.brand} /><Text style={styles.contactsText}>Contactos</Text></PressableScale>
             </View>

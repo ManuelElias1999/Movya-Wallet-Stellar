@@ -5,7 +5,6 @@ import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
-import { BottomNavigation } from '@/components/BottomNavigation';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { PressableScale } from '@/components/PressableScale';
 import { ProfilePhoto } from '@/components/ProfilePhoto';
@@ -29,7 +28,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <InternalScreenBackground />
-      <PageHeader subtitle="Preferencias de tu cuenta" title="Ajustes" />
+      <PageHeader backTo="/(tabs)" subtitle="Preferencias de tu cuenta" title="Ajustes" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profile}>
           <View style={styles.avatar}>{auth.user ? <Text style={styles.name}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={54} />}</View>
@@ -55,7 +54,6 @@ export default function SettingsScreen() {
         </View>
         {auth.user ? <PressableScale disabled={busy} onPress={() => { setBusy(true); void auth.logout().then(() => router.replace('/')).catch(e => Alert.alert('No se pudo cerrar sesión', e.message)).finally(() => setBusy(false)); }} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>{busy ? 'Cerrando sesión…' : 'Cerrar sesión'}</Text></PressableScale> : <PressableScale onPress={() => router.replace('/')} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>Crear cuenta o ingresar con correo</Text></PressableScale>}
       </ScrollView>
-      <BottomNavigation active="account" />
     </SafeAreaView>
   );
 }
