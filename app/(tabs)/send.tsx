@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useMemo, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
@@ -11,27 +11,49 @@ import { PressableScale } from '@/components/PressableScale';
 import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
 import { TokenSelector } from '@/components/TokenSelector';
 import { TokenIcon } from '@/components/TokenIcon';
+import { PaymentReviewSheet } from '@/components/PaymentReviewSheet';
+import { useTestnetWallet } from '@/context/TestnetWalletContext';
+import { assetBalance, preparePayment, type PaymentAsset, type PaymentReceipt, type PaymentReview } from '@/services/stellar/payments';
 import { demoContacts } from '@/data/demo';
 import { colors, radius } from '@/theme/tokens';
 
 export default function SendScreen() {
-  const params = useLocalSearchParams<{ contact?: string }>();
+  const params = useLocalSearchParams<{ contact?: string; address?: string; amount?: string; token?: string }>();
+  const wallet = useTestnetWallet();
+  const router = useRouter();
+  const lock = useRef(false);
+  const [preparing, setPreparing] = useState(false);
+  const [error, setError] = useState('');
+  const [review, setReview] = useState<PaymentReview | null>(null);
+  const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
   const initialContact = useMemo(() => demoContacts.find((item) => item.name === params.contact), [params.contact]);
   const [selectedContactId, setSelectedContactId] = useState(initialContact?.id ?? '');
-  const [address, setAddress] = useState('');
-  const [token, setToken] = useState('USDC');
-  const [amount, setAmount] = useState('');
+  const [address, setAddress] = useState(params.address ?? '');
+  const [token, setToken] = useState<PaymentAsset>(params.token === 'XLM' ? 'XLM' : 'USDC');
+  const [amount, setAmount] = useState(params.amount ?? '');
   const [contactsOpen, setContactsOpen] = useState(false);
   const [tokensOpen, setTokensOpen] = useState(false);
   const selected = demoContacts.find((item) => item.id === selectedContactId);
-  const ready = Boolean(amount && (selected || address.trim()));
-  const balances: Record<string, string> = { USDC: '$1,240.00', XLM: '862.41 XLM', EURC: '92.00 EURC', AQUA: '4,800 AQUA' };
+  const ready = Boolean(wallet.publicKey && wallet.account && amount && (selected || address.trim()) && !preparing && !receipt && !wallet.loading);
+  const balance = wallet.account ? assetBalance(wallet.account, token)?.balance ?? '0' : '—';
   const tokenColors: Record<string, string> = { USDC: '#2775CA', XLM: colors.navy, EURC: '#6857E5', AQUA: '#00A6A6' };
 
   const pickContact = (id: string) => {
     setSelectedContactId(id);
     setAddress('');
     setContactsOpen(false);
+  };
+
+  const reviewPayment = async () => {
+    if (lock.current || !wallet.publicKey) return;
+    lock.current = true; setPreparing(true); setError('');
+    try {
+      const destination = selected?.name === 'Ouali' ? wallet.oualiAddress : selected?.address ?? address.trim();
+      if (selected && !destination) throw new Error('Este contacto todavía no tiene una dirección vinculada. Configura Ouali en tu Wallet de Testnet o pega una dirección.');
+      const next = await preparePayment({ source: wallet.publicKey, destination, amount, asset: token });
+      setReview(next);
+    } catch (failure) { setError(failure instanceof Error ? failure.message : 'No se pudo preparar el envío.'); }
+    finally { lock.current = false; setPreparing(false); }
   };
 
   return (
@@ -41,6 +63,7 @@ export default function SendScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.networkBadge}><StellarNetworkBadge label="Todos los envíos se realizan en Stellar · Testnet" /></View>
+          {!wallet.publicKey || !wallet.account ? <PressableScale onPress={() => router.push('/testnet-wallet')} style={styles.summary}><Text style={styles.summaryTitle}>Configurar mi wallet de pruebas →</Text></PressableScale> : null}
           <Text style={styles.label}>Monto</Text>
           <View style={styles.amountCard}>
             <Text style={styles.currency}>{token === 'USDC' ? '$' : ''}</Text>
@@ -51,7 +74,7 @@ export default function SendScreen() {
               <Ionicons name="chevron-down" size={15} color={colors.brand} />
             </PressableScale>
           </View>
-          <View style={styles.balanceRow}><Text style={styles.balance}>Disponible: {balances[token]}</Text><Pressable onPress={() => setAmount(token === 'USDC' ? '1240.00' : token === 'XLM' ? '862.41' : token === 'EURC' ? '92.00' : '4800')}><Text style={styles.max}>Usar máximo</Text></Pressable></View>
+          <View style={styles.balanceRow}><Text style={styles.balance}>Balance de Testnet: {wallet.loading ? 'Actualizando…' : `${balance} ${token}`}</Text><Pressable onPress={() => void wallet.refresh()}><Text style={styles.max}>Actualizar</Text></Pressable></View>
 
           <Text style={styles.label}>Destinatario</Text>
           {selected ? (
@@ -76,12 +99,14 @@ export default function SendScreen() {
             <View style={styles.summaryCopy}><Text style={styles.summaryTitle}>Envío protegido en Stellar</Text><Text style={styles.summaryText}>Verificarás destinatario, monto, activo y red antes de continuar.</Text></View>
           </View>
 
-          <PressableScale disabled={!ready} onPress={() => Alert.alert('Vista previa', 'En la siguiente fase aparecerá la confirmación antes de firmar la operación.')} style={[styles.primaryButton, !ready && styles.disabled]}><Text style={styles.primaryText}>Revisar envío</Text></PressableScale>
+          {error || wallet.error ? <Text accessibilityLiveRegion="polite" style={{ color: '#B52D42', marginTop: 16, fontSize: 12, lineHeight: 18 }}>{error || wallet.error}</Text> : null}
+          {receipt ? <View style={styles.summary}><View style={styles.summaryCopy}><Text style={styles.summaryTitle}>Transferencia confirmada en Testnet</Text><Text selectable style={styles.summaryText}>{receipt.hash}</Text><PressableScale onPress={() => void Linking.openURL(receipt.explorerUrl)}><Text style={styles.changeContact}>Ver comprobante en Stellar Expert</Text></PressableScale><PressableScale onPress={() => { setReceipt(null); setAmount(''); setError(''); }}><Text style={styles.changeContact}>Hacer otro envío</Text></PressableScale></View></View> : null}
+          <PressableScale disabled={!ready} onPress={() => void reviewPayment()} style={[styles.primaryButton, !ready && styles.disabled]}><Text style={styles.primaryText}>{preparing ? 'Verificando…' : 'Revisar envío'}</Text></PressableScale>
           <View style={styles.contextHelp}>
             <MovyaContextHelp
               actionPrompt={`Quiero enviar ${amount || 'un monto'} de ${token}. Ayúdame a elegir el destinatario y preparar el envío.`}
               explanationSteps={[
-                'Escoge el token que quieres enviar: USDC, XLM, EURC o AQUA.',
+                'Escoge XLM o USDC de Testnet.',
                 'Escribe el monto y revisa que tengas balance suficiente.',
                 'Pega la dirección Stellar del destinatario. Empieza con la letra G; por ejemplo: GABCD…9XYZ.',
                 'También puedes pulsar Contactos y elegir una persona guardada. Antes de enviar verás una confirmación final.',
@@ -111,9 +136,10 @@ export default function SendScreen() {
         <Pressable onPress={() => setTokensOpen(false)} style={styles.backdrop} />
         <View style={styles.sheet}>
           <View style={styles.sheetHandle} /><Text style={styles.sheetTitle}>Elegir activo</Text>
-          <TokenSelector onChange={(value) => { setToken(value); setTokensOpen(false); }} value={token} />
+          <TokenSelector options={['USDC', 'XLM']} onChange={(value) => { setToken(value as PaymentAsset); setTokensOpen(false); }} value={token} />
         </View>
       </Modal>
+      {review ? <PaymentReviewSheet key={review.hash} review={review} onClose={() => setReview(null)} onSuccess={(result) => { setReceipt(result); setReview(null); }} /> : null}
     </SafeAreaView>
   );
 }

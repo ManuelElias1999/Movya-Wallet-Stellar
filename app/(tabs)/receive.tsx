@@ -10,11 +10,14 @@ import { InternalScreenBackground } from '@/components/InternalScreenBackground'
 import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { PressableScale } from '@/components/PressableScale';
 import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
+import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { colors, radius } from '@/theme/tokens';
 
-const demoAddress = 'GAJIBAJ3YTJLXHVROCHO374P3LM4YLQFGT6WLWS2NOWO2PLHH3CWMDDQ';
+const fallbackAddress = 'GAJIBAJ3YTJLXHVROCHO374P3LM4YLQFGT6WLWS2NOWO2PLHH3CWMDDQ';
 
 export default function ReceiveScreen() {
+  const wallet = useTestnetWallet();
+  const demoAddress = wallet.publicKey ?? fallbackAddress;
   const [copied, setCopied] = useState(false);
   const copyAddress = async () => {
     await Clipboard.setStringAsync(demoAddress);
@@ -34,12 +37,12 @@ export default function ReceiveScreen() {
       <InternalScreenBackground />
       <PageHeader subtitle="Tu cuenta personal" title="Recibir dinero" />
       <ScrollView contentContainerStyle={styles.content}>
-        <StellarNetworkBadge label="Recibe únicamente por la red Stellar" />
+        <StellarNetworkBadge label="Stellar Testnet · recibe únicamente tokens de prueba" />
         <Text style={styles.title}>Tu código para recibir</Text>
         <Text style={styles.subtitle}>La otra persona puede escanearlo o copiar tu dirección.</Text>
         <View style={styles.qrCard}>
           <View style={styles.qrWrap}><QRCode backgroundColor="#FFFFFF" color={colors.navy} size={216} value={demoAddress} /></View>
-          <View style={styles.badge}><View style={styles.dot} /><Text style={styles.badgeText}>Cuenta disponible</Text></View>
+          <View style={styles.badge}><View style={styles.dot} /><Text style={styles.badgeText}>{wallet.publicKey ? wallet.account ? 'Cuenta de Testnet activa' : 'Activa tu cuenta con XLM de prueba' : 'Dirección de demostración'}</Text></View>
         </View>
         <View style={styles.addressCard}>
           <Text style={styles.addressLabel}>Tu dirección</Text>
@@ -57,7 +60,7 @@ export default function ReceiveScreen() {
         </View>
         <View style={styles.info}>
           <Ionicons name="information-circle-outline" size={21} color={colors.brand} />
-          <Text style={styles.infoText}>Este QR corresponde a una dirección de Stellar de demostración. Cuando conectemos tu cuenta real, se generará automáticamente con tu dirección.</Text>
+          <Text style={styles.infoText}>{wallet.publicKey ? 'Este QR corresponde a tu wallet de Testnet. Habilita USDC desde Ajustes → Wallet de Testnet antes de recibirlo.' : 'Este QR es de demostración. Crea tu wallet en Ajustes → Wallet de Testnet para recibir tokens de prueba.'}</Text>
         </View>
         <View style={styles.helper}>
           <MovyaContextHelp

@@ -7,9 +7,12 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { PageHeader } from '@/components/PageHeader';
 import { demoActivity } from '@/data/demo';
+import { TestnetPaymentHistory } from '@/components/TestnetPaymentHistory';
+import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { colors, radius } from '@/theme/tokens';
 
 export default function ActivityScreen() {
+  const wallet = useTestnetWallet();
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <InternalScreenBackground />
@@ -22,9 +25,9 @@ export default function ActivityScreen() {
             <Text style={styles.statusText}>Tus movimientos aparecerán aquí automáticamente.</Text>
           </View>
         </View>
-        <Text style={styles.month}>Septiembre</Text>
+        <Text style={styles.month}>{wallet.publicKey ? 'Stellar Testnet' : 'Septiembre · Demo'}</Text>
         <View style={styles.card}>
-          {demoActivity.map((item) => <ActivityRow key={item.id} {...item} />)}
+          {wallet.publicKey ? <TestnetPaymentHistory /> : demoActivity.map((item) => <ActivityRow key={item.id} {...item} />)}
         </View>
       </ScrollView>
       <BottomNavigation active="activity" />

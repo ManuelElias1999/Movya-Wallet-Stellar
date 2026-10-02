@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { env } from '@/config/env';
+import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { getAccountSnapshot } from '@/services/stellar/horizon';
 import type { StellarAccountSnapshot } from '@/services/stellar/types';
 
@@ -11,6 +12,7 @@ type AccountState = {
 };
 
 export function useStellarAccount() {
+  const wallet = useTestnetWallet();
   const [state, setState] = useState<AccountState>({
     data: null,
     loading: Boolean(env.demoAccount),
@@ -37,5 +39,9 @@ export function useStellarAccount() {
     void refresh();
   }, [refresh]);
 
+  if (wallet.publicKey) return {
+    data: wallet.account ? { publicKey: wallet.publicKey, sequence: wallet.account.sequence, balances: wallet.account.balances.map((balance) => ({ assetCode: balance.asset_type === 'native' ? 'XLM' : balance.asset_code ?? 'ASSET', assetIssuer: balance.asset_issuer, balance: balance.balance })) } : null,
+    loading: wallet.loading, error: wallet.error, refresh: wallet.refresh, isDemo: false,
+  };
   return { ...state, refresh, isDemo: !env.demoAccount };
 }

@@ -18,6 +18,7 @@ import { PressableScale } from '@/components/PressableScale';
 import { ProfilePhoto } from '@/components/ProfilePhoto';
 import { TokenIcon } from '@/components/TokenIcon';
 import { demoActivity, demoAssets } from '@/data/demo';
+import { TestnetPaymentHistory } from '@/components/TestnetPaymentHistory';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { colors } from '@/theme/tokens';
 
@@ -41,7 +42,7 @@ export default function HomeScreen() {
     amount: Number(item.balance).toLocaleString(undefined, { maximumFractionDigits: 4 }),
     value: 'Cuenta Testnet',
     color: item.assetCode === 'XLM' ? colors.navy : colors.brand,
-  })) ?? demoAssets;
+  })) ?? (account.isDemo ? demoAssets : []);
   const privateValue = (value: string) => amountsVisible ? value : '••••••';
 
   return (
@@ -71,7 +72,7 @@ export default function HomeScreen() {
       </BlurView>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AnimatedAccountCard amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount="$1,629.24" />
+        <AnimatedAccountCard amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : 'Stellar Testnet'} balanceLabel={account.isDemo ? 'Saldo total en USD' : 'Cuenta de pruebas · sin valor real'} />
 
         <View style={styles.actionsRow}>
           {quickActions.map((action) => (
@@ -105,7 +106,7 @@ export default function HomeScreen() {
           <Pressable onPress={() => router.push('/activity')}><Text style={styles.sectionAction}>Ver todo</Text></Pressable>
         </View>
         <View style={styles.activityCard}>
-          {demoActivity.map((item) => <ActivityRow hidden={!amountsVisible} key={item.id} {...item} />)}
+          {account.isDemo ? demoActivity.map((item) => <ActivityRow hidden={!amountsVisible} key={item.id} {...item} />) : <TestnetPaymentHistory hidden={!amountsVisible} />}
         </View>
 
         {account.error ? <Text style={styles.syncError}>No pudimos sincronizar Testnet: {account.error}</Text> : null}

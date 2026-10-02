@@ -9,10 +9,13 @@ import { PageHeader } from '@/components/PageHeader';
 import { PressableScale } from '@/components/PressableScale';
 import { TokenIcon } from '@/components/TokenIcon';
 import { demoAssets } from '@/data/demo';
+import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { colors } from '@/theme/tokens';
 
 export default function PortfolioScreen() {
   const [selectedAsset, setSelectedAsset] = useState<AssetDetail | null>(null);
+  const account = useStellarAccount();
+  const assets = account.isDemo ? demoAssets : account.data?.balances.map((balance) => ({ code: balance.assetCode, name: balance.assetCode, amount: balance.balance, value: 'Testnet · sin valor real', color: colors.brand })) ?? [];
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -21,16 +24,16 @@ export default function PortfolioScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.summary}>
           <View>
-            <Text style={styles.summaryLabel}>Valor total estimado</Text>
-            <Text style={styles.summaryValue}>$1,629.24</Text>
+            <Text style={styles.summaryLabel}>{account.isDemo ? 'Valor total estimado' : 'Cuenta de pruebas'}</Text>
+            <Text style={styles.summaryValue}>{account.isDemo ? '$1,629.24' : 'Stellar Testnet'}</Text>
           </View>
-          <View style={styles.assetCount}><Text style={styles.assetCountText}>{demoAssets.length} activos</Text></View>
+          <View style={styles.assetCount}><Text style={styles.assetCountText}>{assets.length} activos</Text></View>
         </View>
 
         <Text style={styles.sectionTitle}>Tus tokens</Text>
         <View style={styles.list}>
-          {demoAssets.map((asset, index) => (
-            <PressableScale key={asset.code} onPress={() => setSelectedAsset(asset)} style={[styles.assetRow, index > 0 && styles.divider]}>
+          {assets.map((asset, index) => (
+            <PressableScale key={`${asset.code}-${index}`} onPress={() => setSelectedAsset(asset)} style={[styles.assetRow, index > 0 && styles.divider]}>
               <TokenIcon code={asset.code} color={asset.color} size={44} />
               <View style={styles.assetCopy}>
                 <Text style={styles.assetName}>{asset.name}</Text>
@@ -44,6 +47,7 @@ export default function PortfolioScreen() {
             </PressableScale>
           ))}
         </View>
+        {account.loading || account.error ? <Text style={styles.hint}>{account.loading ? 'Actualizando balances…' : account.error}</Text> : null}
         <Text style={styles.hint}>Toca cualquier token para ver su precio, balance e información.</Text>
       </ScrollView>
       <AssetDetailSheet asset={selectedAsset} onClose={() => setSelectedAsset(null)} />

@@ -11,9 +11,10 @@ type AnimatedAccountCardProps = {
   amountsVisible: boolean;
   onToggleAmounts: () => void;
   totalAmount?: string;
+  balanceLabel?: string;
 };
 
-export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmount = '$1,629.24' }: AnimatedAccountCardProps) {
+export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmount = '$1,629.24', balanceLabel = 'Saldo total en USD' }: AnimatedAccountCardProps) {
   const movement = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
 
@@ -74,7 +75,7 @@ export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmou
         <View style={styles.statusPill}><View style={styles.statusDot} /><Text style={styles.statusText}>Activa</Text></View>
       </View>
       <View>
-        <Text style={styles.availableLabel}>Saldo total en USD</Text>
+        <Text style={styles.availableLabel}>{balanceLabel}</Text>
         <View style={styles.amountRow}>
           <Text style={styles.amount}>{amountsVisible ? totalAmount : '••••••'}</Text>
           <PressableScale

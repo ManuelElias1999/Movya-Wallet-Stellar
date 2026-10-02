@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +19,7 @@ const rows = [
 ];
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState(true);
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -29,6 +31,11 @@ export default function SettingsScreen() {
           <View><Text style={styles.name}>Manuel Elias</Text><Text style={styles.email}>Cuenta personal</Text></View>
         </View>
         <Text style={styles.sectionTitle}>Cuenta</Text>
+        <PressableScale onPress={() => router.push('/testnet-wallet')} style={[styles.card, styles.row]}>
+          <View style={[styles.rowIcon, { backgroundColor: colors.brandSoft }]}><Ionicons name="wallet-outline" size={20} color={colors.brand} /></View>
+          <View style={styles.rowCopy}><Text style={styles.rowTitle}>Wallet de Testnet</Text><Text style={styles.rowSubtitle}>Activa tu cuenta y prueba envíos reales</Text></View>
+          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
+        </PressableScale>
         <View style={styles.card}>
           {rows.map((row, index) => (
             <PressableScale key={row.title} style={[styles.row, index > 0 && styles.divider]}>

@@ -3,11 +3,14 @@ import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
+import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Easing, Image, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme/tokens';
+import { useTestnetWallet } from '@/context/TestnetWalletContext';
+import { assetBalance } from '@/services/stellar/payments';
 
 type TextMessage = { id: number; role: 'movya' | 'user'; kind: 'text'; text: string };
 type VoiceMessage = { id: number; role: 'user'; kind: 'voice'; duration: number };
@@ -23,6 +26,8 @@ const waveBars = [11, 18, 25, 15, 29, 21, 13, 24, 18, 28, 16, 23, 12, 19];
 const formatDuration = (seconds: number) => `0:${String(seconds).padStart(2, '0')}`;
 
 export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetProps) {
+  const wallet = useTestnetWallet();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(screenHeight)).current;
   const scrollRef = useRef<ScrollView | null>(null);
@@ -55,7 +60,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
 
   const createMovyaReply = (message: string, id: number): TextMessage => {
     const normalized = message.toLowerCase();
-    if (normalized.includes('balance') || normalized.includes('cuánto dinero')) return { id, role: 'movya', kind: 'text', text: 'Tu balance total de demostración es $1,629.24. Puedo mostrarte el detalle de cada activo si quieres.' };
+    if (normalized.includes('balance') || normalized.includes('cuánto dinero')) return { id, role: 'movya', kind: 'text', text: wallet.publicKey ? wallet.account ? `En Testnet tienes ${assetBalance(wallet.account, 'USDC')?.balance ?? '0'} USDC y ${assetBalance(wallet.account, 'XLM')?.balance ?? '0'} XLM. Son tokens de prueba.` : 'Activa tu cuenta y actualiza el balance desde Ajustes → Wallet de Testnet.' : 'Tu balance total de demostración es $1,629.24. Puedo mostrarte el detalle de cada activo si quieres.' };
     if (normalized.includes('cambia') || normalized.includes('cambio')) return { id, role: 'movya', kind: 'text', text: 'Claro. Dime qué activo quieres entregar, cuál quieres recibir y el monto. Después te mostraré la cotización antes de confirmar.' };
     if (normalized.includes('contacto')) return { id, role: 'movya', kind: 'text', text: 'Puedo ayudarte. Dime el nombre y luego comparte su correo de Movya o su dirección Stellar pública.' };
     if (normalized.includes('recibir') || normalized.includes('compartir')) return { id, role: 'movya', kind: 'text', text: 'Puedes recibir por Stellar usando tu QR o tu dirección pública. Puedo ayudarte a copiarla o compartirla.' };
@@ -69,6 +74,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   };
 
   const finishTransaction = (transaction: TransactionDetails, baseId: number) => {
+    if (wallet.publicKey) { openRealPayment(transaction); return; }
     setMessages((current) => [...current, { id: baseId, role: 'movya', kind: 'text', text: 'Preparando la transacción en Stellar Testnet…' }]);
     setTimeout(() => {
       setMessages((current) => [
@@ -78,6 +84,12 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       ]);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }, 900);
+  };
+
+  const openRealPayment = (transaction: TransactionDetails) => {
+    const destination = transaction.recipient.toLowerCase() === 'ouali' ? wallet.oualiAddress : transaction.recipient;
+    onClose();
+    router.push({ pathname: '/send', params: { amount: transaction.amount, token: transaction.token, ...(transaction.recipient.toLowerCase() === 'ouali' ? { contact: 'Ouali' } : { address: destination }) } });
   };
 
   const sendDirect = (message: string) => {
@@ -105,6 +117,12 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
 
     const transaction = parseSendRequest(clean);
     if (transaction) {
+      if (wallet.publicKey) {
+        if (!['USDC', 'XLM'].includes(transaction.token)) {
+          setMessages((current) => [...current, { id, role: 'movya', kind: 'text', text: 'Por ahora las transferencias de Testnet admiten USDC y XLM.' }]);
+        } else { openRealPayment(transaction); }
+        setText(''); return;
+      }
       setPendingTransaction(transaction);
       setMessages((current) => [...current, { id, role: 'user', kind: 'text', text: clean }, { id: id + 1, role: 'movya', kind: 'confirmation', transaction }]);
     } else {

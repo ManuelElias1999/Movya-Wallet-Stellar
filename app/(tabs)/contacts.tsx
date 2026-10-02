@@ -155,7 +155,7 @@ export default function ContactsScreen() {
               <View style={[styles.largeAvatar, { backgroundColor: selected.color }]}><Text style={styles.largeInitials}>{selected.initials}</Text></View>
               <Text style={styles.sheetTitle}>{selected.name}</Text>
               <Text style={styles.sheetHandle}>{selected.handle}</Text>
-              <PressableScale onPress={() => { const name = selected.name; setSelected(null); router.push({ pathname: '/send', params: { contact: name } }); }} style={styles.sendButton}>
+              <PressableScale onPress={() => { const name = selected.name; const address = selected.address ?? ''; setSelected(null); router.push({ pathname: '/send', params: { contact: name, address } }); }} style={styles.sendButton}>
                 <Ionicons name="paper-plane-outline" size={19} color="#FFFFFF" /><Text style={styles.sendText}>Enviar dinero</Text>
               </PressableScale>
               <View style={styles.secondaryActions}>
