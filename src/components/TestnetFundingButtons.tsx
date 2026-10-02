@@ -43,7 +43,6 @@ export function TestnetFundingButtons() {
     <View style={styles.row}>{(['XLM', 'USDC'] as const).map(asset => <PressableScale key={asset} accessibilityLabel={`Pedir fondos de prueba en ${asset}`} disabled={Boolean(busy) || !wallet.initialized} onPress={() => void request(asset)} style={[styles.button, busy && styles.disabled]}>
       <Ionicons name="download-outline" size={18} color={colors.brand} /><Text style={styles.label}>{busy === asset ? 'Solicitando…' : `Pedir fondos en ${asset}`}</Text>
     </PressableScale>)}</View>
-    <Text style={styles.hint}>Fondos de Testnet · sin valor real</Text>
     {message ? <Text accessibilityLiveRegion="polite" style={styles.message}>{message}</Text> : null}
   </View>;
 }

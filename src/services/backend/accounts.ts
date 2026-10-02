@@ -1,11 +1,12 @@
 import { requireBackend } from './client';
-import { readWallet, writeWallet } from './storage';
+import { readWallet, writeWallet, type StoredWallet } from './storage';
 import { recoverWallet, type RecoveryProgress, type WalletRecord } from './walletRecovery';
 import { Platform } from 'react-native';
 
 export async function unlockUserWallet(userId: string, password: string, options: { signal?: AbortSignal; onProgress?: (stage: RecoveryProgress) => void } = {}) {
   const db = requireBackend();
-  return recoverWallet({
+  let opened: StoredWallet | null = null;
+  await recoverWallet({
     getBackup: async () => {
       const result = await db.from('wallet_backups').select('owner_id, public_key, backup').eq('owner_id', userId).maybeSingle();
       if (result.error) throw result.error;
@@ -16,6 +17,9 @@ export async function unlockUserWallet(userId: string, password: string, options
       if (result.error) throw result.error;
       return result.data as WalletRecord;
     },
-    readLocal: readWallet, writeLocal: writeWallet,
+    readLocal: readWallet,
+    writeLocal: async (wallet, owner) => { await writeWallet(wallet, owner); opened = wallet; },
   }, userId, password, false, { ...options, allowLocalCache: Platform.OS !== 'web' });
+  if (!opened) throw new Error('No pudimos abrir tu wallet. Vuelve a intentarlo.');
+  return opened as StoredWallet;
 }

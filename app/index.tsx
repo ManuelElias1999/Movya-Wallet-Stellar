@@ -2,13 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
-import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackground';
 import { PressableScale } from '@/components/PressableScale';
 import { useAuth } from '@/context/AuthContext';
+import { KeyboardDismissButton } from '@/components/KeyboardDismissButton';
 import { colors } from '@/theme/tokens';
 
 type AuthMode = 'login' | 'register';
@@ -22,18 +23,17 @@ export default function WelcomeScreen() {
   const [message, setMessage] = useState('');
   const [pendingEmail, setPendingEmail] = useState('');
   const [code, setCode] = useState('');
-  const unlocking = Boolean(auth.user && !auth.ready);
   const [name, setName] = useState('');
-  const [identity, setIdentity] = useState('');
+  const [identity, setIdentity] = useState(auth.user?.email ?? '');
   const [password, setPassword] = useState('');
-  const canContinue = auth.configured && !busy && (!pendingEmail || unlocking || /^\d{6,10}$/.test(code.trim())) && password.length >= (!unlocking && authMode === 'register' ? 12 : 1) && (unlocking || (/^\S+@\S+\.\S+$/.test(identity.trim()) && (authMode === 'login' || name.trim().length > 1)));
+  useEffect(() => { if (auth.user?.email && !identity) setIdentity(auth.user.email); }, [auth.user?.email]);
+  const canContinue = auth.configured && !busy && (!pendingEmail || /^\d{6,10}$/.test(code.trim())) && password.length >= (authMode === 'register' ? 12 : 1) && (pendingEmail || (/^\S+@\S+\.\S+$/.test(identity.trim()) && (authMode === 'login' || name.trim().length > 1)));
 
   const continueToApp = async () => {
     if (!canContinue || lock.current) return;
-    lock.current = true; setBusy(true); setMessage('');
+    Keyboard.dismiss(); lock.current = true; setBusy(true); setMessage('');
     try {
-      if (unlocking) await auth.unlock(password);
-      else if (pendingEmail) await auth.verifyEmail(pendingEmail, code, password);
+      if (pendingEmail) await auth.verifyEmail(pendingEmail, code, password);
       else if (authMode === 'register') {
         const ready = await auth.register(identity, password, name);
         if (!ready) {
@@ -43,7 +43,7 @@ export default function WelcomeScreen() {
         }
       } else await auth.login(identity, password);
       // Protected routes open the backup step for a new account, or the
-      // dashboard for a returning account whose backup was acknowledged.
+      // dashboard directly for every returning account.
       setPassword('');
     } catch (e) { setMessage(e && typeof e === 'object' && 'message' in e && typeof e.message === 'string' ? e.message : 'No se pudo completar el acceso. Inténtalo nuevamente.'); }
     finally { lock.current = false; setBusy(false); }
@@ -53,7 +53,8 @@ export default function WelcomeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <AnimatedDashboardBackground />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <KeyboardDismissButton />
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
           <View style={styles.page}>
             <View style={styles.brandArea}>
               <View style={styles.logoHalo}>
@@ -65,31 +66,32 @@ export default function WelcomeScreen() {
 
             <BlurView intensity={72} tint="light" style={[styles.authCard, Platform.OS === 'web' ? webGlass : null]}>
               <View pointerEvents="none" style={styles.cardShine} />
-              {!busy && !unlocking && !pendingEmail ? <View style={styles.modeTabs}>
-                <PressableScale onPress={() => setAuthMode('login')} style={[styles.modeTab, authMode === 'login' && styles.modeTabActive]}>
+              {!pendingEmail ? <View style={styles.modeTabs}>
+                <PressableScale disabled={busy} onPress={() => setAuthMode('login')} style={[styles.modeTab, authMode === 'login' && styles.modeTabActive]}>
                   <Text style={[styles.modeText, authMode === 'login' && styles.modeTextActive]}>Ingresar</Text>
                 </PressableScale>
-                <PressableScale onPress={() => setAuthMode('register')} style={[styles.modeTab, authMode === 'register' && styles.modeTabActive]}>
+                <PressableScale disabled={busy} onPress={() => setAuthMode('register')} style={[styles.modeTab, authMode === 'register' && styles.modeTabActive]}>
                   <Text style={[styles.modeText, authMode === 'register' && styles.modeTextActive]}>Crear cuenta</Text>
                 </PressableScale>
               </View> : null}
 
               <View style={styles.cardHeading}>
-                <Text style={styles.title}>{busy && auth.accessStage ? 'Estamos abriendo tu wallet' : unlocking ? 'Abre tu wallet' : pendingEmail ? 'Confirma tu correo' : authMode === 'login' ? 'Bienvenido de nuevo' : 'Crea tu cuenta Movya'}</Text>
-                <Text accessibilityLiveRegion="polite" style={styles.description}>{busy && auth.accessStage ? auth.accessStage : unlocking ? `Ingresa tu contraseña para recuperar la wallet de ${auth.user?.email}.` : pendingEmail ? `Escribe el código que enviamos a ${pendingEmail}.` : authMode === 'login' ? 'Tu cuenta, tus contactos y tu wallet te esperan.' : 'Ingresa tus datos y tendrás tu propia wallet de pruebas.'}</Text>
+                <Text style={styles.title}>{pendingEmail ? 'Confirma tu correo' : authMode === 'login' ? 'Bienvenido de nuevo' : 'Crea tu cuenta Movya'}</Text>
+                <Text style={styles.description}>{pendingEmail ? `Escribe el código que enviamos a ${pendingEmail}.` : authMode === 'login' ? 'Tu cuenta, tus contactos y tu wallet te esperan.' : 'Ingresa tus datos y tendrás tu propia wallet.'}</Text>
               </View>
 
-              {!unlocking && authMode === 'register' ? (
+              {authMode === 'register' ? (
                 <View style={styles.field}>
                   <Ionicons color={colors.brand} name="person-outline" size={19} />
-                  <TextInput autoCapitalize="words" onChangeText={setName} placeholder="Tu nombre" placeholderTextColor="#71809B" style={styles.input} value={name} />
+                  <TextInput editable={!busy} autoCapitalize="words" onChangeText={setName} placeholder="Tu nombre" placeholderTextColor="#71809B" style={styles.input} value={name} />
                 </View>
               ) : null}
 
-              {!unlocking && !pendingEmail ? (
+              {!pendingEmail ? (
               <View style={styles.field}>
                 <Ionicons color={colors.brand} name="mail-outline" size={19} />
                 <TextInput
+                  editable={!busy}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   onChangeText={setIdentity}
@@ -101,31 +103,36 @@ export default function WelcomeScreen() {
               </View>
               ) : null}
 
-              {pendingEmail && !unlocking ? <View style={styles.field}><Ionicons color={colors.brand} name="key-outline" size={19} /><TextInput value={code} onChangeText={setCode} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} placeholder="Código del correo" placeholderTextColor="#71809B" style={styles.input} /></View> : null}
+              {pendingEmail ? <View style={styles.field}><Ionicons color={colors.brand} name="key-outline" size={19} /><TextInput editable={!busy} value={code} onChangeText={setCode} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} placeholder="Código del correo" placeholderTextColor="#71809B" style={styles.input} /></View> : null}
               <View style={styles.field}>
                 <Ionicons color={colors.brand} name="lock-closed-outline" size={19} />
                 <TextInput editable={!busy} autoCapitalize="none" autoCorrect={false} onChangeText={setPassword} placeholder="Contraseña" placeholderTextColor="#71809B" secureTextEntry style={styles.input} value={password} />
                 <Ionicons color={colors.muted} name="eye-outline" size={19} />
               </View>
 
-              <Text style={styles.terms}>Tu contraseña también permite recuperar tu wallet. Consérvala en un lugar seguro. {!unlocking && authMode === 'register' ? 'Usa al menos 12 caracteres.' : ''}</Text>
+              <Text style={styles.terms}>Tu contraseña también permite recuperar tu wallet. Consérvala en un lugar seguro. {authMode === 'register' ? 'Usa al menos 12 caracteres.' : ''}</Text>
               {!auth.configured ? <Text style={styles.terms}>El acceso por correo se activará pronto. Puedes continuar probando tu wallet actual.</Text> : null}
               {message || auth.error ? <Text accessibilityLiveRegion="polite" style={[styles.description, { marginTop: 12 }]}>{message || auth.error}</Text> : null}
 
+              {busy && auth.accessStage ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 14 }}>
+                <ActivityIndicator color={colors.brand} />
+                <Text accessibilityLiveRegion="polite" style={[styles.description, { flex: 1 }]}>Cargando tu wallet… {auth.accessStage}</Text>
+              </View> : null}
+
               <PressableScale disabled={!canContinue} onPress={continueToApp} style={[styles.primaryButton, !canContinue && styles.primaryButtonDisabled]}>
                 <LinearGradient colors={canContinue ? ['#287CFF', '#0755D8'] : ['#AEBBCD', '#97A6BA']} end={{ x: 1, y: 1 }} style={styles.primaryGradient}>
-                  <Text style={styles.primaryText}>{busy ? 'Abriendo tu cuenta…' : unlocking ? 'Abrir mi wallet' : pendingEmail ? 'Confirmar y abrir mi wallet' : authMode === 'login' ? 'Ingresar a Movya' : 'Crear mi cuenta'}</Text>
+                  <Text style={styles.primaryText}>{busy ? 'Cargando…' : pendingEmail ? 'Confirmar y abrir mi wallet' : authMode === 'login' ? 'Ingresar a Movya' : 'Crear mi cuenta'}</Text>
                   {busy ? <ActivityIndicator color="#FFFFFF" /> : <Ionicons color="#FFFFFF" name="arrow-forward" size={19} />}
                 </LinearGradient>
               </PressableScale>
               {busy && auth.accessStage ? <PressableScale onPress={auth.cancelAccess} style={styles.demoButton}><Text style={styles.demoText}>Cancelar y volver a intentar</Text></PressableScale> : null}
 
-              {pendingEmail && !unlocking ? <>
+              {pendingEmail ? <>
                 <PressableScale disabled={busy} onPress={() => { setBusy(true); void auth.resendEmail(pendingEmail).then(() => setMessage('Enviamos otro código. Revisa tu correo.')).catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}><Text style={styles.demoText}>Reenviar código</Text></PressableScale>
                 <PressableScale disabled={busy} onPress={() => { setPendingEmail(''); setCode(''); setMessage(''); }} style={styles.demoButton}><Text style={styles.demoText}>Ya confirmé mi correo · Ingresar</Text></PressableScale>
               </> : null}
               {!auth.configured ? <PressableScale onPress={() => router.replace('/(tabs)')} style={styles.demoButton}><Text style={styles.demoText}>Continuar con mi wallet de pruebas</Text></PressableScale> : null}
-              {unlocking ? <PressableScale disabled={busy} onPress={() => { setBusy(true); void auth.logout().catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}><Text style={styles.demoText}>Ingresar con otra cuenta</Text></PressableScale> : null}
+              {auth.user && !auth.ready && !busy ? <PressableScale onPress={() => { setBusy(true); void auth.logout().catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}><Text style={styles.demoText}>Ingresar con otra cuenta</Text></PressableScale> : null}
             </BlurView>
 
             <View style={styles.stellarFooter}>

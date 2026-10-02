@@ -17,7 +17,8 @@ export type RecoveryProgress = 'reading' | 'creating' | 'encrypting' | 'register
 export async function recoverWallet(storage: WalletStorage, userId: string, password: string, linkExisting: boolean, options: { signal?: AbortSignal; onProgress?: (stage: RecoveryProgress) => void; allowLocalCache?: boolean } = {}) {
   const progress = (stage: RecoveryProgress) => { assertAccessActive(options.signal); options.onProgress?.(stage); };
   progress('reading');
-  let record = await storage.getBackup();
+  // Independent network and protected-storage reads can happen together.
+  let [record, local] = await Promise.all([storage.getBackup(), storage.readLocal(userId)]);
   assertAccessActive(options.signal);
   let created: { material: RecoveryMaterial; publicKey: string; backup: WalletBackup } | undefined;
   if (!record) {
@@ -36,8 +37,6 @@ export async function recoverWallet(storage: WalletStorage, userId: string, pass
   assertAccessActive(options.signal);
   if (!record || record.owner_id !== userId) throw new Error('La wallet no corresponde a esta cuenta.');
   const fingerprint = fingerprintBackup(record.backup, userId, record.public_key);
-  const local = await storage.readLocal(userId);
-  assertAccessActive(options.signal);
   if (local && Keypair.fromSecret(local.secret).publicKey() !== record.public_key) throw new Error('La wallet local no coincide con tu respaldo.');
   // Reuse our own material only when the immutable RPC returns exactly the
   // backup we just encrypted. A concurrent registration winner must be decrypted.

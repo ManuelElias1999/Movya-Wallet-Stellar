@@ -10,12 +10,13 @@ import { PressableScale } from '@/components/PressableScale';
 import { TokenIcon } from '@/components/TokenIcon';
 import { demoAssets } from '@/data/demo';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
+import { formatXlmBalance } from '@/services/presentation';
 import { colors } from '@/theme/tokens';
 
 export default function PortfolioScreen() {
   const [selectedAsset, setSelectedAsset] = useState<AssetDetail | null>(null);
   const account = useStellarAccount();
-  const assets = account.isDemo ? demoAssets : account.data?.balances.map((balance) => ({ code: balance.assetCode, name: balance.assetCode, amount: balance.balance, value: 'Testnet · sin valor real', color: colors.brand })) ?? [];
+  const assets = account.isDemo ? demoAssets : account.data?.balances.map((balance) => ({ code: balance.assetCode, name: balance.assetCode, amount: balance.balance, value: balance.assetCode === 'XLM' ? 'Stellar' : balance.assetCode === 'USDC' ? 'USD Coin' : balance.assetCode, color: colors.brand })) ?? [];
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -24,8 +25,8 @@ export default function PortfolioScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.summary}>
           <View>
-            <Text style={styles.summaryLabel}>{account.isDemo ? 'Valor total estimado' : 'Cuenta de pruebas'}</Text>
-            <Text style={styles.summaryValue}>{account.isDemo ? '$1,629.24' : 'Stellar Testnet'}</Text>
+            <Text style={styles.summaryLabel}>{account.isDemo ? 'Valor total estimado' : 'Saldo en Stellar'}</Text>
+            <Text style={styles.summaryValue}>{account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : formatXlmBalance(account.data?.balances)}</Text>
           </View>
           <View style={styles.assetCount}><Text style={styles.assetCountText}>{assets.length} activos</Text></View>
         </View>

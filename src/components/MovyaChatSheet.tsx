@@ -5,10 +5,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Easing, Image, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Dimensions, Easing, Image, Keyboard, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme/tokens';
+import { useAuth } from '@/context/AuthContext';
+import { displayName } from '@/services/presentation';
 import { useContacts } from '@/context/ContactsContext';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance } from '@/services/stellar/payments';
@@ -28,6 +30,8 @@ const formatDuration = (seconds: number) => `0:${String(seconds).padStart(2, '0'
 
 export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetProps) {
   const wallet = useTestnetWallet();
+  const auth = useAuth();
+  const name = displayName(auth.user?.user_metadata).split(/\s+/)[0];
   const saved = useContacts();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -40,7 +44,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   const [playingVoiceId, setPlayingVoiceId] = useState<number | null>(null);
   const [pendingTransaction, setPendingTransaction] = useState<TransactionDetails | null>(null);
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, role: 'movya', kind: 'text', text: 'Hola, Manuel. Puedo ayudarte a enviar, recibir o cambiar dinero en Stellar. Prueba escribiendo: “Envía 20 USDC a Ouali”.' },
+    { id: 1, role: 'movya', kind: 'text', text: `Hola, ${name}. Puedo ayudarte a enviar, recibir o cambiar dinero en Stellar. Prueba escribiendo: “Envía 20 USDC a Ouali”.` },
   ]);
 
   useEffect(() => {
@@ -62,7 +66,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
 
   const createMovyaReply = (message: string, id: number): TextMessage => {
     const normalized = message.toLowerCase();
-    if (normalized.includes('balance') || normalized.includes('cuánto dinero')) return { id, role: 'movya', kind: 'text', text: wallet.publicKey ? wallet.account ? `En Testnet tienes ${assetBalance(wallet.account, 'USDC')?.balance ?? '0'} USDC y ${assetBalance(wallet.account, 'XLM')?.balance ?? '0'} XLM. Son tokens de prueba.` : 'Activa tu cuenta y actualiza el balance desde Ajustes → Wallet de Testnet.' : 'Tu balance total de demostración es $1,629.24. Puedo mostrarte el detalle de cada activo si quieres.' };
+    if (normalized.includes('balance') || normalized.includes('cuánto dinero')) return { id, role: 'movya', kind: 'text', text: wallet.publicKey ? wallet.account ? `En Testnet tienes ${assetBalance(wallet.account, 'USDC')?.balance ?? '0'} USDC y ${assetBalance(wallet.account, 'XLM')?.balance ?? '0'} XLM. Son tokens de prueba.` : 'Solicita XLM desde Inicio y actualiza tu saldo.' : 'Tu balance total de demostración es $1,629.24. Puedo mostrarte el detalle de cada activo si quieres.' };
     if (normalized.includes('cambia') || normalized.includes('cambio')) return { id, role: 'movya', kind: 'text', text: 'Claro. Dime qué activo quieres entregar, cuál quieres recibir y el monto. Después te mostraré la cotización antes de confirmar.' };
     if (normalized.includes('contacto')) return { id, role: 'movya', kind: 'text', text: 'Puedo ayudarte. Dime el nombre y luego comparte su correo de Movya o su dirección Stellar pública.' };
     if (normalized.includes('recibir') || normalized.includes('compartir')) return { id, role: 'movya', kind: 'text', text: 'Puedes recibir por Stellar usando tu QR o tu dirección pública. Puedo ayudarte a copiarla o compartirla.' };
@@ -168,10 +172,10 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
             <View style={styles.logoWrap}><Image source={require('../../assets/movya-logo.png')} style={styles.logo} /><View style={styles.statusDot} /></View>
             <View><Text style={styles.title}>Movya</Text><Text style={styles.status}>Asistente financiero · En línea</Text></View>
           </View>
-          <Pressable style={styles.infoButton}><Ionicons name="information-circle-outline" size={22} color={colors.ink} /></Pressable>
+          <Pressable accessibilityLabel="Ocultar teclado" onPress={Keyboard.dismiss} style={styles.infoButton}><Ionicons name="chevron-down" size={22} color={colors.ink} /></Pressable>
         </BlurView>
 
-        <ScrollView contentContainerStyle={styles.messages} keyboardShouldPersistTaps="handled" onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })} ref={scrollRef} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={styles.messages} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })} ref={scrollRef} showsVerticalScrollIndicator={false}>
           <Text style={styles.today}>HOY</Text>
           {messages.map((message) => message.role === 'movya' ? (
             <View key={message.id} style={styles.movyaGroup}>

@@ -10,6 +10,7 @@ import { InternalScreenBackground } from '@/components/InternalScreenBackground'
 import { PressableScale } from '@/components/PressableScale';
 import { ProfilePhoto } from '@/components/ProfilePhoto';
 import { useAuth } from '@/context/AuthContext';
+import { displayName as getDisplayName } from '@/services/presentation';
 import { colors, radius } from '@/theme/tokens';
 
 const rows = [
@@ -22,7 +23,7 @@ const rows = [
 export default function SettingsScreen() {
   const router = useRouter();
   const auth = useAuth();
-  const displayName = typeof auth.user?.user_metadata.display_name === 'string' ? auth.user.user_metadata.display_name : 'Usuario';
+  const displayName = getDisplayName(auth.user?.user_metadata);
   const [busy, setBusy] = useState(false);
   const [notifications, setNotifications] = useState(true);
   return (
@@ -32,22 +33,12 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profile}>
           <View style={styles.avatar}>{auth.user ? <Text style={styles.name}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={54} />}</View>
-          <View><Text style={styles.name}>{auth.user ? displayName : 'Manuel Elias'}</Text><Text style={styles.email}>{auth.user?.email ?? 'Wallet de pruebas'}</Text></View>
+          <View><Text style={styles.name}>{displayName}</Text><Text style={styles.email}>{auth.user?.email ?? 'Wallet de pruebas'}</Text></View>
         </View>
         <Text style={styles.sectionTitle}>Cuenta</Text>
-        <PressableScale onPress={() => router.push('/wallet-backup')} style={[styles.card, styles.row]}>
-          <View style={[styles.rowIcon, { backgroundColor: '#E4F8F5' }]}><Ionicons name="key-outline" size={20} color="#008B83" /></View>
-          <View style={styles.rowCopy}><Text style={styles.rowTitle}>Respaldo y claves</Text><Text style={styles.rowSubtitle}>Frase de recuperación y clave privada</Text></View>
-          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-        </PressableScale>
-        <PressableScale onPress={() => router.push('/testnet-wallet')} style={[styles.card, styles.row]}>
-          <View style={[styles.rowIcon, { backgroundColor: colors.brandSoft }]}><Ionicons name="wallet-outline" size={20} color={colors.brand} /></View>
-          <View style={styles.rowCopy}><Text style={styles.rowTitle}>Wallet de Testnet</Text><Text style={styles.rowSubtitle}>Activa tu cuenta y prueba envíos reales</Text></View>
-          <Ionicons name="chevron-forward" size={18} color={colors.muted} />
-        </PressableScale>
         <View style={styles.card}>
           {rows.map((row, index) => (
-            <PressableScale key={row.title} style={[styles.row, index > 0 && styles.divider]}>
+            <PressableScale key={row.title} onPress={row.title === 'Seguridad' ? () => router.push('/security') : undefined} style={[styles.row, index > 0 && styles.divider]}>
               <View style={[styles.rowIcon, { backgroundColor: row.tint }]}><Ionicons name={row.icon} size={20} color={row.color} /></View>
               <View style={styles.rowCopy}><Text style={styles.rowTitle}>{row.title}</Text><Text style={styles.rowSubtitle}>{row.subtitle}</Text></View>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />

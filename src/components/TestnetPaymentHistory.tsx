@@ -4,10 +4,13 @@ import { ActivityRow } from '@/components/ActivityRow';
 import { PressableScale } from '@/components/PressableScale';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { getPaymentHistory, type PaymentRecord } from '@/services/stellar/payments';
+import { useContacts } from '@/context/ContactsContext';
+import { paymentDescription } from '@/services/presentation';
 import { colors } from '@/theme/tokens';
 
 export function TestnetPaymentHistory({ hidden = false }: { hidden?: boolean }) {
   const wallet = useTestnetWallet();
+  const { contacts } = useContacts();
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,8 +30,9 @@ export function TestnetPaymentHistory({ hidden = false }: { hidden?: boolean }) 
     {payments.map((payment) => {
       const received = payment.to === wallet.publicKey;
       const other = received ? payment.from : payment.to;
+      const description = paymentDescription(received, other, contacts);
       return <PressableScale accessibilityLabel="Ver transacción en Stellar Expert" key={payment.id} onPress={() => void Linking.openURL(`https://stellar.expert/explorer/testnet/tx/${payment.transaction_hash}`)}>
-        <ActivityRow hidden={hidden} type={received ? 'Recibiste' : 'Enviaste'} detail={`${received ? 'De' : 'A'} ${other === wallet.oualiAddress ? 'Ouali' : `${other.slice(0, 5)}…${other.slice(-4)}`}`} amount={`${received ? '+' : '-'} ${payment.amount} ${payment.asset_type === 'native' ? 'XLM' : payment.asset_code}`} time={new Date(payment.created_at).toLocaleString()} positive={received} />
+        <ActivityRow hidden={hidden} type={description.title} detail={description.detail} amount={`${received ? '+' : '-'} ${payment.amount} ${payment.asset_type === 'native' ? 'XLM' : payment.asset_code}`} time={new Date(payment.created_at).toLocaleString()} positive={received} />
       </PressableScale>;
     })}
   </View>;

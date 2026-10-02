@@ -16,6 +16,7 @@ import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance, preparePayment, type PaymentAsset, type PaymentReceipt, type PaymentReview } from '@/services/stellar/payments';
 import { useContacts } from '@/context/ContactsContext';
 import { contactDestination } from '@/services/backend/contacts';
+import { KeyboardDismissButton } from '@/components/KeyboardDismissButton';
 import { colors, radius } from '@/theme/tokens';
 
 export default function SendScreen() {
@@ -52,7 +53,7 @@ export default function SendScreen() {
     lock.current = true; setPreparing(true); setError('');
     try {
       const destination = selected ? saved.persistent ? await contactDestination(selected) : selected.name === 'Ouali' ? wallet.oualiAddress : selected.address ?? '' : address.trim();
-      if (selected && !destination) throw new Error('Este contacto todavía no tiene una dirección vinculada. Configura Ouali en tu Wallet de Testnet o pega una dirección.');
+      if (selected && !destination) throw new Error('Este contacto todavía no tiene una dirección vinculada. Guarda su dirección en Contactos o pega una dirección.');
       const next = await preparePayment({ source: wallet.publicKey, destination, amount, asset: token });
       setReview(next);
     } catch (failure) { setError(failure instanceof Error ? failure.message : 'No se pudo preparar el envío.'); }
@@ -64,7 +65,8 @@ export default function SendScreen() {
       <InternalScreenBackground />
       <PageHeader subtitle="Revisarás todo antes de confirmar" title="Enviar" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardDismissButton />
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
           <View style={styles.networkBadge}><StellarNetworkBadge label="Todos los envíos se realizan en Stellar · Testnet" /></View>
           {!wallet.publicKey || !wallet.account ? <PressableScale onPress={() => router.push('/testnet-wallet')} style={styles.summary}><Text style={styles.summaryTitle}>Configurar mi wallet de pruebas →</Text></PressableScale> : null}
           <Text style={styles.label}>Monto</Text>

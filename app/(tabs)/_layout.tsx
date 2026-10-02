@@ -1,13 +1,17 @@
 import { Stack } from 'expo-router';
+import { Platform } from 'react-native';
 
 export default function AppLayout() {
   return (
     <Stack
-      screenOptions={{
-        animation: 'slide_from_right',
+      screenOptions={({ route }) => ({
+        animation: Platform.OS === 'ios' ? 'default' : (route.params as { tabDirection?: string } | undefined)?.tabDirection === 'backward' ? 'slide_from_left' : 'slide_from_right',
+        // UIKit uses a native pop for movement towards the left-hand tabs.
+        animationTypeForReplace: Platform.OS === 'ios' && (route.params as { tabDirection?: string } | undefined)?.tabDirection === 'backward' ? 'pop' : 'push',
+        animationDuration: 280,
         contentStyle: { backgroundColor: '#E9EFF5' },
         headerShown: false,
-      }}
+      })}
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="activity" />

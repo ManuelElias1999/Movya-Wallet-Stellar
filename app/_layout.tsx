@@ -24,9 +24,12 @@ function AppRoutes() {
   if (!auth.initialized) return null;
   return <Stack screenOptions={{ headerShown: false }}>
     <Stack.Protected guard={!auth.configured || !auth.ready}><Stack.Screen name="index" /></Stack.Protected>
-    <Stack.Protected guard={!auth.configured || Boolean(auth.user && auth.ready && !auth.needsBackup)}>
+    <Stack.Protected guard={!auth.configured || Boolean(auth.user && auth.ready && !auth.needsBackup && !auth.needsOnboarding)}>
       <Stack.Screen name="(tabs)" /><Stack.Screen name="testnet-wallet" />
-      <Stack.Screen name="onboarding" /><Stack.Screen name="entering-wallet" />
+      <Stack.Screen name="security" /><Stack.Screen name="entering-wallet" />
+    </Stack.Protected>
+    <Stack.Protected guard={!auth.configured || Boolean(auth.user && auth.ready && !auth.needsBackup && auth.needsOnboarding)}>
+      <Stack.Screen name="onboarding" />
     </Stack.Protected>
     <Stack.Protected guard={!auth.configured || Boolean(auth.user && auth.ready)}>
       <Stack.Screen name="wallet-backup" />
