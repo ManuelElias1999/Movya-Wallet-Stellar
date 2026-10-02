@@ -33,13 +33,15 @@ The goal is to build a wallet that feels familiar to everyday users and can beco
 - **Send, receive, and swap flows:** mobile-first experiences with clear confirmations.
 - **Guided onboarding:** an interactive demo teaches the core wallet flow.
 - **Real Testnet payments:** locally sign and submit XLM and verified-issuer USDC transfers, with balances, history, and transaction receipts.
+- **Email accounts and persistent contacts:** Supabase integration with verified email, encrypted Testnet wallet backup, and private contact storage (requires backend configuration).
+- **Testnet funding shortcuts:** separate XLM and USDC buttons below the dashboard actions.
 - **Responsive premium UI:** optimized for mobile, web, and modern iPhone safe areas.
 
 ## Current status
 
 Movya provides an interactive prototype plus a developer wallet that executes real Stellar Testnet payments. Create a Testnet wallet under **Cuenta → Wallet de Testnet**, activate it with Friendbot, and enable USDC before receiving test tokens from Circle.
 
-Native signing uses a locally generated key stored in Expo SecureStore. Web wallets are temporary and remain only in memory. Production login, recovery, sponsorship, and swaps are still pending. The onboarding tutorial remains a simulated demonstration.
+Native signing uses a locally generated key stored in Expo SecureStore. Configure the Supabase backend to register verified email accounts, store private contacts, and recover the same Testnet wallet using an encrypted backup. Web secrets remain in memory and can be reopened with the account password after reload. Production recovery, sponsorship, and swaps remain pending. The onboarding tutorial is still a simulated demonstration. See [`docs/BACKEND_SETUP.md`](docs/BACKEND_SETUP.md) for activation and current limitations.
 
 ## Built with
 
@@ -50,6 +52,8 @@ Native signing uses a locally generated key stored in Expo SecureStore. Web wall
 | Language | TypeScript |
 | Network | Stellar Testnet |
 | Blockchain data | Horizon API |
+| Authentication and database | Supabase Auth + PostgreSQL with RLS |
+| Testnet wallet backup | Local AES-256-GCM + PBKDF2; encrypted server storage |
 | Local Testnet signing | Stellar SDK + Expo SecureStore (native); memory only (web) |
 
 ## Getting started
@@ -104,7 +108,7 @@ npm run web
 
 ## Guided demo flow
 
-1. Create an account to open the guided onboarding.
+1. With the backend configured, register and verify your email to open the guided onboarding. Without it, select **Continuar con mi wallet de pruebas** to keep testing the existing wallet.
 2. Tap the Movya logo in the center of the bottom navigation.
 3. Send the message: `Envía 20 USDC a Ouali`.
 4. Review the transaction summary.

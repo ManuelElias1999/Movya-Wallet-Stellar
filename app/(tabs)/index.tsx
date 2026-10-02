@@ -18,6 +18,8 @@ import { PressableScale } from '@/components/PressableScale';
 import { ProfilePhoto } from '@/components/ProfilePhoto';
 import { TokenIcon } from '@/components/TokenIcon';
 import { demoActivity, demoAssets } from '@/data/demo';
+import { useAuth } from '@/context/AuthContext';
+import { TestnetFundingButtons } from '@/components/TestnetFundingButtons';
 import { TestnetPaymentHistory } from '@/components/TestnetPaymentHistory';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { colors } from '@/theme/tokens';
@@ -31,6 +33,8 @@ const quickActions = [
 
 export default function HomeScreen() {
   const router = useRouter();
+  const auth = useAuth();
+  const displayName = typeof auth.user?.user_metadata.display_name === 'string' ? auth.user.user_metadata.display_name : 'Usuario';
   const insets = useSafeAreaInsets();
   const [amountsVisible, setAmountsVisible] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
@@ -54,9 +58,9 @@ export default function HomeScreen() {
       <BlurView intensity={54} tint="dark" style={[styles.header, Platform.OS === 'web' ? webGlass : null]}>
         <LinearGradient colors={['rgba(31,80,135,0.8)', 'rgba(60,127,150,0.64)']} end={{ x: 1, y: 0 }} pointerEvents="none" start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
         <View style={styles.profileRow}>
-          <View style={styles.avatar}><ProfilePhoto size={40} /></View>
+          <View style={styles.avatar}>{auth.user ? <Text style={styles.hello}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={40} />}</View>
           <View>
-            <Text style={styles.hello}>Hola, Manuel</Text>
+            <Text style={styles.hello}>Hola, {auth.user ? displayName.split(' ')[0] : 'Manuel'}</Text>
             <Text style={styles.welcome}>Bienvenido a tu wallet</Text>
           </View>
         </View>
@@ -82,6 +86,8 @@ export default function HomeScreen() {
             </PressableScale>
           ))}
         </View>
+
+        <TestnetFundingButtons />
 
         <View style={styles.sectionHeader}>
           <View><Text style={styles.sectionTitle}>Portafolio</Text><Text style={styles.sectionSubtitle}>Tus activos en Stellar</Text></View>

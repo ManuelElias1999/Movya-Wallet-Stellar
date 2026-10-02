@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,92 +9,69 @@ import { BottomNavigation } from '@/components/BottomNavigation';
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
 import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { PressableScale } from '@/components/PressableScale';
-import { demoContacts } from '@/data/demo';
+import { useContacts } from '@/context/ContactsContext';
+import { contactDestination, type Contact } from '@/services/backend/contacts';
 import { colors, radius } from '@/theme/tokens';
-
-type Contact = {
-  id: string;
-  name: string;
-  handle: string;
-  initials: string;
-  color: string;
-  favorite: boolean;
-  email?: string;
-  address?: string;
-};
 
 export default function ContactsScreen() {
   const router = useRouter();
-  const [contacts, setContacts] = useState<Contact[]>(demoContacts.map((contact, index) => ({ ...contact, favorite: index === 0 })));
+  const saved = useContacts();
+  const { contacts } = saved;
+  const lock = useRef(false);
+  const [busy, setBusy] = useState(false);
+  const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Contact | null>(null);
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
   const [editName, setEditName] = useState('');
-  const [editHandle, setEditHandle] = useState('');
   const [newName, setNewName] = useState('');
   const [identifier, setIdentifier] = useState('');
   const [identifierType, setIdentifierType] = useState<'email' | 'address'>('email');
-  const ordered = useMemo(() => [...contacts].sort((a, b) => Number(b.favorite) - Number(a.favorite)), [contacts]);
+  const ordered = useMemo(() => contacts.filter(c => `${c.name} ${c.handle}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => Number(b.favorite) - Number(a.favorite)), [contacts, search]);
 
   const openContact = (contact: Contact) => {
     setSelected(contact);
     setEditName(contact.name);
-    setEditHandle(contact.handle);
     setEditing(false);
   };
 
-  const toggleFavorite = () => {
-    if (!selected) return;
-    const next = { ...selected, favorite: !selected.favorite };
-    setSelected(next);
-    setContacts((current) => current.map((contact) => contact.id === next.id ? next : contact));
+  const run = async (action: () => Promise<void>) => {
+    if (lock.current) return;
+    lock.current = true; setBusy(true);
+    try {
+      if (!saved.persistent) throw new Error('Ingresa con tu correo para guardar tus contactos.');
+      await action();
+    } catch (e) { Alert.alert('Revisa los datos', e instanceof Error ? e.message : 'No se pudo guardar el contacto.'); }
+    finally { lock.current = false; setBusy(false); }
   };
-
+  const toggleFavorite = () => { if (selected) void run(async () => setSelected(await saved.update(selected.id, { favorite: !selected.favorite }))); };
   const saveContact = () => {
     if (!selected || !editName.trim()) return;
-    const initials = editName.trim().split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
-    const next = { ...selected, name: editName.trim(), handle: editHandle.trim(), initials };
-    setSelected(next);
-    setContacts((current) => current.map((contact) => contact.id === next.id ? next : contact));
-    setEditing(false);
+    void run(async () => { setSelected(await saved.update(selected.id, { name: editName.trim() })); setEditing(false); });
   };
-
   const deleteContact = () => {
     if (!selected) return;
     Alert.alert('Eliminar contacto', `¿Quieres eliminar a ${selected.name}?`, [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Eliminar', style: 'destructive', onPress: () => { setContacts((current) => current.filter((contact) => contact.id !== selected.id)); setSelected(null); } },
+      { text: 'Eliminar', style: 'destructive', onPress: () => void run(async () => { await saved.remove(selected.id); setSelected(null); }) },
     ]);
   };
-
-  const addContact = () => {
-    const cleanName = newName.trim();
-    const cleanIdentifier = identifier.trim();
-    const validEmail = identifierType === 'email' && /^\S+@\S+\.\S+$/.test(cleanIdentifier);
-    const validAddress = identifierType === 'address' && cleanIdentifier.toUpperCase().startsWith('G') && cleanIdentifier.length >= 20;
-
-    if (!cleanName || (!validEmail && !validAddress)) {
-      Alert.alert('Revisa los datos', identifierType === 'email' ? 'Ingresa un nombre y un correo válido.' : 'Ingresa un nombre y una dirección Stellar válida.');
-      return;
+  const addContact = () => void run(async () => {
+    await saved.add({ name: newName, identifier, type: identifierType });
+    setAdding(false); setNewName(''); setIdentifier('');
+  });
+  const sendContact = () => {
+    if (!selected || lock.current) return;
+    if (!saved.persistent) {
+      const contactId = selected.id; setSelected(null);
+      router.push({ pathname: '/send', params: { contactId } }); return;
     }
-
-    const initials = cleanName.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase();
-    const shortAddress = `${cleanIdentifier.slice(0, 5)}…${cleanIdentifier.slice(-4)}`;
-    const next: Contact = {
-      id: String(Date.now()),
-      name: cleanName,
-      handle: identifierType === 'email' ? cleanIdentifier : `Wallet externa · ${shortAddress}`,
-      initials,
-      color: identifierType === 'email' ? '#E4F3FF' : '#F0EBFF',
-      favorite: false,
-      ...(identifierType === 'email' ? { email: cleanIdentifier } : { address: cleanIdentifier }),
-    };
-
-    setContacts((current) => [...current, next]);
-    setAdding(false);
-    setNewName('');
-    setIdentifier('');
-    Alert.alert('Contacto agregado', identifierType === 'email' ? 'Cuando el correo tenga una cuenta Movya, usaremos automáticamente su dirección asociada.' : 'La wallet externa quedó guardada.');
+    lock.current = true; setBusy(true);
+    void contactDestination(selected).then(address => {
+      const contactId = selected.id; setSelected(null);
+      router.push({ pathname: '/send', params: { contactId, address } });
+    }).catch(e => Alert.alert('No se pudo preparar el envío', e.message))
+      .finally(() => { lock.current = false; setBusy(false); });
   };
 
   return (
@@ -104,10 +81,14 @@ export default function ContactsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.search}>
           <Ionicons name="search" size={18} color={colors.muted} />
-          <TextInput placeholder="Buscar personas" placeholderTextColor={colors.muted} style={styles.input} />
+          <TextInput value={search} onChangeText={setSearch} placeholder="Buscar personas" placeholderTextColor={colors.muted} style={styles.input} />
         </View>
         <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Tus contactos</Text><PressableScale onPress={() => setAdding(true)} pressedScale={0.9} style={styles.add}><Ionicons name="person-add-outline" size={18} color={colors.brand} /></PressableScale></View>
+        {saved.loading ? <Text style={styles.handle}>Cargando tus contactos…</Text> : null}
+        {saved.error ? <Pressable onPress={() => void saved.refresh()}><Text style={styles.handle}>{saved.error} · Reintentar</Text></Pressable> : null}
+        {!saved.persistent ? <Text style={styles.addDescription}>Estos contactos son de demostración. Ingresa con tu correo para guardar personas.</Text> : null}
         <View style={styles.card}>
+          {!ordered.length && !saved.loading ? <Text style={[styles.handle, { padding: 20 }]}>Todavía no hay contactos. Agrega tu primera persona.</Text> : null}
           {ordered.map((contact, index) => (
             <PressableScale key={contact.id} onPress={() => openContact(contact)} style={[styles.contact, index > 0 && styles.divider]}>
               <View style={[styles.avatar, { backgroundColor: contact.color }]}><Text style={styles.avatarText}>{contact.initials}</Text></View>
@@ -144,18 +125,18 @@ export default function ContactsScreen() {
               <Text style={styles.sheetTitle}>Editar contacto</Text>
               <Text style={styles.editLabel}>Nombre</Text>
               <TextInput onChangeText={setEditName} style={styles.editInput} value={editName} />
-              <Text style={styles.editLabel}>Usuario</Text>
-              <TextInput autoCapitalize="none" onChangeText={setEditHandle} style={styles.editInput} value={editHandle} />
-              <Pressable onPress={saveContact} style={styles.sendButton}><Text style={styles.sendText}>Guardar cambios</Text></Pressable>
+              <Text style={styles.editLabel}>Correo o dirección vinculada</Text>
+              <Text selectable style={styles.sheetHandle}>{selected.handle}</Text>
+              <Pressable disabled={busy} onPress={saveContact} style={styles.sendButton}><Text style={styles.sendText}>Guardar cambios</Text></Pressable>
               <Pressable onPress={() => setEditing(false)} style={styles.cancelButton}><Text style={styles.cancelText}>Cancelar</Text></Pressable>
             </View>
           ) : (
             <View>
-              <Pressable onPress={toggleFavorite} style={styles.favorite}><Ionicons name={selected.favorite ? 'star' : 'star-outline'} size={23} color={selected.favorite ? '#F5A623' : colors.muted} /></Pressable>
+              <Pressable disabled={busy} onPress={toggleFavorite} style={styles.favorite}><Ionicons name={selected.favorite ? 'star' : 'star-outline'} size={23} color={selected.favorite ? '#F5A623' : colors.muted} /></Pressable>
               <View style={[styles.largeAvatar, { backgroundColor: selected.color }]}><Text style={styles.largeInitials}>{selected.initials}</Text></View>
               <Text style={styles.sheetTitle}>{selected.name}</Text>
               <Text style={styles.sheetHandle}>{selected.handle}</Text>
-              <PressableScale onPress={() => { const name = selected.name; const address = selected.address ?? ''; setSelected(null); router.push({ pathname: '/send', params: { contact: name, address } }); }} style={styles.sendButton}>
+              <PressableScale disabled={busy} onPress={sendContact} style={styles.sendButton}>
                 <Ionicons name="paper-plane-outline" size={19} color="#FFFFFF" /><Text style={styles.sendText}>Enviar dinero</Text>
               </PressableScale>
               <View style={styles.secondaryActions}>
@@ -183,7 +164,7 @@ export default function ContactsScreen() {
           <Text style={styles.editLabel}>{identifierType === 'email' ? 'Correo electrónico' : 'Dirección Stellar'}</Text>
           <TextInput autoCapitalize={identifierType === 'email' ? 'none' : 'characters'} keyboardType={identifierType === 'email' ? 'email-address' : 'default'} onChangeText={setIdentifier} placeholder={identifierType === 'email' ? 'andrea@correo.com' : 'G...'} placeholderTextColor={colors.muted} style={styles.editInput} value={identifier} />
           <View style={styles.lookupInfo}><Ionicons name={identifierType === 'email' ? 'link-outline' : 'shield-checkmark-outline'} size={18} color={colors.brand} /><Text style={styles.lookupText}>{identifierType === 'email' ? 'Si ya usa Movya, vincularemos la dirección asociada a ese correo.' : 'Las wallets externas se guardan directamente por su dirección pública.'}</Text></View>
-          <Pressable onPress={addContact} style={styles.sendButton}><Text style={styles.sendText}>Agregar contacto</Text></Pressable>
+          <Pressable disabled={busy} onPress={addContact} style={styles.sendButton}><Text style={styles.sendText}>Agregar contacto</Text></Pressable>
           <Pressable onPress={() => setAdding(false)} style={styles.cancelButton}><Text style={styles.cancelText}>Cancelar</Text></Pressable>
         </View>
       </Modal>

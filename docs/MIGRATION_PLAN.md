@@ -63,3 +63,7 @@ Production account ownership/recovery, fee sponsorship, and mainnet release rema
 - Never send a wallet secret to the AI agent or backend logs.
 - The agent produces intents; the wallet layer validates and signs them.
 - Mainnet stays disabled until the signing and recovery model is reviewed.
+
+## Email and contacts implementation (October 2026)
+
+Supabase Auth, private contact CRUD, exact verified-email resolution and encrypted Testnet wallet backups are implemented. Activation requires a project, the SQL migration and public environment values; see [BACKEND_SETUP.md](BACKEND_SETUP.md). The dashboard includes separate XLM/Friendbot and USDC/Circle funding buttons. USDC uses the public faucet with its manual CAPTCHA step. Production recovery and sponsorship remain pending.

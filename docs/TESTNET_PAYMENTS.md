@@ -14,7 +14,7 @@ Movya can now prepare, locally sign, and submit classic Stellar XLM and USDC pay
 8. Send a small amount such as **1 USDC**. Review the amount, complete destination, network, issuer, and XLM fee. Select **Confirmar y enviar**.
 9. The confirmed result contains the real transaction hash and a link to that exact transaction in Stellar Expert. The receiving account's balance and the payment history reflect the operation.
 
-XLM transfers can be tested after step 3 without obtaining USDC. Recipients must already have active Testnet accounts. Email resolution is not connected yet; the Ouali mapping is an explicitly saved public Testnet address.
+XLM transfers can be tested after step 3 without obtaining USDC. Recipients must already have active Testnet accounts. With the backend configured, verified Movya emails resolve to saved account addresses and contacts persist across sessions. Without it, the Ouali mapping remains an explicitly saved public Testnet address. See [backend setup](BACKEND_SETUP.md).
 
 ## Chat
 
@@ -32,9 +32,9 @@ With a Testnet wallet active, `Envía 1 USDC a Ouali` opens the real payment scr
 
 ## Key storage
 
-Native keys are generated on the device and stored in Expo SecureStore with `WHEN_UNLOCKED_THIS_DEVICE_ONLY`. They are not sent to an agent, server, faucet, logs, or `EXPO_PUBLIC_*` variables. Only the public address and signed transaction leave the device.
+Native keys are generated on the device and stored in Expo SecureStore with `WHEN_UNLOCKED_THIS_DEVICE_ONLY`. They are not sent to an agent, server, faucet, logs, or `EXPO_PUBLIC_*` variables. With email accounts enabled, a locally encrypted wallet backup is also stored in Supabase. The plaintext secret is not stored in the database; see [backend setup](BACKEND_SETUP.md) for the authentication-provider trust boundary.
 
-On web, the secret stays only in memory. Refreshing the page destroys that temporary wallet session. There is no secret-key import or export, and no production recovery flow yet. Use only test tokens.
+On web, the secret stays only in memory. Refreshing the page destroys the in-memory key. Email users can reopen their existing backup using their account password; developer wallets without a backend remain temporary. There is no secret-key import or export, and no production recovery flow yet. Use only test tokens.
 
 ## Validation
 

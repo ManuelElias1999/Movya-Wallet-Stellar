@@ -15,7 +15,10 @@
   "dependencies": {
     "@expo/metro-runtime": "~57.0.15",
     "@expo/vector-icons": "^15.0.2",
+    "@noble/ciphers": "^2.4.0",
+    "@noble/hashes": "^2.4.0",
     "@stellar/stellar-sdk": "^17.1.0",
+    "@supabase/supabase-js": "^2.117.2",
     "buffer": "^6.0.3",
     "expo": "~57.0.23",
     "expo-blur": "~57.0.3",
@@ -36,9 +39,11 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-svg": "15.15.4",
+    "react-native-url-polyfill": "^4.0.0",
     "react-native-web": "~0.21.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/node": "^22.20.5",
     "@types/react": "~19.2.2",
     "tsx": "^4.23.15",

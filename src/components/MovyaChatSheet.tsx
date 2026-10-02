@@ -9,6 +9,7 @@ import { Animated, Dimensions, Easing, Image, KeyboardAvoidingView, Linking, Pla
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme/tokens';
+import { useContacts } from '@/context/ContactsContext';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance } from '@/services/stellar/payments';
 
@@ -27,6 +28,7 @@ const formatDuration = (seconds: number) => `0:${String(seconds).padStart(2, '0'
 
 export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetProps) {
   const wallet = useTestnetWallet();
+  const saved = useContacts();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const translateY = useRef(new Animated.Value(screenHeight)).current;
@@ -87,9 +89,15 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   };
 
   const openRealPayment = (transaction: TransactionDetails) => {
-    const destination = transaction.recipient.toLowerCase() === 'ouali' ? wallet.oualiAddress : transaction.recipient;
+    const matches = saved.contacts.filter(c => c.name.toLowerCase() === transaction.recipient.trim().toLowerCase());
+    if (matches.length > 1) {
+      setMessages(current => [...current, { id: Date.now(), role: 'movya', kind: 'text', text: 'Tienes varias personas con ese nombre. Elige el contacto en la pantalla de Enviar.' }]);
+      onClose(); router.push('/send'); return;
+    }
+    const contact = matches[0];
+    const destination = !saved.persistent && transaction.recipient.toLowerCase() === 'ouali' ? wallet.oualiAddress : transaction.recipient;
     onClose();
-    router.push({ pathname: '/send', params: { amount: transaction.amount, token: transaction.token, ...(transaction.recipient.toLowerCase() === 'ouali' ? { contact: 'Ouali' } : { address: destination }) } });
+    router.push({ pathname: '/send', params: { amount: transaction.amount, token: transaction.token, ...(contact ? { contactId: contact.id } : { address: destination }) } });
   };
 
   const sendDirect = (message: string) => {
