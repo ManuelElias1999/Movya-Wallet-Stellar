@@ -32,6 +32,10 @@ This repository is a clean migration of the Movya product, not a mechanical chai
 
 ### Phase 2 — Wallet and payments
 
+Implemented for developer Testnet use: locally generated native keys in SecureStore, temporary in-memory web keys, Friendbot activation, USDC trustline creation, XLM/USDC payment review and local signing, Horizon submission, real receipts and history. See [TESTNET_PAYMENTS.md](TESTNET_PAYMENTS.md).
+
+Production account ownership/recovery, fee sponsorship, and mainnet release remain pending.
+
 - Decide embedded-wallet custody and recovery model
 - Secure key management or approved wallet provider
 - XLM and USDC trustline support

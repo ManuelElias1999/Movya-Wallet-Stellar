@@ -32,14 +32,14 @@ The goal is to build a wallet that feels familiar to everyday users and can beco
 - **Stellar portfolio:** view balances, tokens, and recent account activity.
 - **Send, receive, and swap flows:** mobile-first experiences with clear confirmations.
 - **Guided onboarding:** an interactive demo teaches the core wallet flow.
-- **Testnet-ready integration:** Horizon services load public balances and payment history.
+- **Real Testnet payments:** locally sign and submit XLM and verified-issuer USDC transfers, with balances, history, and transaction receipts.
 - **Responsive premium UI:** optimized for mobile, web, and modern iPhone safe areas.
 
 ## Current status
 
-Movya currently provides the complete product interface, onboarding, portfolio experience, account reads, and conversational transaction demo on Stellar Testnet.
+Movya provides an interactive prototype plus a developer wallet that executes real Stellar Testnet payments. Create a Testnet wallet under **Cuenta → Wallet de Testnet**, activate it with Friendbot, and enable USDC before receiving test tokens from Circle.
 
-Transaction signing is intentionally not enabled yet. The custody, recovery, and authorization model must be finalized before private-key functionality is introduced.
+Native signing uses a locally generated key stored in Expo SecureStore. Web wallets are temporary and remain only in memory. Production login, recovery, sponsorship, and swaps are still pending. The onboarding tutorial remains a simulated demonstration.
 
 ## Built with
 
@@ -50,13 +50,13 @@ Transaction signing is intentionally not enabled yet. The custody, recovery, and
 | Language | TypeScript |
 | Network | Stellar Testnet |
 | Blockchain data | Horizon API |
-| Local security foundation | Expo Secure Store |
+| Local Testnet signing | Stellar SDK + Expo SecureStore (native); memory only (web) |
 
 ## Getting started
 
 ### Requirements
 
-- Node.js 20 or newer
+- Node.js 22.12 or newer (Node.js 24 recommended)
 - npm
 - Expo Go on a mobile device for native testing
 
@@ -95,12 +95,14 @@ npx expo start --go --tunnel --clear
 
 ```bash
 npm run typecheck
+npm test
+npm run test:testnet
 npm run ios
 npm run android
 npm run web
 ```
 
-## Demo flow
+## Guided demo flow
 
 1. Create an account to open the guided onboarding.
 2. Tap the Movya logo in the center of the bottom navigation.
@@ -108,7 +110,11 @@ npm run web
 4. Review the transaction summary.
 5. Confirm with **Sí** or cancel with **No**.
 6. Movya displays the preparation state, success message, and Stellar explorer link.
-7. The current transaction is a visual Testnet demo and does not move real funds.
+7. The onboarding transaction is a visual demonstration and does not move funds.
+
+## Real Testnet transfers
+
+Follow [`docs/TESTNET_PAYMENTS.md`](docs/TESTNET_PAYMENTS.md) to activate a wallet, obtain test USDC, connect Ouali's public address, and send a real payment. When a Testnet wallet is active, chat payment commands open the actual review screen instead of returning a simulated success.
 
 ## Project structure
 
@@ -126,9 +132,8 @@ docs/                   Migration and security planning
 
 ## Roadmap
 
-- Connect real Stellar transaction building and signing.
-- Add the final non-custodial account and recovery model.
-- Execute USDC transfers from the conversational assistant.
+- Add production account onboarding and recovery.
+- Bring the final confirmation and transaction receipt into the conversational assistant.
 - Integrate swap liquidity and quotes.
 - Add gas sponsorship and web2-friendly onboarding.
 - Run user testing in Bolivia and Latin America.
@@ -136,3 +141,4 @@ docs/                   Migration and security planning
 ## Documentation
 
 See [`docs/MIGRATION_PLAN.md`](docs/MIGRATION_PLAN.md) for the migration roadmap, security boundaries, and next integration milestones.
+See [`docs/TESTNET_PAYMENTS.md`](docs/TESTNET_PAYMENTS.md) for the current payment implementation, testing instructions, and key storage boundaries.
