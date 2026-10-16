@@ -7,6 +7,7 @@ import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance, enableUSDC, fundTestnetAccount, readTestnetAccount, SubmissionUnknownError } from '@/services/stellar/payments';
 import { colors } from '@/theme/tokens';
 import { PressableScale } from './PressableScale';
+import { NavigationGlass } from './NavigationGlass';
 
 export function TestnetFundingButtons() {
   const wallet = useTestnetWallet(); const router = useRouter();
@@ -41,15 +42,16 @@ export function TestnetFundingButtons() {
   };
   return <View style={styles.container}>
     <View style={styles.row}>{(['XLM', 'USDC'] as const).map(asset => <PressableScale key={asset} accessibilityLabel={`Pedir fondos de prueba en ${asset}`} disabled={Boolean(busy) || !wallet.initialized} onPress={() => void request(asset)} style={[styles.button, busy && styles.disabled]}>
-      <Ionicons name="download-outline" size={18} color={colors.brand} /><Text style={styles.label}>{busy === asset ? 'Solicitando…' : `Pedir fondos en ${asset}`}</Text>
+      <NavigationGlass style={styles.surface}><Ionicons name="download-outline" size={18} color="#FFFFFF" /><Text style={styles.label}>{busy === asset ? 'Solicitando…' : `Pedir fondos en ${asset}`}</Text></NavigationGlass>
     </PressableScale>)}</View>
     {message ? <Text accessibilityLiveRegion="polite" style={styles.message}>{message}</Text> : null}
   </View>;
 }
 const styles = StyleSheet.create({
   container: { marginTop: 20 }, row: { flexDirection: 'row', gap: 10 },
-  button: { flex: 1, minHeight: 54, paddingHorizontal: 10, paddingVertical: 12, borderRadius: 16, backgroundColor: '#E8F2FF', borderWidth: 1, borderColor: '#B8D2F1', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  label: { flexShrink: 1, color: colors.brandDark, fontSize: 12, fontWeight: '800', textAlign: 'center' },
+  button: { flex: 1, borderRadius: 999, backgroundColor: 'transparent', shadowColor: '#00123F', shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 5 },
+  surface: { minHeight: 54, width: '100%', paddingHorizontal: 10, paddingVertical: 12, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  label: { flexShrink: 1, color: '#FFFFFF', fontSize: 12, fontWeight: '800', textAlign: 'center' },
   hint: { fontSize: 10, color: colors.muted, textAlign: 'center', marginTop: 8 },
   message: { fontSize: 12, lineHeight: 19, color: colors.brandDark, marginTop: 10 }, disabled: { opacity: 0.5 },
 });

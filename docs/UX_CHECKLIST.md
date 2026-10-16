@@ -2,7 +2,7 @@
 
 ## Validación manual en iPhone y Android
 
-- Revisar Inicio en teléfonos estrechos y con nombres largos: el header claro mantiene el saludo y los botones de actualizar/ajustes sin desbordar. Los cuatro accesos tienen iconos y etiquetas blancas sobre fondos azules, y abren las mismas rutas que antes. La tarjeta no tiene una franja blanca en su borde superior.
+- Revisar Inicio en teléfonos estrechos y con nombres largos: el header de vidrio azul mantiene el saludo y los botones de actualizar/ajustes sin desbordar. El header, los accesos y los botones de fondos comparten el degradado, blur y borde del footer. Los cuatro accesos tienen iconos y etiquetas blancas, y abren las mismas rutas que antes. La tarjeta no tiene una franja blanca en su borde superior.
 - Cambiar Inicio → Actividad → Contactos → Cuenta → Inicio. La barra inferior debe permanecer quieta; la sección seleccionada cambia sin deslizar toda la pantalla.
 - Abrir una sección desde un enlace directo y tocar Volver. Actividad, Contactos y Cuenta vuelven a Inicio sin depender de un historial previo.
 - Desde Cuenta abrir Seguridad: su encabezado ocupa todo el ancho. Respaldo y claves vuelve a Seguridad y Seguridad vuelve a Cuenta.
