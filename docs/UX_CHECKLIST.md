@@ -17,7 +17,7 @@
 
 ## Creación y respaldo
 
-- En Ingresar y Crear cuenta escribir `1234`, tocar correo, volver a contraseña y escribir `5`: debe quedar `12345`. Ocultar el teclado, volver y borrar: debe quedar `1234`, no vacío. Repetir con la contraseña visible, selección parcial, seleccionar todo, pegar y autocompletar. Revisar físicamente en iPhone (incluido Expo Go) y Android; las pruebas de la recuperación de edición no sustituyen esta comprobación del teclado nativo.
+- En Ingresar y Crear cuenta escribir `1234`, tocar correo, volver a contraseña y escribir `5`: debe quedar `12345`. Ocultar el teclado, volver y borrar: debe quedar `1234`, no vacío. Repetir varias veces; al borrar no debe aparecer texto en claro ni parpadear toda la contraseña. Repetir con la contraseña visible, selección parcial, seleccionar todo, pegar y autocompletar. Revisar físicamente en iPhone (incluido Expo Go) y Android; las pruebas del componente no sustituyen esta comprobación de UIKit y del teclado nativo.
 - Completar correo y contraseña en Ingresar, cambiar a Crear cuenta: nombre, correo y contraseña quedan vacíos y el ojo queda cerrado. Escribir datos y volver a Ingresar: correo y contraseña también vacíos. Tocar la pestaña ya seleccionada conserva lo escrito. Cambiar de campo o cerrar el teclado sin cambiar de pestaña conserva los datos.
 - En Ingresar, Crear cuenta y Respaldo y claves, tocar el ojo muestra y oculta la contraseña sin cambiar su valor. Debe volver a ocultarse al comenzar una operación, borrar el campo o poner la app en segundo plano.
 - Al crear una cuenta, Movya trabaja como herrero sobre una billetera. El texto refleja el paso real; al terminar se abre el respaldo sin una espera artificial. Cancelar o un error cierra la animación y permite volver al formulario.
@@ -34,3 +34,9 @@ El acceso posterior en el mismo teléfono reutiliza la copia local protegida ún
 La app incluye un módulo local para acelerar el cálculo fuera de JavaScript en una compilación propia. Expo Go mantiene el motor portable. Seguir [NATIVE_WALLET_CREATION.md](NATIVE_WALLET_CREATION.md) para instalar la app desde Xcode, comprobar la recuperación y medir en el teléfono. No se afirman tiempos de creación sin esa medición.
 
 Las pruebas automatizadas cubren servicios, seguridad y selección de sección; la presentación visual y el comportamiento del teclado requieren esta revisión física.
+
+## Campo de contraseña en iOS
+
+El campo reasigna el texto protegido al recuperar el foco mediante dos commits de layout (vacío y valor actual), sin modificar la contraseña del formulario ni alternar `secureTextEntry`. Esto busca reiniciar el comportamiento de UIKit que reemplaza el contenido al pulsar la primera tecla. No usa temporizadores ni reconstruye el texto a partir de `onKeyPress`. Las siguientes ediciones, incluido pegar y autocompletar, se entregan sin modificación.
+
+Las pruebas del componente verifican la secuencia de commits, que el modo protegido permanece activo y que las siguientes ediciones se propagan. No ejecutan UIKit: la corrección del reemplazo y la ausencia de parpadeo deben confirmarse con los pasos anteriores en un iPhone real.

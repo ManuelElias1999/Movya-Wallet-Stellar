@@ -1,54 +1,41 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Platform, TextInput, type TextInputProps } from 'react-native';
-import { recoverResumedPasswordEdit } from '@/services/passwordEditing';
 
-type Props = Omit<TextInputProps, 'value' | 'onChangeText' | 'onKeyPress' | 'onSelectionChange'> & {
+type Props = Omit<TextInputProps, 'value' | 'onChangeText'> & {
   value: string;
   onChangeText: (value: string) => void;
 };
 
-export function PasswordInput({ value, onChangeText, onFocus, onBlur, secureTextEntry, ...props }: Props) {
+export function PasswordInput({ value, onChangeText, onFocus, secureTextEntry, ...props }: Props) {
   const input = useRef<TextInput>(null);
-  const resumed = useRef(false);
-  const selection = useRef({ start: value.length, end: value.length });
-  const edit = useRef<{ previous: string; key: string; selection: { start: number; end: number } } | null>(null);
-  const cursor = useRef<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const restoreCursor = useRef(false);
 
+  // Reassign secure text AFTER UIKit begins editing, clearing its replace-on-first-
+  // key state. Two layout commits force RN to send both native text assignments.
+  // The parent password never changes, and secureTextEntry never toggles here.
+  // No timers, key guesses, or delayed writes can overwrite a later user edit.
   useLayoutEffect(() => {
-    if (cursor.current !== null) {
-      input.current?.setSelection(cursor.current, cursor.current);
-      cursor.current = null;
+    if (refreshing) {
+      restoreCursor.current = true;
+      setRefreshing(false);
+    } else if (restoreCursor.current) {
+      restoreCursor.current = false;
+      input.current?.setSelection(value.length, value.length);
     }
-  }, [value]);
+  }, [refreshing, value]);
 
   return <TextInput
     {...props}
     ref={input}
-    value={value}
+    value={refreshing ? '' : value}
     secureTextEntry={secureTextEntry}
     clearTextOnFocus={false}
     selectTextOnFocus={false}
     onFocus={event => {
-      resumed.current = Platform.OS === 'ios' && Boolean(secureTextEntry) && value.length > 0;
-      edit.current = null;
-      if (resumed.current) {
-        selection.current = { start: value.length, end: value.length };
-        input.current?.setSelection(value.length, value.length);
-      }
+      if (Platform.OS === 'ios' && secureTextEntry && value) setRefreshing(true);
       onFocus?.(event);
     }}
-    onBlur={event => { resumed.current = false; edit.current = null; onBlur?.(event); }}
-    onSelectionChange={event => { selection.current = event.nativeEvent.selection; }}
-    onKeyPress={event => {
-      edit.current = resumed.current ? { previous: value, key: event.nativeEvent.key, selection: { ...selection.current } } : null;
-    }}
-    onChangeText={next => {
-      const pending = edit.current;
-      edit.current = null;
-      resumed.current = false;
-      const recovered = pending ? recoverResumedPasswordEdit(pending.previous, next, pending.key, pending.selection) : null;
-      if (recovered) cursor.current = recovered.cursor;
-      onChangeText(recovered?.value ?? next);
-    }}
+    onChangeText={onChangeText}
   />;
 }
