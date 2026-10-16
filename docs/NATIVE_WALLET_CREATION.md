@@ -28,7 +28,7 @@ Web sigue usando WebCrypto. Expo Go y Android anteriores a API 26 conservan el m
 
    Este comando genera los proyectos nativos e instala los pods. Se requiere configurar la firma de Apple en Xcode si aún no está preparada. La prueba se abre en la app instalada, no en Expo Go. Los proyectos generados no deben subirse al repositorio; el módulo local sí está versionado. No hace falta generar un proyecto EAS ni publicar en App Store para esta prueba local.
 
-   `npm install` aplica también el parche de edición de contraseñas al adaptador de iOS de React Native. El plugin local configura `ios.buildReactNativeFromSource=true` para que la compilación use ese código y no un RNCore precompilado. Ejecutar prebuild también actualiza esta propiedad si ya existía la carpeta `ios`. La primera compilación desde fuente puede tardar más. Expo Go no incluye este parche: actualizar solo Metro no lo instala.
+   Esta compilación es opcional para probar la aceleración del cifrado. No se necesita Xcode para probar español/inglés: usa `npx expo start --go --clear`. La corrección nativa del teclado queda pospuesta y no se aplica al instalar dependencias.
 
 3. Mantener el `.env` de Supabase y Stellar Testnet. Registrar una cuenta de prueba nueva y anotar el tiempo que aparece en la pantalla del taller. Comparar con Expo Go en el mismo teléfono y red. No se promete un tiempo sin esa medición: Supabase y el almacenamiento también pueden tardar.
 

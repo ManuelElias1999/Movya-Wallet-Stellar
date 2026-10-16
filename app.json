@@ -25,7 +25,6 @@
       "output": "static"
     },
     "plugins": [
-      "./plugins/with-secure-input.cjs",
       "expo-router",
       "expo-secure-store"
     ],
