@@ -17,6 +17,8 @@
 
 ## Creación y respaldo
 
+- En Ingresar y Crear cuenta escribir `1234`, tocar correo, volver a contraseña y escribir `5`: debe quedar `12345`. Ocultar el teclado, volver y borrar: debe quedar `1234`, no vacío. Repetir con la contraseña visible, selección parcial, seleccionar todo, pegar y autocompletar. Revisar físicamente en iPhone (incluido Expo Go) y Android; las pruebas de la recuperación de edición no sustituyen esta comprobación del teclado nativo.
+- Completar correo y contraseña en Ingresar, cambiar a Crear cuenta: nombre, correo y contraseña quedan vacíos y el ojo queda cerrado. Escribir datos y volver a Ingresar: correo y contraseña también vacíos. Tocar la pestaña ya seleccionada conserva lo escrito. Cambiar de campo o cerrar el teclado sin cambiar de pestaña conserva los datos.
 - En Ingresar, Crear cuenta y Respaldo y claves, tocar el ojo muestra y oculta la contraseña sin cambiar su valor. Debe volver a ocultarse al comenzar una operación, borrar el campo o poner la app en segundo plano.
 - Al crear una cuenta, Movya trabaja como herrero sobre una billetera. El texto refleja el paso real; al terminar se abre el respaldo sin una espera artificial. Cancelar o un error cierra la animación y permite volver al formulario.
 - En el taller, comprobar el rostro desde el primer fotograma incluso con carga lenta de imágenes. El brazo nace en el hombro y el martillo llega a la parte superior de la billetera, con chispas en el contacto. Revisar también una pantalla de 320 px: la escena debe reducirse sin desbordar.
