@@ -1,16 +1,16 @@
 # Testnet payments
 
-Movya can now prepare, locally sign, and submit classic Stellar XLM and USDC payments. This is a developer Testnet wallet; production onboarding, recovery, sponsorship, and swaps remain future milestones.
+Movya prepares, locally signs, and submits classic Stellar XLM and USDC payments. Email accounts, automatic wallet creation, encrypted recovery and persistent contacts are implemented with Supabase. This remains a Testnet MVP; production recovery, sponsorship and swaps are future milestones.
 
 ## Try it on your iPhone
 
 1. Update `main`, run `npm install`, and start `npx expo start --go --clear`.
-2. Open **Cuenta → Wallet de Testnet**.
-3. Select **Crear wallet de Testnet**, then **Solicitar XLM de prueba**. Friendbot activates the generated account with test XLM.
-4. Select **Habilitar USDC**. This submits a locally signed trustline transaction.
-5. Select **Obtener USDC de prueba**. Your public address is copied and the [Circle faucet](https://faucet.circle.com/) opens. Choose **USDC / Stellar Testnet**, paste the address, and complete the faucet request. Return to Movya and refresh the balance.
-6. Prepare a second Testnet account, on another device or in a temporary web session. Activate it and enable the same USDC trustline. Copy that account's public address.
-7. Save the second address as **Ouali** in the Testnet wallet screen, or paste it directly in **Enviar**.
+2. With Supabase configured, register a Movya account, verify your email if required, and save or defer the backup. The wallet is created automatically; the developer-wallet entry is no longer in Settings. See [backend setup](BACKEND_SETUP.md).
+3. From **Inicio**, select **Pedir fondos en XLM**. Friendbot activates the generated account with test XLM, subject to its eligibility rules.
+4. Select **Pedir fondos en USDC**. This creates the verified-issuer trustline if needed, using a locally signed transaction and XLM for the reserve/fee.
+5. Your public address is copied and the [Circle faucet](https://faucet.circle.com/) opens. Choose **USDC / Stellar Testnet**, paste the address, and complete the external request. Return to Movya and refresh the balance.
+6. Prepare a second Testnet account, on another device or in a separate browser session. Activate it and enable the same USDC trustline. Copy that account's public address.
+7. Save the second account in **Contactos** by its public address or exact verified Movya email, or paste the address directly in **Enviar**. The contact can be named **Ouali** for the command below.
 8. Send a small amount such as **1 USDC**. Review the amount, complete destination, network, issuer, and XLM fee. Select **Confirmar y enviar**.
 9. The confirmed result contains the real transaction hash and a link to that exact transaction in Stellar Expert. The receiving account's balance and the payment history reflect the operation.
 
@@ -34,7 +34,7 @@ With a Testnet wallet active, `Envía 1 USDC a Ouali` opens the real payment scr
 
 Native keys are generated on the device and stored in Expo SecureStore with `WHEN_UNLOCKED_THIS_DEVICE_ONLY`. They are not sent to an agent, server, faucet, logs, or `EXPO_PUBLIC_*` variables. With email accounts enabled, a locally encrypted wallet backup is also stored in Supabase. The plaintext secret is not stored in the database; see [backend setup](BACKEND_SETUP.md) for the authentication-provider trust boundary.
 
-On web, the secret stays only in memory. Refreshing the page destroys the in-memory key. Email users can reopen their existing backup using their account password; developer wallets without a backend remain temporary. Registered users can reveal their mnemonic (new wallets) or private key under Cuenta → Respaldo y claves after password verification. Existing unseeded wallets retain their private key and do not acquire a new mnemonic. In-app import and production account recovery are not implemented yet. Use only test tokens.
+On web, the secret stays only in memory. Refreshing the page destroys the in-memory key. Email users can reopen their existing backup using their account password; developer wallets without a backend remain temporary. Registered users can reveal their mnemonic (new wallets) or private key under **Cuenta → Seguridad → Respaldo y claves** after password verification. Existing unseeded wallets retain their private key and do not acquire a new mnemonic. In-app import and production account recovery are not implemented yet. Use only test tokens.
 
 ## Validation
 
