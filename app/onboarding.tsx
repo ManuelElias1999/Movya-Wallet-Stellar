@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackground';
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
 import { PressableScale } from '@/components/PressableScale';
+import { MovyaLogo } from '@/components/MovyaLogo';
 import { colors } from '@/theme/tokens';
 import { useAuth } from '@/context/AuthContext';
 import { displayName } from '@/services/presentation';
@@ -38,7 +39,7 @@ export default function OnboardingScreen() {
     <SafeAreaView style={styles.safeArea}>
       <AnimatedDashboardBackground />
       <View style={styles.header}>
-        <View style={styles.miniBrand}><Image source={require('../assets/movya-logo.png')} style={styles.miniLogo} /><Text style={styles.miniBrandText}>Movya</Text></View>
+        <View style={styles.miniBrand}><MovyaLogo size={34} /><Text style={styles.miniBrandText}>Movya</Text></View>
         <PressableScale onPress={finish} style={styles.skip}><Text style={styles.skipText}>Omitir</Text></PressableScale>
       </View>
 
@@ -154,7 +155,7 @@ function DemoAnimatedLogo({ size }: { size: number }) {
 }
 
 function DemoMessageLogo() {
-  return <View style={[styles.messageLogoRing, { borderWidth: 0 }]}><View style={{ width: 29, height: 29, alignItems: 'center', justifyContent: 'center' }}><Image source={require('../assets/movya-logo.png')} style={{ position: 'absolute', width: 29, height: 29, resizeMode: 'contain', tintColor: '#4D6A87' }} /><Image source={require('../assets/movya-logo.png')} style={styles.messageLogo} /></View></View>;
+  return <View style={[styles.messageLogoRing, { borderWidth: 0 }]}><MovyaLogo size={29} /></View>;
 }
 
 const webGlass = { backdropFilter: 'blur(28px) saturate(170%)', WebkitBackdropFilter: 'blur(28px) saturate(170%)' } as const;

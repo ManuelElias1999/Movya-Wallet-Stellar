@@ -3,6 +3,8 @@
 ## Validación manual en iPhone y Android
 
 - Revisar Inicio en teléfonos estrechos y con nombres largos: el header de vidrio azul mantiene el saludo y los botones de actualizar/ajustes sin desbordar. El header, los accesos y los botones de fondos comparten el degradado, blur y borde del footer. Los cuatro accesos tienen iconos y etiquetas blancas, y abren las mismas rutas que antes. La tarjeta no tiene una franja blanca en su borde superior.
+- Comprobar la presentación compacta: header de 68 px y accesos principales de 72 px, conservando controles de header de 44 px. El contenido puede crecer con tamaños de texto accesibles.
+- Revisar el contorno fino de Movya en bienvenida, los cuatro pasos de la guía, tarjeta, footer, chat, ayuda contextual y pantallas de apertura/creación. Todos deben usar el mismo logo compartido, sin un borde más grueso en la demo.
 - Cambiar Inicio → Actividad → Contactos → Cuenta → Inicio. La barra inferior debe permanecer quieta; la sección seleccionada cambia sin deslizar toda la pantalla.
 - Abrir una sección desde un enlace directo y tocar Volver. Actividad, Contactos y Cuenta vuelven a Inicio sin depender de un historial previo.
 - Desde Cuenta abrir Seguridad: su encabezado ocupa todo el ancho. Respaldo y claves vuelve a Seguridad y Seguridad vuelve a Cuenta.
@@ -17,6 +19,7 @@
 
 - En Ingresar, Crear cuenta y Respaldo y claves, tocar el ojo muestra y oculta la contraseña sin cambiar su valor. Debe volver a ocultarse al comenzar una operación, borrar el campo o poner la app en segundo plano.
 - Al crear una cuenta, Movya trabaja como herrero sobre una billetera. El texto refleja el paso real; al terminar se abre el respaldo sin una espera artificial. Cancelar o un error cierra la animación y permite volver al formulario.
+- En el taller, comprobar el rostro desde el primer fotograma incluso con carga lenta de imágenes. El brazo nace en el hombro y el martillo llega a la parte superior de la billetera, con chispas en el contacto. Revisar también una pantalla de 320 px: la escena debe reducirse sin desbordar.
 - Activar Reducir movimiento: el taller debe mostrarse estático con un indicador de actividad.
 - Antes de revelar el respaldo, tocar «Ya guardé mi respaldo». Aparece una advertencia para verificar la contraseña y la casilla permanece desmarcada. Escribir una contraseña sin verificarla tampoco habilita la confirmación. Después de revelar y guardar el respaldo, la casilla sí se puede marcar y desmarcar.
 
