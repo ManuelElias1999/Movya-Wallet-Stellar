@@ -37,6 +37,14 @@ Las pruebas automatizadas cubren servicios, seguridad y selección de sección; 
 
 ## Campo de contraseña en iOS
 
-El campo reasigna el texto protegido al recuperar el foco mediante dos commits de layout (vacío y valor actual), sin modificar la contraseña del formulario ni alternar `secureTextEntry`. Esto busca reiniciar el comportamiento de UIKit que reemplaza el contenido al pulsar la primera tecla. No usa temporizadores ni reconstruye el texto a partir de `onKeyPress`. Las siguientes ediciones, incluido pegar y autocompletar, se entregan sin modificación.
+El campo no vacía, restaura ni reconstruye la contraseña desde JavaScript. El parche `scripts/patch-ios-password.cjs`, aplicado por postinstall, hace que los campos protegidos usen la ruta de sustitución de rangos que ya incluye el adaptador nativo de React Native. Así se aplican la inserción, el borrado y la selección antes de que UIKit pueda reemplazar todo al retomar la edición. Mantiene el modo protegido, los límites del delegado, la posición del cursor y la notificación de cambios.
 
-Las pruebas del componente verifican la secuencia de commits, que el modo protegido permanece activo y que las siguientes ediciones se propagan. No ejecutan UIKit: la corrección del reemplazo y la ausencia de parpadeo deben confirmarse con los pasos anteriores en un iPhone real.
+Se requiere compilar la app siguiendo [NATIVE_WALLET_CREATION.md](NATIVE_WALLET_CREATION.md). El plugin obliga a compilar RNCore desde la fuente modificada. Expo Go conserva su control nativo original y no recibe este parche. Las pruebas del componente comprueban que JavaScript nunca vacía el valor al enfocar. La prueba `bash scripts/test-ios-password.sh` ejecuta el método real extraído del adaptador instalado contra un campo UIKit en el simulador; no equivale a probar la app completa ni confirma la ausencia de parpadeo en un iPhone físico.
+
+## Español e inglés
+
+- Cambiar ES/EN desde Ingresar y Crear cuenta con datos escritos: cambian textos y placeholders, sin borrar los campos ni cambiar de modo. Al cambiar entre Ingresar/Crear cuenta sí quedan vacíos, como antes.
+- Cambiar el idioma en Inicio o Ajustes, navegar por actividad, contactos, enviar, recibir, swap, seguridad y respaldo, y volver al acceso. Se mantiene la elección. Cerrar y reabrir conserva el idioma.
+- Verificar etiquetas, ayuda, alertas, etapas de creación y avisos de error de la app. Errores desconocidos de proveedores externos se muestran sin inventar una traducción.
+- Comprobar que nombres, correos, mensajes del usuario, direcciones, claves privadas y las 12 palabras no cambian. Una persona llamada «Inicio» no debe convertirse en «Home».
+- Probar las sugerencias del chat en ambos idiomas. «Send 1 XLM to Aya» y «Envía 1 XLM a Aya» deben abrir la misma revisión, sin firmar automáticamente.

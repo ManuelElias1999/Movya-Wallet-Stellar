@@ -1,3 +1,4 @@
+import { Pressable, Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -5,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Easing, Keyboard, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Dimensions, Easing, Keyboard, KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme/tokens';
@@ -15,6 +16,8 @@ import { displayName } from '@/services/presentation';
 import { useContacts } from '@/context/ContactsContext';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance } from '@/services/stellar/payments';
+import { useLanguage } from '@/i18n/Language';
+import { chatTopic, parseSendRequest } from '@/services/chatIntent';
 
 type TextMessage = { id: number; role: 'movya' | 'user'; kind: 'text'; text: string };
 type VoiceMessage = { id: number; role: 'user'; kind: 'voice'; duration: number };
@@ -30,6 +33,7 @@ const waveBars = [11, 18, 25, 15, 29, 21, 13, 24, 18, 28, 16, 23, 12, 19];
 const formatDuration = (seconds: number) => `0:${String(seconds).padStart(2, '0')}`;
 
 export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetProps) {
+  const { t } = useLanguage();
   const wallet = useTestnetWallet();
   const auth = useAuth();
   const name = displayName(auth.user?.user_metadata).split(/\s+/)[0];
@@ -39,7 +43,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   const translateY = useRef(new Animated.Value(screenHeight)).current;
   const scrollRef = useRef<ScrollView | null>(null);
   const consumedPrompt = useRef('');
-  const [text, setText] = useState(initialPrompt ?? '');
+  const [text, setText] = useState(initialPrompt ? t(initialPrompt) : '');
   const [recording, setRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [playingVoiceId, setPlayingVoiceId] = useState<number | null>(null);
@@ -56,7 +60,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     if (!open || !initialPrompt || consumedPrompt.current === initialPrompt) return;
     consumedPrompt.current = initialPrompt;
     const id = Date.now();
-    setMessages((current) => [...current, { id, role: 'user', kind: 'text', text: initialPrompt }, createMovyaReply(initialPrompt, id + 1)]);
+    setMessages((current) => [...current, { id, role: 'user', kind: 'text', text: t(initialPrompt) }, createMovyaReply(initialPrompt, id + 1)]);
   }, [initialPrompt, open]);
 
   useEffect(() => {
@@ -66,18 +70,12 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   }, [recording]);
 
   const createMovyaReply = (message: string, id: number): TextMessage => {
-    const normalized = message.toLowerCase();
-    if (normalized.includes('balance') || normalized.includes('cuánto dinero')) return { id, role: 'movya', kind: 'text', text: wallet.publicKey ? wallet.account ? `En Testnet tienes ${assetBalance(wallet.account, 'USDC')?.balance ?? '0'} USDC y ${assetBalance(wallet.account, 'XLM')?.balance ?? '0'} XLM. Son tokens de prueba.` : 'Solicita XLM desde Inicio y actualiza tu saldo.' : 'Tu balance total de demostración es $1,629.24. Puedo mostrarte el detalle de cada activo si quieres.' };
-    if (normalized.includes('cambia') || normalized.includes('cambio')) return { id, role: 'movya', kind: 'text', text: 'Claro. Dime qué activo quieres entregar, cuál quieres recibir y el monto. Después te mostraré la cotización antes de confirmar.' };
-    if (normalized.includes('contacto')) return { id, role: 'movya', kind: 'text', text: 'Puedo ayudarte. Dime el nombre y luego comparte su correo de Movya o su dirección Stellar pública.' };
-    if (normalized.includes('recibir') || normalized.includes('compartir')) return { id, role: 'movya', kind: 'text', text: 'Puedes recibir por Stellar usando tu QR o tu dirección pública. Puedo ayudarte a copiarla o compartirla.' };
+    const topic = chatTopic(message);
+    if (topic === 'balance') return { id, role: 'movya', kind: 'text', text: wallet.publicKey ? wallet.account ? `En Testnet tienes ${assetBalance(wallet.account, 'USDC')?.balance ?? '0'} USDC y ${assetBalance(wallet.account, 'XLM')?.balance ?? '0'} XLM. Son tokens de prueba.` : 'Solicita XLM desde Inicio y actualiza tu saldo.' : 'Tu balance total de demostración es $1,629.24. Puedo mostrarte el detalle de cada activo si quieres.' };
+    if (topic === 'swap') return { id, role: 'movya', kind: 'text', text: 'Claro. Dime qué activo quieres entregar, cuál quieres recibir y el monto. Después te mostraré la cotización antes de confirmar.' };
+    if (topic === 'contact') return { id, role: 'movya', kind: 'text', text: 'Puedo ayudarte. Dime el nombre y luego comparte su correo de Movya o su dirección Stellar pública.' };
+    if (topic === 'receive') return { id, role: 'movya', kind: 'text', text: 'Puedes recibir por Stellar usando tu QR o tu dirección pública. Puedo ayudarte a copiarla o compartirla.' };
     return { id, role: 'movya', kind: 'text', text: 'Perfecto. Dime el token, el monto y el destinatario. Prepararé el envío y te mostraré un resumen antes de confirmar.' };
-  };
-
-  const parseSendRequest = (message: string): TransactionDetails | null => {
-    const match = message.match(/env[ií]a(?:r)?\s+\$?\s*(\d+(?:[.,]\d+)?)\s+([a-z0-9]+)\s+a\s+(.+)/i);
-    if (!match) return null;
-    return { amount: match[1].replace(',', '.'), token: match[2].toUpperCase(), recipient: match[3].trim() };
   };
 
   const finishTransaction = (transaction: TransactionDetails, baseId: number) => {
@@ -112,12 +110,12 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     const normalized = clean.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
     if (pendingTransaction) {
-      if (/^(si|confirmar|confirmo|adelante)$/.test(normalized)) {
+      if (/^(si|confirmar|confirmo|adelante|yes|confirm|go ahead)$/.test(normalized)) {
         const transaction = pendingTransaction;
         setPendingTransaction(null);
         setMessages((current) => [...current, { id, role: 'user', kind: 'text', text: clean }]);
         finishTransaction(transaction, id + 1);
-      } else if (/^(no|cancelar|cancela)$/.test(normalized)) {
+      } else if (/^(no|cancelar|cancela|cancel)$/.test(normalized)) {
         setPendingTransaction(null);
         setMessages((current) => [...current, { id, role: 'user', kind: 'text', text: clean }, { id: id + 1, role: 'movya', kind: 'text', text: 'Transacción cancelada. No se movió ningún fondo. ¿Deseas hacer algo más?' }]);
       } else {
@@ -184,21 +182,21 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
               <BlurView intensity={72} tint="light" style={[styles.bubble, styles.movyaBubble]}>
                 {message.kind === 'confirmation' ? (
                   <View>
-                    <Text style={styles.messageText}>¿Confirmas la transacción de {message.transaction.amount} {message.transaction.token} a {message.transaction.recipient}?</Text>
+                    <Text style={styles.messageText}>¿Confirmas la transacción de {message.transaction.amount} {message.transaction.token} a <Text translate={false}>{message.transaction.recipient}</Text>?</Text>
                     <View style={styles.transactionSummary}>
                       <View style={styles.transactionRow}><Text style={styles.transactionLabel}>Enviar</Text><Text style={styles.transactionValue}>{message.transaction.amount} {message.transaction.token}</Text></View>
-                      <View style={styles.transactionRow}><Text style={styles.transactionLabel}>A</Text><Text style={styles.transactionValue}>{message.transaction.recipient}</Text></View>
+                      <View style={styles.transactionRow}><Text style={styles.transactionLabel}>A</Text><Text translate={false} style={styles.transactionValue}>{message.transaction.recipient}</Text></View>
                       <View style={styles.transactionRow}><Text style={styles.transactionLabel}>Red</Text><Text style={styles.transactionValue}>Stellar · Testnet</Text></View>
                     </View>
                     <View style={styles.confirmActions}>
                       <Pressable onPress={() => sendDirect('No')} style={styles.noButton}><Text style={styles.noText}>No</Text></Pressable>
-                      <Pressable onPress={() => sendDirect('Sí')} style={styles.yesButton}><Ionicons color="#FFFFFF" name="checkmark" size={15} /><Text style={styles.yesText}>Sí, confirmar</Text></Pressable>
+                      <Pressable onPress={() => sendDirect(t('Sí'))} style={styles.yesButton}><Ionicons color="#FFFFFF" name="checkmark" size={15} /><Text style={styles.yesText}>Sí, confirmar</Text></Pressable>
                     </View>
                   </View>
                 ) : message.kind === 'success' ? (
                   <View>
                     <View style={styles.successTitleRow}><View style={styles.successIcon}><Ionicons color="#FFFFFF" name="checkmark" size={17} /></View><Text style={styles.successTitle}>Transacción exitosa</Text></View>
-                    <Text style={styles.messageText}>Se enviaron {message.transaction.amount} {message.transaction.token} a {message.transaction.recipient}.</Text>
+                    <Text style={styles.messageText}>Se enviaron {message.transaction.amount} {message.transaction.token} a <Text translate={false}>{message.transaction.recipient}</Text>.</Text>
                     <Pressable onPress={() => void Linking.openURL(message.explorerUrl)} style={styles.explorerLink}><Ionicons color={colors.brand} name="open-outline" size={16} /><Text style={styles.explorerText}>Ver en Stellar Expert · Testnet</Text></Pressable>
                     <Text style={styles.demoNotice}>Transacción demostrativa; no movió fondos reales.</Text>
                   </View>
@@ -218,10 +216,10 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
           ) : (
             <View key={message.id} style={styles.userGroup}>
               <Text style={styles.userSender}>Tú</Text>
-              <LinearGradient colors={['#176BFF', '#064AAE']} end={{ x: 1, y: 1 }} style={[styles.bubble, styles.userBubble]}><Text style={[styles.messageText, styles.userText]}>{message.text}</Text><Text style={styles.userTime}>Ahora</Text></LinearGradient>
+              <LinearGradient colors={['#176BFF', '#064AAE']} end={{ x: 1, y: 1 }} style={[styles.bubble, styles.userBubble]}><Text translate={false} style={[styles.messageText, styles.userText]}>{message.text}</Text><Text style={styles.userTime}>Ahora</Text></LinearGradient>
             </View>
           ))}
-          <View style={styles.suggestions}>{suggestions.map((suggestion) => <Pressable key={suggestion} onPress={() => sendDirect(suggestion)} style={styles.suggestion}><Ionicons name="sparkles-outline" size={14} color={colors.brand} /><Text style={styles.suggestionText}>{suggestion}</Text><Ionicons name="arrow-up-circle" size={15} color={colors.brand} /></Pressable>)}</View>
+          <View style={styles.suggestions}>{suggestions.map((suggestion) => <Pressable key={suggestion} onPress={() => sendDirect(t(suggestion))} style={styles.suggestion}><Ionicons name="sparkles-outline" size={14} color={colors.brand} /><Text style={styles.suggestionText}>{suggestion}</Text><Ionicons name="arrow-up-circle" size={15} color={colors.brand} /></Pressable>)}</View>
         </ScrollView>
 
         <BlurView intensity={88} tint="light" style={[styles.composerArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>

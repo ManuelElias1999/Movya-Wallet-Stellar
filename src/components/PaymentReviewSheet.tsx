@@ -1,5 +1,6 @@
+import { Text } from '@/i18n/primitives';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PressableScale } from '@/components/PressableScale';
@@ -44,10 +45,10 @@ export function PaymentReviewSheet({ review, onClose, onSuccess }: { review: Pay
         <ScrollView keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Revisa tu transferencia</Text>
           <Text style={styles.amount}>{review?.amount} {review?.asset}</Text>
-          <Text style={styles.label}>De tu wallet</Text><Text selectable style={styles.address}>{review?.source}</Text>
-          <Text style={styles.label}>Dirección destinataria</Text><Text selectable style={styles.address}>{review?.destination}</Text>
+          <Text style={styles.label}>De tu wallet</Text><Text translate={false} selectable style={styles.address}>{review?.source}</Text>
+          <Text style={styles.label}>Dirección destinataria</Text><Text translate={false} selectable style={styles.address}>{review?.destination}</Text>
           <Text style={styles.label}>Red</Text><Text style={styles.value}>Stellar Testnet · tokens de prueba</Text>
-          {review?.issuer ? <><Text style={styles.label}>Emisor de USDC</Text><Text selectable style={styles.address}>{review.issuer}</Text></> : null}
+          {review?.issuer ? <><Text style={styles.label}>Emisor de USDC</Text><Text translate={false} selectable style={styles.address}>{review.issuer}</Text></> : null}
           <Text style={styles.label}>Comisión de red</Text><Text style={styles.value}>{review?.fee} XLM</Text>
           <Text style={styles.note}>Al confirmar, Movya firma y envía esta operación desde tu dispositivo. La revisión expira en 3 minutos.</Text>
           {error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}

@@ -1,7 +1,8 @@
+import { Alert, Pressable, Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
@@ -92,10 +93,10 @@ export default function ContactsScreen() {
           {!ordered.length && !saved.loading ? <Text style={[styles.handle, { padding: 20 }]}>Todavía no hay contactos. Agrega tu primera persona.</Text> : null}
           {ordered.map((contact, index) => (
             <PressableScale key={contact.id} onPress={() => openContact(contact)} style={[styles.contact, index > 0 && styles.divider]}>
-              <View style={[styles.avatar, { backgroundColor: contact.color }]}><Text style={styles.avatarText}>{contact.initials}</Text></View>
+              <View style={[styles.avatar, { backgroundColor: contact.color }]}><Text translate={false} style={styles.avatarText}>{contact.initials}</Text></View>
               <View style={styles.contactCopy}>
-                <View style={styles.nameRow}><Text style={styles.name}>{contact.name}</Text>{contact.favorite ? <Ionicons name="star" size={14} color="#F5A623" /> : null}</View>
-                <Text style={styles.handle}>{contact.handle}</Text>
+                <View style={styles.nameRow}><Text translate={false} style={styles.name}>{contact.name}</Text>{contact.favorite ? <Ionicons name="star" size={14} color="#F5A623" /> : null}</View>
+                <Text translate={false} style={styles.handle}>{contact.handle}</Text>
               </View>
               <Ionicons name="chevron-forward" color={colors.muted} size={18} />
             </PressableScale>
@@ -125,16 +126,16 @@ export default function ContactsScreen() {
               <Text style={styles.editLabel}>Nombre</Text>
               <TextInput returnKeyType="done" onSubmitEditing={Keyboard.dismiss} onChangeText={setEditName} style={styles.editInput} value={editName} />
               <Text style={styles.editLabel}>Correo o dirección vinculada</Text>
-              <Text selectable style={styles.sheetHandle}>{selected.handle}</Text>
+              <Text translate={false} selectable style={styles.sheetHandle}>{selected.handle}</Text>
               <Pressable disabled={busy} onPress={saveContact} style={styles.sendButton}><Text style={styles.sendText}>Guardar cambios</Text></Pressable>
               <Pressable onPress={() => setEditing(false)} style={styles.cancelButton}><Text style={styles.cancelText}>Cancelar</Text></Pressable>
             </View>
           ) : (
             <View>
               <Pressable disabled={busy} onPress={toggleFavorite} style={styles.favorite}><Ionicons name={selected.favorite ? 'star' : 'star-outline'} size={23} color={selected.favorite ? '#F5A623' : colors.muted} /></Pressable>
-              <View style={[styles.largeAvatar, { backgroundColor: selected.color }]}><Text style={styles.largeInitials}>{selected.initials}</Text></View>
-              <Text style={styles.sheetTitle}>{selected.name}</Text>
-              <Text style={styles.sheetHandle}>{selected.handle}</Text>
+              <View style={[styles.largeAvatar, { backgroundColor: selected.color }]}><Text translate={false} style={styles.largeInitials}>{selected.initials}</Text></View>
+              <Text translate={false} style={styles.sheetTitle}>{selected.name}</Text>
+              <Text translate={false} style={styles.sheetHandle}>{selected.handle}</Text>
               <PressableScale disabled={busy} onPress={sendContact} style={styles.sendButton}>
                 <Ionicons name="paper-plane-outline" size={19} color="#FFFFFF" /><Text style={styles.sendText}>Enviar dinero</Text>
               </PressableScale>

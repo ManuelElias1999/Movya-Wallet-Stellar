@@ -1,7 +1,8 @@
+import { Pressable, Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
@@ -21,6 +22,8 @@ import { TestnetPaymentHistory } from '@/components/TestnetPaymentHistory';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { displayName as getDisplayName, formatXlmBalance } from '@/services/presentation';
 import { colors } from '@/theme/tokens';
+import { LanguageSelector } from '@/components/LanguageSelector';
+import { useLanguage } from '@/i18n/Language';
 
 const actionGradientColors = ['rgba(33,76,180,0.92)', 'rgba(47,108,207,0.86)'] as const;
 
@@ -32,6 +35,7 @@ const quickActions = [
 ];
 
 export default function HomeScreen() {
+  const { locale } = useLanguage();
   const router = useRouter();
   const auth = useAuth();
   const displayName = getDisplayName(auth.user?.user_metadata);
@@ -41,7 +45,7 @@ export default function HomeScreen() {
   const assets = account.data?.balances.map((item) => ({
     code: item.assetCode,
     name: item.assetCode === 'XLM' ? 'Stellar' : item.assetCode === 'USDC' ? 'USD Coin' : item.assetCode,
-    amount: Number(item.balance).toLocaleString(undefined, { maximumFractionDigits: 4 }),
+    amount: Number(item.balance).toLocaleString(locale, { maximumFractionDigits: 4 }),
     value: item.assetCode === 'XLM' ? 'Stellar' : item.assetCode === 'USDC' ? 'USD Coin' : item.assetCode,
     color: item.assetCode === 'XLM' ? colors.navy : colors.brand,
   })) ?? (account.isDemo ? demoAssets : []);
@@ -55,9 +59,9 @@ export default function HomeScreen() {
       <View style={styles.headerShell}>
       <NavigationGlass style={styles.header}>
         <View style={styles.profileRow}>
-          <PressableScale accessibilityLabel="Abrir mi cuenta" accessibilityRole="button" onPress={() => router.push('/settings')} style={styles.avatar}>{auth.user ? <Text style={styles.avatarInitial}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={38} />}</PressableScale>
+          <PressableScale accessibilityLabel="Abrir mi cuenta" accessibilityRole="button" onPress={() => router.push('/settings')} style={styles.avatar}>{auth.user ? <Text translate={false} style={styles.avatarInitial}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={38} />}</PressableScale>
           <View style={styles.greeting}>
-            <Text numberOfLines={1} style={styles.hello}>Hola, {displayName.split(/\s+/)[0]}</Text>
+            <Text numberOfLines={1} style={styles.hello}>Hola, <Text translate={false}>{displayName.split(/\s+/)[0]}</Text></Text>
             <Text numberOfLines={1} style={styles.welcome}>Tu dinero, más simple</Text>
           </View>
         </View>
@@ -73,7 +77,8 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AnimatedAccountCard ownerName={displayName} currency={account.isDemo ? 'USD' : 'XLM'} amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : formatXlmBalance(account.data?.balances)} balanceLabel={account.isDemo ? 'Saldo total en USD' : 'Saldo en Stellar'} />
+        <LanguageSelector />
+        <AnimatedAccountCard ownerName={displayName} currency={account.isDemo ? 'USD' : 'XLM'} amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : formatXlmBalance(account.data?.balances, locale)} balanceLabel={account.isDemo ? 'Saldo total en USD' : 'Saldo en Stellar'} />
 
         <View style={styles.actionsRow}>
           {quickActions.map((action) => (

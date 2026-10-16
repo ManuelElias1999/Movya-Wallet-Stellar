@@ -7,15 +7,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { ContactsProvider } from '@/context/ContactsContext';
 import { TestnetWalletProvider } from '@/context/TestnetWalletContext';
+import { LanguageProvider } from '@/i18n/Language';
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
+    <LanguageProvider><SafeAreaProvider>
       <AuthProvider><TestnetWalletProvider><ContactsProvider>
       <StatusBar style="dark" />
       <AppRoutes />
       </ContactsProvider></TestnetWalletProvider></AuthProvider>
-    </SafeAreaProvider>
+    </SafeAreaProvider></LanguageProvider>
   );
 }
 

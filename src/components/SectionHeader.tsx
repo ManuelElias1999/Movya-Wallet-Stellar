@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text } from '@/i18n/primitives';
+import { StyleSheet, View } from 'react-native';
 
 import { colors } from '@/theme/tokens';
 

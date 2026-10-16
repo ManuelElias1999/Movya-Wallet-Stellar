@@ -1,6 +1,7 @@
+import { Pressable, Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
@@ -94,7 +95,7 @@ export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmou
         </View>
       </View>
       <View style={styles.footer}>
-        <Text numberOfLines={1} style={[styles.owner, { flex: 1, marginRight: 12 }]}>{ownerName.toUpperCase()}</Text>
+        <Text translate={false} numberOfLines={1} style={[styles.owner, { flex: 1, marginRight: 12 }]}>{ownerName.toUpperCase()}</Text>
         <View style={styles.currencyPill}><Text style={styles.currencyText}>{currency}</Text></View>
       </View>
     </LinearGradient>
