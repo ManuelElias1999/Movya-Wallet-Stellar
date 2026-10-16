@@ -15,7 +15,7 @@ export function usePasswordVisibility(password: string, busy: boolean) {
       if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, []);
-  return { visible, toggle: () => setVisible(value => !value) };
+  return { visible, toggle: () => setVisible(value => !value), hide: () => setVisible(false) };
 }
 
 export function PasswordVisibilityButton({ visible, onPress, disabled }: { visible: boolean; onPress: () => void; disabled?: boolean }) {

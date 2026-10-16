@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,6 +12,7 @@ import { MovyaLogo } from '@/components/MovyaLogo';
 import { useAuth } from '@/context/AuthContext';
 import { WalletForge } from '@/components/WalletForge';
 import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
+import { PasswordInput } from '@/components/PasswordInput';
 import { colors } from '@/theme/tokens';
 
 type AuthMode = 'login' | 'register';
@@ -29,7 +30,13 @@ export default function WelcomeScreen() {
   const [identity, setIdentity] = useState(auth.user?.email ?? '');
   const [password, setPassword] = useState('');
   const passwordVisibility = usePasswordVisibility(password, busy);
-  useEffect(() => { if (auth.user?.email && !identity) setIdentity(auth.user.email); }, [auth.user?.email]);
+  const changeAuthMode = (next: AuthMode) => {
+    if (next === authMode || busy || lock.current) return;
+    Keyboard.dismiss();
+    setIdentity(''); setPassword(''); setName(''); setCode(''); setPendingEmail(''); setMessage('');
+    passwordVisibility.hide();
+    setAuthMode(next);
+  };
   const canContinue = auth.configured && !busy && (!pendingEmail || /^\d{6,10}$/.test(code.trim())) && password.length >= (authMode === 'register' ? 12 : 1) && (pendingEmail || (/^\S+@\S+\.\S+$/.test(identity.trim()) && (authMode === 'login' || name.trim().length > 1)));
 
   const continueToApp = async () => {
@@ -70,10 +77,10 @@ export default function WelcomeScreen() {
             <BlurView intensity={72} tint="light" style={[styles.authCard, Platform.OS === 'web' ? webGlass : null]}>
               <View pointerEvents="none" style={styles.cardShine} />
               {!pendingEmail ? <View style={styles.modeTabs}>
-                <PressableScale disabled={busy} onPress={() => setAuthMode('login')} style={[styles.modeTab, authMode === 'login' && styles.modeTabActive]}>
+                <PressableScale disabled={busy} onPress={() => changeAuthMode('login')} style={[styles.modeTab, authMode === 'login' && styles.modeTabActive]}>
                   <Text style={[styles.modeText, authMode === 'login' && styles.modeTextActive]}>Ingresar</Text>
                 </PressableScale>
-                <PressableScale disabled={busy} onPress={() => setAuthMode('register')} style={[styles.modeTab, authMode === 'register' && styles.modeTabActive]}>
+                <PressableScale disabled={busy} onPress={() => changeAuthMode('register')} style={[styles.modeTab, authMode === 'register' && styles.modeTabActive]}>
                   <Text style={[styles.modeText, authMode === 'register' && styles.modeTextActive]}>Crear cuenta</Text>
                 </PressableScale>
               </View> : null}
@@ -84,14 +91,14 @@ export default function WelcomeScreen() {
               </View>
 
               {authMode === 'register' ? (
-                <View style={styles.field}>
+                <View key="name" style={styles.field}>
                   <Ionicons color={colors.brand} name="person-outline" size={19} />
                   <TextInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} editable={!busy} autoCapitalize="words" onChangeText={setName} placeholder="Tu nombre" placeholderTextColor="#71809B" style={styles.input} value={name} />
                 </View>
               ) : null}
 
               {!pendingEmail ? (
-              <View style={styles.field}>
+              <View key={`email-${authMode}`} style={styles.field}>
                 <Ionicons color={colors.brand} name="mail-outline" size={19} />
                 <TextInput
                   returnKeyType="done"
@@ -110,9 +117,9 @@ export default function WelcomeScreen() {
               ) : null}
 
               {pendingEmail ? <View style={styles.field}><Ionicons color={colors.brand} name="key-outline" size={19} /><TextInput editable={!busy} value={code} onChangeText={setCode} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} placeholder="Código del correo" placeholderTextColor="#71809B" style={styles.input} /></View> : null}
-              <View style={styles.field}>
+              <View key={`password-${authMode}`} style={styles.field}>
                 <Ionicons color={colors.brand} name="lock-closed-outline" size={19} />
-                <TextInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} editable={!busy} autoCapitalize="none" autoCorrect={false} onChangeText={setPassword} placeholder="Contraseña" placeholderTextColor="#71809B" secureTextEntry={!passwordVisibility.visible} style={styles.input} value={password} />
+                <PasswordInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} editable={!busy} autoCapitalize="none" autoCorrect={false} onChangeText={setPassword} placeholder="Contraseña" placeholderTextColor="#71809B" secureTextEntry={!passwordVisibility.visible} style={styles.input} value={password} />
                 <PasswordVisibilityButton visible={passwordVisibility.visible} onPress={passwordVisibility.toggle} disabled={busy} />
               </View>
 
