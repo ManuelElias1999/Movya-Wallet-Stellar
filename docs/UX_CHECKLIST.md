@@ -37,9 +37,9 @@ Las pruebas automatizadas cubren servicios, seguridad y selección de sección; 
 
 ## Campo de contraseña en iOS
 
-El campo no vacía, restaura ni reconstruye la contraseña desde JavaScript. El parche `scripts/patch-ios-password.cjs`, aplicado por postinstall, hace que los campos protegidos usen la ruta de sustitución de rangos que ya incluye el adaptador nativo de React Native. Así se aplican la inserción, el borrado y la selección antes de que UIKit pueda reemplazar todo al retomar la edición. Mantiene el modo protegido, los límites del delegado, la posición del cursor y la notificación de cambios.
+La corrección nativa queda pospuesta por decisión de Manuel. El campo conserva el control protegido estándar: no se vacía, restaura ni reconstruye la contraseña desde JavaScript. No se instala un parche de React Native ni se fuerza su compilación desde fuente. El fallo al retomar la edición en iOS sigue pendiente; las pruebas del componente no deben interpretarse como una corrección de ese fallo nativo.
 
-Se requiere compilar la app siguiendo [NATIVE_WALLET_CREATION.md](NATIVE_WALLET_CREATION.md). El plugin obliga a compilar RNCore desde la fuente modificada. Expo Go conserva su control nativo original y no recibe este parche. Las pruebas del componente comprueban que JavaScript nunca vacía el valor al enfocar. La prueba `bash scripts/test-ios-password.sh` ejecuta el método real extraído del adaptador instalado contra un campo UIKit en el simulador; no equivale a probar la app completa ni confirma la ausencia de parpadeo en un iPhone físico.
+Los idiomas se prueban en Expo Go con `npx expo start --go --clear`, sin Xcode. La implementación nativa anterior se conserva en el historial del PR #18 para retomarla cuando se decida preparar una compilación propia.
 
 ## Español e inglés
 
