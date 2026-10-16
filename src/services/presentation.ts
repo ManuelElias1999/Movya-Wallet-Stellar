@@ -13,8 +13,13 @@ export function formatXlmBalance(balances?: { assetCode: string; balance: string
   if (!/^\d+(\.\d{1,7})?$/.test(balance)) return '0 XLM';
   const [whole, fraction = ''] = balance.split('.');
   const decimals = fraction.replace(/0+$/, '');
-  const separator = new Intl.NumberFormat(locale).formatToParts(1.1).find(part => part.type === 'decimal')?.value ?? '.';
-  return `${BigInt(whole).toLocaleString(locale)}${decimals ? `${separator}${decimals}` : ''} XLM`;
+  // The app supports Spanish and English. Format the decimal string directly:
+  // Expo Go/Hermes may not provide Intl.formatToParts or BigInt locale methods.
+  // Keeping strings also preserves all seven Stellar decimal places.
+  const english = /^en(?:-|$)/i.test(locale);
+  const separator = english ? '.' : ',';
+  const grouped = whole.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, english ? ',' : '.');
+  return `${grouped}${decimals ? `${separator}${decimals}` : ''} XLM`;
 }
 export function paymentDescription(received: boolean, address: string, contacts: { address?: string; name: string }[]) {
   const contact = contacts.find(item => item.address === address);
