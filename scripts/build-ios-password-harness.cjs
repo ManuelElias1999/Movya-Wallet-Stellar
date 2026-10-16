@@ -7,6 +7,11 @@ const end = source.indexOf('- (BOOL)textFieldShouldReturn:', start);
 if (start < 0 || end < 0 || !source.includes('&& !textField.secureTextEntry')) throw Error('Patched RN adapter not found');
 // Extract the actual installed method, not a reimplementation of its behavior.
 const method = source.slice(start, end);
+const fieldSource = fs.readFileSync(path.join(root, 'Libraries/Text/TextInput/Singleline/RCTUITextField.mm'), 'utf8');
+const fieldStart = fieldSource.indexOf('// Movya: route secure UIKeyInput edits through the RN delegate.');
+const fieldEnd = fieldSource.indexOf('#pragma mark - Context Menu', fieldStart);
+if (fieldStart < 0 || fieldEnd < 0) throw Error('Patched native field not found');
+const fieldMethods = fieldSource.slice(fieldStart, fieldEnd);
 const harness = `
 #import <UIKit/UIKit.h>
 @interface MVChanges : NSObject
@@ -22,6 +27,7 @@ const harness = `
 @end
 @implementation MVField
 - (void)setSelectedTextRange:(UITextRange *)range notifyDelegate:(BOOL)notify { [super setSelectedTextRange:range]; }
+${fieldMethods}
 @end
 @interface MVAdapter : NSObject <UITextFieldDelegate> {
   MVField *_backedTextInputView;
