@@ -22,7 +22,6 @@ import { TestnetPaymentHistory } from '@/components/TestnetPaymentHistory';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { displayName as getDisplayName, formatXlmBalance } from '@/services/presentation';
 import { colors } from '@/theme/tokens';
-import { LanguageSelector } from '@/components/LanguageSelector';
 import { useLanguage } from '@/i18n/Language';
 
 const actionGradientColors = ['rgba(33,76,180,0.92)', 'rgba(47,108,207,0.86)'] as const;
@@ -62,7 +61,7 @@ export default function HomeScreen() {
           <PressableScale accessibilityLabel="Abrir mi cuenta" accessibilityRole="button" onPress={() => router.push('/settings')} style={styles.avatar}>{auth.user ? <Text translate={false} style={styles.avatarInitial}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={38} />}</PressableScale>
           <View style={styles.greeting}>
             <Text numberOfLines={1} style={styles.hello}>Hola, <Text translate={false}>{displayName.split(/\s+/)[0]}</Text></Text>
-            <Text numberOfLines={1} style={styles.welcome}>Tu dinero, más simple</Text>
+            <Text numberOfLines={1} style={styles.welcome}>Un mensaje, una transacción</Text>
           </View>
         </View>
         <View style={styles.headerActions}>
@@ -77,7 +76,6 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <LanguageSelector />
         <AnimatedAccountCard ownerName={displayName} currency={account.isDemo ? 'USD' : 'XLM'} amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : formatXlmBalance(account.data?.balances, locale)} balanceLabel={account.isDemo ? 'Saldo total en USD' : 'Saldo en Stellar'} />
 
         <View style={styles.actionsRow}>

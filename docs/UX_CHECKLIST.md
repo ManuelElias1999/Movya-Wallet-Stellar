@@ -43,8 +43,8 @@ Los idiomas se prueban en Expo Go con `npx expo start --go --clear`, sin Xcode. 
 
 ## Español e inglés
 
-- Cambiar ES/EN desde Ingresar y Crear cuenta con datos escritos: cambian textos y placeholders, sin borrar los campos ni cambiar de modo. Al cambiar entre Ingresar/Crear cuenta sí quedan vacíos, como antes.
-- Cambiar el idioma en Inicio o Ajustes, navegar por actividad, contactos, enviar, recibir, swap, seguridad y respaldo, y volver al acceso. Se mantiene la elección. Cerrar y reabrir conserva el idioma.
+- En Ajustes → Idioma y región elegir Español o English. El selector solo aparece en Ajustes, con el idioma activo marcado y el formato regional que usa la app.
+- Navegar por Inicio, actividad, contactos, enviar, recibir, swap, seguridad y respaldo, y volver al acceso. Se mantiene la elección. Cerrar y reabrir conserva el idioma. El acceso y el dashboard muestran «Un mensaje, una transacción» / «One message, one transaction», sin el selector ES/EN.
 - Verificar etiquetas, ayuda, alertas, etapas de creación y avisos de error de la app. Errores desconocidos de proveedores externos se muestran sin inventar una traducción.
 - Comprobar que nombres, correos, mensajes del usuario, direcciones, claves privadas y las 12 palabras no cambian. Una persona llamada «Inicio» no debe convertirse en «Home».
 - Probar las sugerencias del chat en ambos idiomas. «Send 1 XLM to Aya» y «Envía 1 XLM a Aya» deben abrir la misma revisión, sin firmar automáticamente.
