@@ -4,9 +4,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Platform, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
 // One surface for the footer, home header and dashboard actions.
-export function NavigationGlass({ children, style }: PropsWithChildren<{ style?: StyleProp<ViewStyle> }>) {
+export function NavigationGlass({ children, style, gradientColors = ['rgba(24,86,153,0.86)', 'rgba(28,132,178,0.74)'] }: PropsWithChildren<{ style?: StyleProp<ViewStyle>; gradientColors?: readonly [string, string] }>) {
   return <BlurView intensity={78} tint="dark" style={[styles.surface, style, Platform.OS === 'web' ? webGlass : null]}>
-    <LinearGradient colors={['rgba(24,86,153,0.86)', 'rgba(28,132,178,0.74)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} pointerEvents="none" style={StyleSheet.absoluteFill} />
+    <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} pointerEvents="none" style={StyleSheet.absoluteFill} />
     {children}
   </BlurView>;
 }
