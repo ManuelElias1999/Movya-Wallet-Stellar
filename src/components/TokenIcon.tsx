@@ -16,7 +16,7 @@ export function TokenIcon({ code, color = colors.navy, size = 42 }: TokenIconPro
 
   return (
     <View style={[styles.container, { width: size, height: size, borderRadius: size / 2, backgroundColor: source ? '#FFFFFF' : color }]}>
-      {source ? <Image resizeMode="contain" source={source} style={{ width: imageSize, height: imageSize }} /> : <Text style={[styles.fallback, { fontSize: size * 0.38 }]}>{code === 'EURC' ? '€' : code.slice(0, 1)}</Text>}
+      {source ? <Image resizeMode="contain" source={source} style={{ width: imageSize, height: imageSize }} /> : <Text translate={false} style={[styles.fallback, { fontSize: size * 0.38 }]}>{code === 'EURC' ? '€' : code.slice(0, 1)}</Text>}
     </View>
   );
 }

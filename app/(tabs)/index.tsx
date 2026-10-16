@@ -59,7 +59,7 @@ export default function HomeScreen() {
       <View style={styles.headerShell}>
       <NavigationGlass style={styles.header}>
         <View style={styles.profileRow}>
-          <PressableScale accessibilityLabel="Abrir mi cuenta" accessibilityRole="button" onPress={() => router.push('/settings')} style={styles.avatar}>{auth.user ? <Text style={styles.avatarInitial}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={38} />}</PressableScale>
+          <PressableScale accessibilityLabel="Abrir mi cuenta" accessibilityRole="button" onPress={() => router.push('/settings')} style={styles.avatar}>{auth.user ? <Text translate={false} style={styles.avatarInitial}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={38} />}</PressableScale>
           <View style={styles.greeting}>
             <Text numberOfLines={1} style={styles.hello}>Hola, <Text translate={false}>{displayName.split(/\s+/)[0]}</Text></Text>
             <Text numberOfLines={1} style={styles.welcome}>Tu dinero, más simple</Text>

@@ -18,6 +18,7 @@ cat > "$app_dir/Info.plist" <<'PLIST'
 <key>CFBundleExecutable</key><string>PasswordCheck</string>
 <key>CFBundleName</key><string>PasswordCheck</string>
 <key>CFBundleVersion</key><string>1</string>
+<key>CFBundleShortVersionString</key><string>1.0.0</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>MinimumOSVersion</key><string>17.0</string>
 <key>LSRequiresIPhoneOS</key><true/>

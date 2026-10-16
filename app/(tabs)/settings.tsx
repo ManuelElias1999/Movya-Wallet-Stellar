@@ -33,8 +33,8 @@ export default function SettingsScreen() {
       <PageHeader backTo="/(tabs)" subtitle="Preferencias de tu cuenta" title="Ajustes" />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profile}>
-          <View style={styles.avatar}>{auth.user ? <Text style={styles.name}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={54} />}</View>
-          <View><Text translate={false} style={styles.name}>{displayName}</Text><Text translate={false} style={styles.email}>{auth.user?.email ?? 'Wallet de pruebas'}</Text></View>
+          <View style={styles.avatar}>{auth.user ? <Text translate={false} style={styles.name}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={54} />}</View>
+          <View><Text translate={false} style={styles.name}>{displayName}</Text>{auth.user?.email ? <Text translate={false} style={styles.email}>{auth.user.email}</Text> : <Text style={styles.email}>Wallet de pruebas</Text>}</View>
         </View>
         <Text style={styles.sectionTitle}>Cuenta</Text>
         <View style={styles.card}>
