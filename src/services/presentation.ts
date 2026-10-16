@@ -8,12 +8,13 @@ export function displayName(metadata?: Record<string, unknown>) {
   const value = metadata?.display_name;
   return typeof value === 'string' && value.trim() ? value.trim() : 'Usuario';
 }
-export function formatXlmBalance(balances?: { assetCode: string; balance: string }[]) {
+export function formatXlmBalance(balances?: { assetCode: string; balance: string }[], locale = 'es-BO') {
   const balance = balances?.find(item => item.assetCode === 'XLM')?.balance ?? '0';
   if (!/^\d+(\.\d{1,7})?$/.test(balance)) return '0 XLM';
   const [whole, fraction = ''] = balance.split('.');
   const decimals = fraction.replace(/0+$/, '');
-  return `${BigInt(whole).toLocaleString('es-BO')}${decimals ? `,${decimals}` : ''} XLM`;
+  const separator = new Intl.NumberFormat(locale).formatToParts(1.1).find(part => part.type === 'decimal')?.value ?? '.';
+  return `${BigInt(whole).toLocaleString(locale)}${decimals ? `${separator}${decimals}` : ''} XLM`;
 }
 export function paymentDescription(received: boolean, address: string, contacts: { address?: string; name: string }[]) {
   const contact = contacts.find(item => item.address === address);

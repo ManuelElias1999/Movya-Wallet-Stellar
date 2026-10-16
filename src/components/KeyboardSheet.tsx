@@ -1,6 +1,7 @@
+import { Pressable } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import type { PropsWithChildren } from 'react';
-import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme/tokens';
 

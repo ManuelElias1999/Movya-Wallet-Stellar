@@ -1,6 +1,7 @@
+import { Pressable } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { AppState, Pressable } from 'react-native';
+import { AppState } from 'react-native';
 import { colors } from '@/theme/tokens';
 
 export function usePasswordVisibility(password: string, busy: boolean) {

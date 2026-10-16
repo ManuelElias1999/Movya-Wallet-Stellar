@@ -1,8 +1,9 @@
+import { Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Linking, StyleSheet, Text, View } from 'react-native';
+import { AppState, Linking, StyleSheet, View } from 'react-native';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance, enableUSDC, fundTestnetAccount, readTestnetAccount, SubmissionUnknownError } from '@/services/stellar/payments';
 import { colors } from '@/theme/tokens';

@@ -1,7 +1,8 @@
+import { Alert, Pressable, Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
@@ -11,6 +12,7 @@ import { ProfilePhoto } from '@/components/ProfilePhoto';
 import { useAuth } from '@/context/AuthContext';
 import { displayName as getDisplayName } from '@/services/presentation';
 import { colors, radius } from '@/theme/tokens';
+import { LanguageSelector } from '@/components/LanguageSelector';
 
 const rows = [
   { icon: 'person-outline' as const, title: 'Datos personales', subtitle: 'Nombre, correo y teléfono', tint: '#E8F1FF', color: '#176BFF' },
@@ -32,7 +34,7 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.profile}>
           <View style={styles.avatar}>{auth.user ? <Text style={styles.name}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={54} />}</View>
-          <View><Text style={styles.name}>{displayName}</Text><Text style={styles.email}>{auth.user?.email ?? 'Wallet de pruebas'}</Text></View>
+          <View><Text translate={false} style={styles.name}>{displayName}</Text><Text translate={false} style={styles.email}>{auth.user?.email ?? 'Wallet de pruebas'}</Text></View>
         </View>
         <Text style={styles.sectionTitle}>Cuenta</Text>
         <View style={styles.card}>
@@ -45,6 +47,7 @@ export default function SettingsScreen() {
           ))}
         </View>
         <Text style={styles.sectionTitle}>Preferencias</Text>
+        <View style={styles.row}><Text style={[styles.rowTitle, { flex: 1 }]}>Idioma</Text><LanguageSelector /></View>
         <View style={styles.card}>
           <View style={styles.row}>
             <View style={[styles.rowIcon, { backgroundColor: '#FCEAF0' }]}><Ionicons name="notifications-outline" size={20} color="#B94F72" /></View>

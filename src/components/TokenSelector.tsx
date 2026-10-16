@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Text } from '@/i18n/primitives';
+import { StyleSheet, View } from 'react-native';
 
 import { PressableScale } from '@/components/PressableScale';
 import { TokenIcon } from '@/components/TokenIcon';

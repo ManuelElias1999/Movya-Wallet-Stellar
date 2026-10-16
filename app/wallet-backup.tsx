@@ -1,9 +1,10 @@
+import { Alert, Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
 import * as Clipboard from 'expo-clipboard';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, AppState, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, AppState, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PageHeader } from '@/components/PageHeader';
 import { PressableScale } from '@/components/PressableScale';
@@ -126,7 +127,7 @@ export default function WalletBackupScreen() {
           {message ? <Text accessibilityLiveRegion="polite" style={styles.notice}>{message}</Text> : null}
           {material ? <View style={styles.recovery}>
             <Text style={styles.title}>{mode === 'phrase' ? 'Tus 12 palabras' : 'Tu clave privada Stellar'}</Text>
-            {mode === 'phrase' && material.mnemonic ? <View style={styles.words}>{material.mnemonic.split(' ').map((word, i) => <View key={i} style={styles.word}><Text style={styles.number}>{i + 1}</Text><Text style={styles.wordText}>{word}</Text></View>)}</View> : <Text selectable style={styles.secret}>{material.secret}</Text>}
+            {mode === 'phrase' && material.mnemonic ? <View style={styles.words}>{material.mnemonic.split(' ').map((word, i) => <View key={i} style={styles.word}><Text style={styles.number}>{i + 1}</Text><Text translate={false} style={styles.wordText}>{word}</Text></View>)}</View> : <Text translate={false} selectable style={styles.secret}>{material.secret}</Text>}
             <PressableScale disabled={busy} onPress={() => void copy()} style={styles.button}><Ionicons name="copy-outline" size={19} color="white" /><Text style={styles.buttonText}>{mode === 'phrase' ? 'Copiar las 12 palabras' : 'Copiar clave privada'}</Text></PressableScale>
             <Text style={styles.copy}>Se ocultará en un minuto, al salir o al poner la app en segundo plano.</Text>
             <PressableScale onPress={hide} style={styles.secondary}><Text style={styles.secondaryText}>Ocultar ahora</Text></PressableScale>

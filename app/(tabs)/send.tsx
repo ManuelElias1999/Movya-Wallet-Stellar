@@ -1,7 +1,8 @@
+import { Pressable, Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Linking, Modal, Platform, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Linking, Modal, Platform, Keyboard, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PageHeader } from '@/components/PageHeader';
@@ -82,8 +83,8 @@ export default function SendScreen() {
           <Text style={styles.label}>Destinatario</Text>
           {selected ? (
             <View style={styles.selectedContact}>
-              <View style={[styles.avatar, { backgroundColor: selected.color }]}><Text style={styles.avatarText}>{selected.initials}</Text></View>
-              <View style={styles.contactCopy}><Text style={styles.contactName}>{selected.name}</Text><Text style={styles.handle}>{selected.handle}</Text></View>
+              <View style={[styles.avatar, { backgroundColor: selected.color }]}><Text translate={false} style={styles.avatarText}>{selected.initials}</Text></View>
+              <View style={styles.contactCopy}><Text translate={false} style={styles.contactName}>{selected.name}</Text><Text translate={false} style={styles.handle}>{selected.handle}</Text></View>
               <Pressable onPress={() => setSelectedContactId('')} style={styles.clear}><Ionicons name="close" size={18} color={colors.muted} /></Pressable>
             </View>
           ) : (
@@ -103,7 +104,7 @@ export default function SendScreen() {
           </View>
 
           {error || wallet.error ? <Text accessibilityLiveRegion="polite" style={{ color: '#B52D42', marginTop: 16, fontSize: 12, lineHeight: 18 }}>{error || wallet.error}</Text> : null}
-          {receipt ? <View style={styles.summary}><View style={styles.summaryCopy}><Text style={styles.summaryTitle}>Transferencia confirmada en Testnet</Text><Text selectable style={styles.summaryText}>{receipt.hash}</Text><PressableScale onPress={() => void Linking.openURL(receipt.explorerUrl)}><Text style={styles.changeContact}>Ver comprobante en Stellar Expert</Text></PressableScale><PressableScale onPress={() => { setReceipt(null); setAmount(''); setError(''); }}><Text style={styles.changeContact}>Hacer otro envío</Text></PressableScale></View></View> : null}
+          {receipt ? <View style={styles.summary}><View style={styles.summaryCopy}><Text style={styles.summaryTitle}>Transferencia confirmada en Testnet</Text><Text translate={false} selectable style={styles.summaryText}>{receipt.hash}</Text><PressableScale onPress={() => void Linking.openURL(receipt.explorerUrl)}><Text style={styles.changeContact}>Ver comprobante en Stellar Expert</Text></PressableScale><PressableScale onPress={() => { setReceipt(null); setAmount(''); setError(''); }}><Text style={styles.changeContact}>Hacer otro envío</Text></PressableScale></View></View> : null}
           <PressableScale disabled={!ready} onPress={() => void reviewPayment()} style={[styles.primaryButton, !ready && styles.disabled]}><Text style={styles.primaryText}>{preparing ? 'Verificando…' : 'Revisar envío'}</Text></PressableScale>
           <View style={styles.contextHelp}>
             <MovyaContextHelp
@@ -128,8 +129,8 @@ export default function SendScreen() {
           {!contacts.length ? <Pressable onPress={() => { setContactsOpen(false); router.push('/contacts'); }}><Text style={styles.help}>Agrega tu primer contacto →</Text></Pressable> : null}
           {contacts.map((contact) => (
             <Pressable key={contact.id} onPress={() => pickContact(contact.id)} style={styles.contactRow}>
-              <View style={[styles.avatar, { backgroundColor: contact.color }]}><Text style={styles.avatarText}>{contact.initials}</Text></View>
-              <View style={styles.contactCopy}><Text style={styles.contactName}>{contact.name}</Text><Text style={styles.handle}>{contact.handle}</Text></View>
+              <View style={[styles.avatar, { backgroundColor: contact.color }]}><Text translate={false} style={styles.avatarText}>{contact.initials}</Text></View>
+              <View style={styles.contactCopy}><Text translate={false} style={styles.contactName}>{contact.name}</Text><Text translate={false} style={styles.handle}>{contact.handle}</Text></View>
               <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
           ))}

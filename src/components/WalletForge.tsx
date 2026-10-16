@@ -1,11 +1,14 @@
+import { Text } from '@/i18n/primitives';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, ActivityIndicator, Animated, Easing, Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Animated, Easing, Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WalletForgeScene } from './WalletForgeScene';
 import { PressableScale } from './PressableScale';
 import { colors } from '@/theme/tokens';
+import { useLanguage } from '@/i18n/Language';
 
 export function WalletForge({ stage, onCancel }: { stage: string; onCancel: () => void }) {
+  const { t } = useLanguage();
   const strike = useRef(new Animated.Value(0)).current;
   const started = useRef(Date.now());
   const [elapsed, setElapsed] = useState(0);
@@ -28,7 +31,7 @@ export function WalletForge({ stage, onCancel }: { stage: string; onCancel: () =
   return <Modal animationType="fade" onRequestClose={onCancel} presentationStyle="fullScreen" visible>
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
-        <View style={styles.panel} accessibilityRole="progressbar" accessibilityLabel="Creación de tu wallet en curso" accessibilityValue={{ text: stage }}>
+        <View style={styles.panel} accessibilityRole="progressbar" accessibilityLabel={t('Creación de tu wallet en curso')} accessibilityValue={{ text: t(stage) }}>
           <Text style={styles.eyebrow}>EL TALLER DE MOVYA</Text>
           <WalletForgeScene strike={strike} reduceMotion={reduceMotion} />
           <Text style={styles.title}>Movya está forjando{ '\n' }tu billetera</Text>

@@ -1,7 +1,8 @@
+import { Pressable, Share, Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -46,7 +47,7 @@ export default function ReceiveScreen() {
         </View>
         <View style={styles.addressCard}>
           <Text style={styles.addressLabel}>Tu dirección</Text>
-          <Text numberOfLines={2} style={styles.address}>{demoAddress}</Text>
+          <Text translate={false} numberOfLines={2} style={styles.address}>{demoAddress}</Text>
           <View style={styles.actions}>
             <PressableScale onPress={copyAddress} style={styles.actionButton}>
               <Ionicons name={copied ? 'checkmark' : 'copy-outline'} size={18} color={colors.brand} />

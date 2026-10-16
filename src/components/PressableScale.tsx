@@ -1,6 +1,7 @@
+import { Pressable } from '@/i18n/primitives';
 import * as Haptics from 'expo-haptics';
 import { useRef, type PropsWithChildren } from 'react';
-import { Animated, Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { Animated, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 
 type PressableScaleProps = PropsWithChildren<Omit<PressableProps, 'style'>> & {
   style?: StyleProp<ViewStyle>;

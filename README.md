@@ -25,7 +25,7 @@ Sending money should not require learning an entirely new vocabulary. Addresses,
 
 Movya starts with a familiar experience: create an account with email, save people as contacts, check a balance and say what you want to do. The wallet handles the blockchain steps while keeping the user in control of the final confirmation.
 
-The project is informed by the barriers to adoption in Bolivia and Latin America, with a broader goal: make digital payments understandable to anyone, including people using Web3 for the first time. It is not limited to experienced crypto users, a particular age group or one region. The current app interface and command examples are primarily in Spanish.
+The project is informed by the barriers to adoption in Bolivia and Latin America, with a broader goal: make digital payments understandable to anyone, including people using Web3 for the first time. It is not limited to experienced crypto users, a particular age group or one region. The app supports Spanish and English, including basic chat commands in both languages. Use ES/EN on sign-in or Home, or the language control in Settings; the preference persists on the device.
 
 > **“Envía 20 USDC a Aya”** → resolve the saved contact → review the payment → confirm → view the Stellar receipt.
 
@@ -44,6 +44,7 @@ This repository contains the Expo wallet application. The marketing website is a
 | Area | Available now | Boundary |
 | --- | --- | --- |
 | Accounts | Email/password registration, login and session restoration with Supabase | Requires a configured Supabase project; email delivery depends on its Auth settings |
+| Languages | Spanish/English UI, accessible labels, alerts, basic chat intents and persisted preference | User content and recovery material are never translated; unknown provider errors remain as returned |
 | Personal wallet | Automatically generated wallet for each new account | Stellar Testnet only; funding activates the account on the network |
 | Recovery | 12-word phrase for new wallets, encrypted backup, restoration of the same wallet on another device | Original account password required; no in-app phrase import or password-change/reset recovery flow |
 | Payments | Review, local signing and submission of XLM and verified-issuer USDC transfers | Recipient must be active; USDC requires compatible, authorized trustlines and sufficient capacity |

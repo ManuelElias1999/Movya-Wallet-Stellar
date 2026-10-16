@@ -1,9 +1,10 @@
+import { Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
-import { ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Image, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackground';
@@ -13,6 +14,7 @@ import { useAuth } from '@/context/AuthContext';
 import { WalletForge } from '@/components/WalletForge';
 import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
 import { PasswordInput } from '@/components/PasswordInput';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { colors } from '@/theme/tokens';
 
 type AuthMode = 'login' | 'register';
@@ -66,6 +68,7 @@ export default function WelcomeScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
           <View style={styles.page}>
+            <LanguageSelector />
             <View style={styles.brandArea}>
               <View style={styles.logoHalo}>
                 <MovyaLogo size={82} />

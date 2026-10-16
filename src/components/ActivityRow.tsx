@@ -1,5 +1,6 @@
+import { Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { colors } from '@/theme/tokens';
 

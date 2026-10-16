@@ -1,8 +1,9 @@
+import { Pressable, Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, StyleSheet, View } from 'react-native';
 
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
 import { PressableScale } from '@/components/PressableScale';
