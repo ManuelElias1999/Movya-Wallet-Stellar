@@ -5,10 +5,11 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Dimensions, Easing, Image, Keyboard, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Dimensions, Easing, Keyboard, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme/tokens';
+import { MovyaLogo } from '@/components/MovyaLogo';
 import { useAuth } from '@/context/AuthContext';
 import { displayName } from '@/services/presentation';
 import { useContacts } from '@/context/ContactsContext';
@@ -169,7 +170,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
         <BlurView intensity={78} tint="light" style={[styles.header, { minHeight: 76 + insets.top, paddingTop: insets.top }]}>
           <Pressable accessibilityLabel="Cerrar chat" onPress={() => { Keyboard.dismiss(); onClose(); }} style={styles.closeButton}><Ionicons name="chevron-down" size={24} color={colors.ink} /></Pressable>
           <View style={styles.identity}>
-            <View style={styles.logoWrap}><Image source={require('../../assets/movya-logo.png')} style={styles.logo} /><View style={styles.statusDot} /></View>
+            <View style={styles.logoWrap}><MovyaLogo size={45} /><View style={styles.statusDot} /></View>
             <View><Text style={styles.title}>Movya</Text><Text style={styles.status}>Asistente financiero · En línea</Text></View>
           </View>
           <View style={{ width: 42, height: 42 }} />
@@ -179,7 +180,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
           <Text style={styles.today}>HOY</Text>
           {messages.map((message) => message.role === 'movya' ? (
             <View key={message.id} style={styles.movyaGroup}>
-              <View style={styles.senderRow}><Image source={require('../../assets/movya-logo.png')} style={styles.messageAvatar} /><Text style={styles.sender}>Movya</Text><View style={styles.aiBadge}><Ionicons name="sparkles" size={10} color={colors.brand} /><Text style={styles.aiText}>IA</Text></View></View>
+              <View style={styles.senderRow}><MovyaLogo size={28} style={{ marginRight: 6 }} /><Text style={styles.sender}>Movya</Text><View style={styles.aiBadge}><Ionicons name="sparkles" size={10} color={colors.brand} /><Text style={styles.aiText}>IA</Text></View></View>
               <BlurView intensity={72} tint="light" style={[styles.bubble, styles.movyaBubble]}>
                 {message.kind === 'confirmation' ? (
                   <View>

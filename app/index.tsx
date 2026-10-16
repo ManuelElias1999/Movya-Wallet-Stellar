@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackground';
 import { PressableScale } from '@/components/PressableScale';
+import { MovyaLogo } from '@/components/MovyaLogo';
 import { useAuth } from '@/context/AuthContext';
 import { WalletForge } from '@/components/WalletForge';
 import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
@@ -60,7 +61,7 @@ export default function WelcomeScreen() {
           <View style={styles.page}>
             <View style={styles.brandArea}>
               <View style={styles.logoHalo}>
-                <Image source={require('../assets/movya-logo.png')} style={styles.logo} />
+                <MovyaLogo size={82} />
               </View>
               <Text style={styles.brand}>Movya Wallet</Text>
               <Text style={styles.tagline}>Tu dinero, más simple. Habla con Movya y hazlo en segundos.</Text>

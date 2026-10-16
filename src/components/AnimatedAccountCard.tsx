@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 import { colors } from '@/theme/tokens';
 import { PressableScale } from '@/components/PressableScale';
+import { MovyaLogo } from '@/components/MovyaLogo';
 
 type AnimatedAccountCardProps = {
   amountsVisible: boolean;
@@ -67,7 +68,7 @@ export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmou
         <View>
           <View style={styles.brandRow}>
             <View style={styles.brandLogoWrap}>
-              <Image source={require('../../assets/movya-logo.png')} style={styles.brandLogo} />
+              <MovyaLogo size={34} />
             </View>
             <Text style={styles.brand}>Movya</Text>
           </View>
