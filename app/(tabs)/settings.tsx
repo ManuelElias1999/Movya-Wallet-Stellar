@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import { displayName as getDisplayName } from '@/services/presentation';
 import { colors, radius } from '@/theme/tokens';
 import { LanguageSelector } from '@/components/LanguageSelector';
+import { useLanguage } from '@/i18n/Language';
 
 const rows = [
   { icon: 'person-outline' as const, title: 'Datos personales', subtitle: 'Nombre, correo y teléfono', tint: '#E8F1FF', color: '#176BFF' },
@@ -22,6 +23,7 @@ const rows = [
 ];
 
 export default function SettingsScreen() {
+  const { language } = useLanguage();
   const router = useRouter();
   const auth = useAuth();
   const displayName = getDisplayName(auth.user?.user_metadata);
@@ -47,12 +49,21 @@ export default function SettingsScreen() {
           ))}
         </View>
         <Text style={styles.sectionTitle}>Preferencias</Text>
-        <View style={styles.row}><Text style={[styles.rowTitle, { flex: 1 }]}>Idioma</Text><LanguageSelector /></View>
         <View style={styles.card}>
           <View style={styles.row}>
             <View style={[styles.rowIcon, { backgroundColor: '#FCEAF0' }]}><Ionicons name="notifications-outline" size={20} color="#B94F72" /></View>
             <View style={styles.rowCopy}><Text style={styles.rowTitle}>Notificaciones</Text><Text style={styles.rowSubtitle}>Movimientos y seguridad</Text></View>
             <Switch onValueChange={setNotifications} trackColor={{ false: '#CED5E0', true: colors.brandIce }} thumbColor={notifications ? colors.brand : '#FFFFFF'} value={notifications} />
+          </View>
+        </View>
+        <Text style={styles.sectionTitle}>Idioma y región</Text>
+        <View style={[styles.card, { paddingVertical: 16 }]}>
+          <Text style={styles.rowTitle}>Idioma de la aplicación</Text>
+          <Text style={styles.rowSubtitle}>Se aplica a toda la app y queda guardado.</Text>
+          <LanguageSelector />
+          <View style={[styles.divider, { paddingTop: 12 }]}>
+            <Text style={styles.rowTitle}>Formato regional</Text>
+            <Text style={styles.rowSubtitle}>{language === 'es' ? 'Español (Bolivia)' : 'Inglés (Estados Unidos)'}</Text>
           </View>
         </View>
         {auth.user ? <PressableScale disabled={busy} onPress={() => { setBusy(true); void auth.logout().then(() => router.replace('/')).catch(e => Alert.alert('No se pudo cerrar sesión', e.message)).finally(() => setBusy(false)); }} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>{busy ? 'Cerrando sesión…' : 'Cerrar sesión'}</Text></PressableScale> : <PressableScale onPress={() => router.replace('/')} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>Crear cuenta o ingresar con correo</Text></PressableScale>}

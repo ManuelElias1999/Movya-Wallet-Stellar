@@ -14,7 +14,6 @@ import { useAuth } from '@/context/AuthContext';
 import { WalletForge } from '@/components/WalletForge';
 import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
 import { PasswordInput } from '@/components/PasswordInput';
-import { LanguageSelector } from '@/components/LanguageSelector';
 import { colors } from '@/theme/tokens';
 
 type AuthMode = 'login' | 'register';
@@ -68,13 +67,12 @@ export default function WelcomeScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
           <View style={styles.page}>
-            <LanguageSelector />
             <View style={styles.brandArea}>
               <View style={styles.logoHalo}>
                 <MovyaLogo size={82} />
               </View>
               <Text style={styles.brand}>Movya Wallet</Text>
-              <Text style={styles.tagline}>Tu dinero, más simple. Habla con Movya y hazlo en segundos.</Text>
+              <Text style={styles.tagline}>Un mensaje, una transacción</Text>
             </View>
 
             <BlurView intensity={72} tint="light" style={[styles.authCard, Platform.OS === 'web' ? webGlass : null]}>

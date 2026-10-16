@@ -25,7 +25,7 @@ Sending money should not require learning an entirely new vocabulary. Addresses,
 
 Movya starts with a familiar experience: create an account with email, save people as contacts, check a balance and say what you want to do. The wallet handles the blockchain steps while keeping the user in control of the final confirmation.
 
-The project is informed by the barriers to adoption in Bolivia and Latin America, with a broader goal: make digital payments understandable to anyone, including people using Web3 for the first time. It is not limited to experienced crypto users, a particular age group or one region. The app supports Spanish and English, including basic chat commands in both languages. Use ES/EN on sign-in or Home, or the language control in Settings; the preference persists on the device.
+The project is informed by the barriers to adoption in Bolivia and Latin America, with a broader goal: make digital payments understandable to anyone, including people using Web3 for the first time. It is not limited to experienced crypto users, a particular age group or one region. The app supports Spanish and English, including basic chat commands in both languages. Choose Español or English in Settings → Language and region; the preference persists on the device and also applies to sign-in.
 
 > **“Envía 20 USDC a Aya”** → resolve the saved contact → review the payment → confirm → view the Stellar receipt.
 
