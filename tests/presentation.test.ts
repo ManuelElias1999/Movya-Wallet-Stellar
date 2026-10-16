@@ -3,6 +3,26 @@ import { test } from 'node:test';
 import { Keypair } from '@stellar/stellar-sdk/base';
 import { displayName, formatXlmBalance, paymentDescription, tabForPath } from '../src/services/presentation';
 
+test('XLM balance formatting works without Intl and BigInt localization in Expo Go', () => {
+  const savedIntl = globalThis.Intl;
+  const savedBigIntFormat = BigInt.prototype.toLocaleString;
+  try {
+    Object.defineProperty(globalThis, 'Intl', { configurable: true, writable: true, value: undefined });
+    BigInt.prototype.toLocaleString = () => { throw new Error('BigInt locale formatting unavailable'); };
+    const balance = [{ assetCode: 'XLM', balance: '922337203685.4775807' }];
+    assert.equal(formatXlmBalance(balance, 'es-BO'), '922.337.203.685,4775807 XLM');
+    assert.equal(formatXlmBalance(balance, 'en-US'), '922,337,203,685.4775807 XLM');
+    assert.equal(formatXlmBalance([{ assetCode: 'XLM', balance: '0001234.1200000' }], 'en-US'), '1,234.12 XLM');
+    assert.equal(formatXlmBalance([{ assetCode: 'XLM', balance: '0.0000001' }], 'es-BO'), '0,0000001 XLM');
+    assert.equal(formatXlmBalance([{ assetCode: 'XLM', balance: '0.0000000' }]), '0 XLM');
+    assert.equal(formatXlmBalance([{ assetCode: 'XLM', balance: 'NaN' }]), '0 XLM');
+    assert.equal(formatXlmBalance(), '0 XLM');
+  } finally {
+    Object.defineProperty(globalThis, 'Intl', { configurable: true, writable: true, value: savedIntl });
+    BigInt.prototype.toLocaleString = savedBigIntFormat;
+  }
+});
+
 test('history identifies saved contacts by full address in both directions and leaves strangers unnamed', () => {
   const aya = Keypair.random().publicKey(); const unknown = Keypair.random().publicKey();
   const contacts = [{ name: 'Aya', address: aya }, { name: 'Sin dirección', address: undefined }];
