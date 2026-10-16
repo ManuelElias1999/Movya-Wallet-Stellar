@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -12,6 +11,7 @@ import { AnimatedAccountCard } from '@/components/AnimatedAccountCard';
 import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackground';
 import { PoweredByStellarFooter } from '@/components/PoweredByStellarFooter';
 import { PressableScale } from '@/components/PressableScale';
+import { NavigationGlass } from '@/components/NavigationGlass';
 import { ProfilePhoto } from '@/components/ProfilePhoto';
 import { TokenIcon } from '@/components/TokenIcon';
 import { demoActivity, demoAssets } from '@/data/demo';
@@ -23,10 +23,10 @@ import { displayName as getDisplayName, formatXlmBalance } from '@/services/pres
 import { colors } from '@/theme/tokens';
 
 const quickActions = [
-  { label: 'Enviar', icon: 'arrow-up' as const, route: '/send' as const, colors: ['#1763DD', '#0755D8'] as const },
-  { label: 'Recibir', icon: 'arrow-down' as const, route: '/receive' as const, colors: ['#2466B1', '#123E73'] as const },
-  { label: 'Swap', icon: 'swap-horizontal' as const, route: '/swap' as const, colors: ['#315B86', '#153451'] as const },
-  { label: 'Agregar', icon: 'add' as const, route: '/receive' as const, colors: ['#187B94', '#0C5067'] as const },
+  { label: 'Enviar', icon: 'arrow-up' as const, route: '/send' as const },
+  { label: 'Recibir', icon: 'arrow-down' as const, route: '/receive' as const },
+  { label: 'Swap', icon: 'swap-horizontal' as const, route: '/swap' as const },
+  { label: 'Agregar', icon: 'add' as const, route: '/receive' as const },
 ];
 
 export default function HomeScreen() {
@@ -50,7 +50,8 @@ export default function HomeScreen() {
       <StatusBar style="dark" />
       <AnimatedDashboardBackground />
 
-      <View style={styles.header}>
+      <View style={styles.headerShell}>
+      <NavigationGlass style={styles.header}>
         <View style={styles.profileRow}>
           <PressableScale accessibilityLabel="Abrir mi cuenta" accessibilityRole="button" onPress={() => router.push('/settings')} style={styles.avatar}>{auth.user ? <Text style={styles.avatarInitial}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={48} />}</PressableScale>
           <View style={styles.greeting}>
@@ -61,12 +62,13 @@ export default function HomeScreen() {
         </View>
         <View style={styles.headerActions}>
           <PressableScale accessibilityLabel="Actualizar portafolio" accessibilityRole="button" disabled={account.loading} onPress={() => void account.refresh()} pressedScale={0.9} style={styles.headerButton}>
-            {account.loading ? <ActivityIndicator color={colors.brand} size="small" /> : <Ionicons color={colors.navy} name="refresh-outline" size={21} />}
+            {account.loading ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Ionicons color="#FFFFFF" name="refresh-outline" size={21} />}
           </PressableScale>
           <PressableScale accessibilityLabel="Abrir ajustes" accessibilityRole="button" onPress={() => router.push('/settings')} pressedScale={0.9} style={styles.headerButton}>
-            <Ionicons color={colors.navy} name="options-outline" size={21} />
+            <Ionicons color="#FFFFFF" name="options-outline" size={21} />
           </PressableScale>
         </View>
+      </NavigationGlass>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -75,10 +77,10 @@ export default function HomeScreen() {
         <View style={styles.actionsRow}>
           {quickActions.map((action) => (
             <PressableScale key={action.label} accessibilityRole="button" accessibilityLabel={action.label} onPress={() => router.push(action.route)} style={styles.actionItem}>
-              <LinearGradient colors={action.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.actionSurface}>
+              <NavigationGlass style={styles.actionSurface}>
                 <View style={styles.actionIcon}><Ionicons color="#FFFFFF" name={action.icon} size={27} /></View>
                 <Text style={styles.actionLabel}>{action.label}</Text>
-              </LinearGradient>
+              </NavigationGlass>
             </PressableScale>
           ))}
         </View>
@@ -121,9 +123,10 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#E9EFF5' },
-  header: { width: '100%', maxWidth: 760, alignSelf: 'center', minHeight: 94, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16, gap: 12 }, profileRow: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' }, avatar: { width: 48, height: 48, borderRadius: 17, alignItems: 'center', justifyContent: 'center', marginRight: 12, overflow: 'hidden', backgroundColor: '#153E73' }, avatarInitial: { color: '#FFFFFF', fontSize: 21, fontWeight: '800' }, greeting: { flex: 1, minWidth: 0 }, eyebrow: { color: '#4E6B8E', fontSize: 9, fontWeight: '800', letterSpacing: 1.5, marginBottom: 3 }, hello: { color: colors.ink, fontSize: 21, fontWeight: '900', letterSpacing: -0.5 }, welcome: { color: '#57708D', fontSize: 11, marginTop: 3 }, headerActions: { flexDirection: 'row', gap: 8 }, headerButton: { width: 44, height: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#D4DFEC', shadowColor: '#153E73', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 2 },
+  headerShell: { width: '100%', maxWidth: 744, alignSelf: 'center', paddingHorizontal: 12, paddingTop: 8, paddingBottom: 12, shadowColor: '#00123F', shadowOpacity: 0.24, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
+  header: { width: '100%', minHeight: 94, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, gap: 10 }, profileRow: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' }, avatar: { width: 48, height: 48, borderRadius: 17, alignItems: 'center', justifyContent: 'center', marginRight: 10, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.24)' }, avatarInitial: { color: '#FFFFFF', fontSize: 21, fontWeight: '800' }, greeting: { flex: 1, minWidth: 0 }, eyebrow: { color: 'rgba(255,255,255,0.76)', fontSize: 9, fontWeight: '800', letterSpacing: 1.5, marginBottom: 3 }, hello: { color: '#FFFFFF', fontSize: 21, fontWeight: '900', letterSpacing: -0.5 }, welcome: { color: 'rgba(255,255,255,0.82)', fontSize: 11, marginTop: 3 }, headerActions: { flexDirection: 'row', gap: 8 }, headerButton: { width: 44, height: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.24)' },
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 136 },
-  actionsRow: { flexDirection: 'row', gap: 10, marginTop: 20 }, actionItem: { flex: 1, minWidth: 0, borderRadius: 20, backgroundColor: '#153E73', shadowColor: '#0A3A7B', shadowOpacity: 0.16, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 4 }, actionSurface: { minHeight: 96, width: '100%', borderRadius: 20, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, gap: 9 }, actionIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.12)' }, actionLabel: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
+  actionsRow: { flexDirection: 'row', gap: 10, marginTop: 20 }, actionItem: { flex: 1, minWidth: 0, borderRadius: 28, backgroundColor: 'transparent', shadowColor: '#00123F', shadowOpacity: 0.24, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 6 }, actionSurface: { minHeight: 96, width: '100%', borderRadius: 28, alignItems: 'center', justifyContent: 'center', paddingVertical: 12, gap: 9 }, actionIcon: { width: 38, height: 38, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.24)' }, actionLabel: { color: '#FFFFFF', fontSize: 12, fontWeight: '800' },
   sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 31, marginBottom: 12 }, sectionTitle: { color: colors.ink, fontSize: 19, fontWeight: '900', letterSpacing: -0.35 }, sectionSubtitle: { color: '#66809B', fontSize: 10, marginTop: 3 }, sectionAction: { color: colors.brand, fontSize: 11, fontWeight: '800' },
   portfolioRow: { gap: 12, paddingRight: 4, paddingBottom: 12 }, assetCard: { width: 184, minHeight: 142, padding: 14, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.96)', shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 4 }, assetTop: { flexDirection: 'row', alignItems: 'center' }, assetIcon: { width: 42, height: 42, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }, assetInitial: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' }, assetIdentity: { flex: 1, marginLeft: 9 }, assetName: { color: colors.ink, fontSize: 12, fontWeight: '800' }, assetCode: { color: colors.muted, fontSize: 9, marginTop: 3 }, assetAmount: { color: colors.ink, fontSize: 19, fontWeight: '900', letterSpacing: -0.4, marginTop: 16 }, assetValue: { color: '#657A93', fontSize: 10, marginTop: 4 },
   activityCard: { paddingHorizontal: 15, borderRadius: 23, backgroundColor: 'rgba(255,255,255,0.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.96)', shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 4 }, syncError: { color: colors.warning, fontSize: 10, lineHeight: 15, marginTop: 14 },

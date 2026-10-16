@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
 import { PressableScale } from '@/components/PressableScale';
+import { NavigationGlass } from '@/components/NavigationGlass';
 import { colors } from '@/theme/tokens';
 
 import { type NavigationTab } from '@/services/presentation';
@@ -29,8 +28,7 @@ export function BottomNavigation({ active, onMovyaPress }: BottomNavigationProps
 
   return (
     <View style={[styles.shell, { paddingBottom: bottomPadding }]}> 
-      <BlurView intensity={78} tint="dark" style={[styles.bar, Platform.OS === 'web' ? webGlass : null]}> 
-        <LinearGradient colors={['rgba(24,86,153,0.86)', 'rgba(28,132,178,0.74)']} end={{ x: 1, y: 0 }} pointerEvents="none" start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
+      <NavigationGlass style={styles.bar}>
         <NavItem active={active === 'home'} icon="home-outline" label="Inicio" onPress={() => navigate('home')} />
         <NavItem active={active === 'activity'} icon="stats-chart-outline" label="Actividad" onPress={() => navigate('activity')} />
         <View style={styles.centerSlot}>
@@ -41,7 +39,7 @@ export function BottomNavigation({ active, onMovyaPress }: BottomNavigationProps
         </View>
         <NavItem active={active === 'contacts'} icon="people-outline" label="Contactos" onPress={() => navigate('contacts')} />
         <NavItem active={active === 'account'} icon="person-outline" label="Cuenta" onPress={() => navigate('account')} />
-      </BlurView>
+      </NavigationGlass>
     </View>
   );
 }
@@ -59,11 +57,9 @@ function NavItem({ active, icon, label, onPress }: NavItemProps) {
   );
 }
 
-const webGlass = { backdropFilter: 'blur(28px) saturate(160%)', WebkitBackdropFilter: 'blur(28px) saturate(160%)' } as const;
-
 const styles = StyleSheet.create({
   shell: { position: 'absolute', left: 12, right: 12, bottom: 8, zIndex: 40, backgroundColor: 'transparent', shadowColor: '#00123F', shadowOpacity: 0.24, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, elevation: 16 },
-  bar: { height: 76, width: '100%', maxWidth: 720, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 5, overflow: 'hidden', backgroundColor: 'rgba(25,92,150,0.46)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.38)', borderRadius: 999 },
+  bar: { height: 76, width: '100%', maxWidth: 720, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 5, borderRadius: 999 },
   item: { width: 61, height: 62, alignItems: 'center', justifyContent: 'center' }, iconWrap: { width: 36, height: 31, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, itemActive: { backgroundColor: '#FFFFFF', borderRadius: 20, borderWidth: 1, borderColor: '#CDE4FF' }, iconWrapActive: { backgroundColor: '#E8F2FF' }, label: { color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: '700', marginTop: 2 }, labelActive: { color: colors.brandDark, fontWeight: '900' },
   centerSlot: { width: 62, height: 64, alignItems: 'center', justifyContent: 'flex-end' }, movyaButton: { position: 'absolute', top: 1, width: 45, height: 45, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.24)' }, movyaLabel: { color: '#FFFFFF', fontSize: 9, fontWeight: '900', marginBottom: 1 },
 });
