@@ -22,11 +22,13 @@ import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { displayName as getDisplayName, formatXlmBalance } from '@/services/presentation';
 import { colors } from '@/theme/tokens';
 
+const actionGradientColors = ['rgba(33,76,180,0.92)', 'rgba(47,108,207,0.86)'] as const;
+
 const quickActions = [
-  { label: 'Enviar', icon: 'arrow-up' as const, route: '/send' as const, gradientColors: ['rgba(33,76,180,0.92)', 'rgba(47,108,207,0.86)'] as const },
-  { label: 'Recibir', icon: 'arrow-down' as const, route: '/receive' as const, gradientColors: ['rgba(15,108,84,0.92)', 'rgba(22,137,105,0.86)'] as const },
-  { label: 'Swap', icon: 'swap-horizontal' as const, route: '/swap' as const, gradientColors: ['rgba(106,53,163,0.92)', 'rgba(142,77,187,0.86)'] as const },
-  { label: 'Agregar', icon: 'add' as const, route: '/receive' as const, gradientColors: ['rgba(157,68,31,0.92)', 'rgba(188,100,43,0.86)'] as const },
+  { label: 'Enviar', icon: 'arrow-up' as const, route: '/send' as const },
+  { label: 'Recibir', icon: 'arrow-down' as const, route: '/receive' as const },
+  { label: 'Swap', icon: 'swap-horizontal' as const, route: '/swap' as const },
+  { label: 'Agregar', icon: 'add' as const, route: '/receive' as const },
 ];
 
 export default function HomeScreen() {
@@ -76,7 +78,7 @@ export default function HomeScreen() {
         <View style={styles.actionsRow}>
           {quickActions.map((action) => (
             <PressableScale key={action.label} accessibilityRole="button" accessibilityLabel={action.label} onPress={() => router.push(action.route)} style={styles.actionItem}>
-              <NavigationGlass style={styles.actionSurface} gradientColors={action.gradientColors}>
+              <NavigationGlass style={styles.actionSurface} gradientColors={actionGradientColors}>
                 <View style={styles.actionIcon}><Ionicons color="#FFFFFF" name={action.icon} size={23} /></View>
                 <Text style={styles.actionLabel}>{action.label}</Text>
               </NavigationGlass>
