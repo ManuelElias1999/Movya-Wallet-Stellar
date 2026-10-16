@@ -50,6 +50,8 @@
     "@electric-sql/pglite": "^0.5.8",
     "@types/node": "^22.20.5",
     "@types/react": "~19.2.2",
+    "@types/react-test-renderer": "19.1.0",
+    "react-test-renderer": "19.2.3",
     "tsx": "^4.23.15",
     "typescript": "~5.9.2"
   },
