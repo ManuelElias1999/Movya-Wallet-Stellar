@@ -68,9 +68,9 @@ $$;
 alter table public.wallet_backups drop constraint wallet_backups_backup_check;
 alter table public.wallet_backups
   add constraint wallet_backups_backup_check check (backup is not null and public.valid_wallet_backup(backup)),
-  add column pending_backup jsonb check (public.valid_wallet_backup(pending_backup)),
-  add column previous_backup jsonb check (public.valid_wallet_backup(previous_backup)),
-  add column updated_at timestamptz not null default now();
+  add column if not exists pending_backup jsonb check (public.valid_wallet_backup(pending_backup)),
+  add column if not exists previous_backup jsonb check (public.valid_wallet_backup(previous_backup)),
+  add column if not exists updated_at timestamptz not null default now();
 
 create function public.stage_wallet_backup(new_backup jsonb)
 returns public.wallet_backups language plpgsql security definer set search_path = '' as $$
