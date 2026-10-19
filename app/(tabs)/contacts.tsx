@@ -10,7 +10,8 @@ import { InternalScreenBackground } from '@/components/InternalScreenBackground'
 import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { PressableScale } from '@/components/PressableScale';
 import { useContacts } from '@/context/ContactsContext';
-import { contactDestination, type Contact } from '@/services/backend/contacts';
+import type { Contact } from '@/services/backend/contacts';
+import { resolveContactWithConfirmation } from '@/components/confirmContactAddress';
 import { KeyboardSheet } from '@/components/KeyboardSheet';
 import { colors, radius } from '@/theme/tokens';
 
@@ -69,7 +70,7 @@ export default function ContactsScreen() {
       router.push({ pathname: '/send', params: { contactId } }); return;
     }
     lock.current = true; setBusy(true);
-    void contactDestination(selected).then(address => {
+    void resolveContactWithConfirmation(selected, () => void saved.refresh()).then(address => {
       const contactId = selected.id; setSelected(null);
       router.push({ pathname: '/send', params: { contactId, address } });
     }).catch(e => Alert.alert('No se pudo preparar el envío', e.message))

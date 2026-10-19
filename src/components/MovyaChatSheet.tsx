@@ -15,7 +15,7 @@ import { displayName } from '@/services/presentation';
 import { useContacts } from '@/context/ContactsContext';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance, checkSubmission, preparePayment, submitPayment, validateAddress } from '@/services/stellar/payments';
-import { contactDestination } from '@/services/backend/contacts';
+import { resolveContactWithConfirmation } from '@/components/confirmContactAddress';
 import { createChatPaymentFlow, matchChatContacts } from '@/services/chatPayment';
 import { ChatPaymentCard } from '@/components/ChatPaymentCard';
 import { SwapReviewCard } from '@/components/SwapReviewCard';
@@ -87,7 +87,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       const contact = contactId ? matches.find(c => c.id === contactId) : matches[0];
       if (contactId && !contact) throw new Error('El contacto cambió. Escribe el envío de nuevo.');
       if (contact) {
-        const destination = currentSaved.persistent ? await contactDestination(contact) : contact.name === 'Ouali' ? currentWallet.oualiAddress : contact.address ?? '';
+        const destination = currentSaved.persistent ? await resolveContactWithConfirmation(contact, () => void currentSaved.refresh()) : contact.name === 'Ouali' ? currentWallet.oualiAddress : contact.address ?? '';
         validateAddress(destination);
         return { destination, name: contact.name };
       }
