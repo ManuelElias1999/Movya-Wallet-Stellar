@@ -46,6 +46,7 @@ export const preparePayment = async (input: any): Promise<PaymentReview> => {
 };
 export const submitPayment = async (review: PaymentReview) => { calls.submit.push(review); return { hash: review.hash, explorerUrl: `https://stellar.expert/explorer/testnet/tx/${review.hash}` }; };
 export const checkSubmission = async () => null;
+export class SubmissionUnknownError extends Error {}
 // This fixture never sends a network transaction; service tests cover Horizon validation.
 
 export const USDC_ISSUER = 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5';

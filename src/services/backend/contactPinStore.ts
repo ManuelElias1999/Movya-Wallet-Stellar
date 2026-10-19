@@ -13,7 +13,7 @@ function parse(raw: string | null): PinnedAddress | null {
   try {
     const value = JSON.parse(raw) as Partial<PinnedAddress>;
     if (typeof value?.address !== 'string') return null;
-    return { address: value.address, ...(typeof value.email === 'string' ? { email: value.email } : {}) };
+    return { address: value.address, ...(typeof value.email === 'string' ? { email: value.email } : {}), ...(typeof value.verifiedAt === 'number' ? { verifiedAt: value.verifiedAt } : {}) };
   } catch { return null; }
 }
 

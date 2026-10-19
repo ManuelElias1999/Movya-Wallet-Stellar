@@ -1,4 +1,4 @@
-import { Text, TextInput } from '@/i18n/primitives';
+import { Alert, Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
@@ -9,6 +9,8 @@ import { PressableScale } from '@/components/PressableScale';
 import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
 import { useSensitiveScreen } from '@/components/useSensitiveScreen';
 import { useAuth } from '@/context/AuthContext';
+import { useTestnetWallet } from '@/context/TestnetWalletContext';
+import { isMfaRequired } from '@/services/backend/mfa';
 import { colors } from '@/theme/tokens';
 
 // One screen for both cases:
@@ -17,7 +19,8 @@ import { colors } from '@/theme/tokens';
 //  - the recovery kit (lost or stolen phone): authorizes a new key for this
 //    device and disables every other device key.
 export default function RestoreWordsScreen() {
-  const auth = useAuth(); const router = useRouter();
+  const auth = useAuth(); const router = useRouter(); const wallet = useTestnetWallet();
+  const [mfaCode, setMfaCode] = useState(''); const [needsCode, setNeedsCode] = useState(false);
   const [words, setWords] = useState(''); const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false); const [message, setMessage] = useState('');
   const working = useRef(false);
@@ -31,10 +34,17 @@ export default function RestoreWordsScreen() {
     if (!canRestore) return;
     Keyboard.dismiss(); working.current = true; setBusy(true); setMessage('');
     try {
-      const kind = await auth.restoreWithWords(password, words);
-      setWords(''); setPassword('');
-      router.replace(kind === 'rotated' ? '/wallet-backup' : '/(tabs)');
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'No se pudo restaurar tu wallet.'); }
+      const kind = await auth.restoreWithWords(password, words, needsCode ? mfaCode : undefined);
+      setWords(''); setPassword(''); setMfaCode('');
+      await wallet.reload();
+      if (kind === 'rotated') {
+        Alert.alert('Clave del teléfono perdido desactivada', 'Las 12 palabras del teléfono anterior ya no controlan tu cuenta, pero siguen siendo secretas: no las publiques ni las uses en otra app. Ahora guarda las palabras nuevas de este teléfono.');
+        router.replace('/wallet-backup');
+      } else router.replace('/(tabs)');
+    } catch (e) {
+      if (isMfaRequired(e)) setNeedsCode(true);
+      setMessage(e instanceof Error ? e.message : 'No se pudo restaurar tu wallet.');
+    }
     finally { working.current = false; setBusy(false); }
   };
 
@@ -58,6 +68,10 @@ export default function RestoreWordsScreen() {
             <PasswordVisibilityButton visible={visibility.visible} onPress={visibility.toggle} disabled={busy} />
           </View>
           <Text style={styles.hint}>Tu wallet se volverá a cifrar con esta contraseña.</Text>
+          {needsCode ? <>
+            <Text style={styles.label}>Código de verificación en dos pasos</Text>
+            <View style={styles.field}><TextInput value={mfaCode} onChangeText={setMfaCode} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={6} placeholder="123456" placeholderTextColor={colors.muted} editable={!busy} style={styles.input} /></View>
+          </> : null}
           <PressableScale disabled={!canRestore} onPress={() => void restore()} style={[styles.button, !canRestore && styles.disabled]}><Text style={styles.buttonText}>Recuperar mi wallet</Text></PressableScale>
           {busy ? <View style={{ flexDirection: 'row', gap: 9, alignItems: 'center', marginTop: 14 }}><ActivityIndicator color={colors.brand} /><Text style={[styles.copy, { marginTop: 0, flex: 1 }]}>{auth.accessStage || 'Recuperando…'}</Text></View> : null}
           {screen.failed ? <Text style={styles.notice}>No pudimos proteger esta pantalla de capturas. Actualiza la app antes de escribir tus palabras.</Text> : null}

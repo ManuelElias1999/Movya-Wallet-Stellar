@@ -65,19 +65,80 @@ Thresholds: low 1, medium 1, high 2. The phone can pay and swap but cannot add o
 
 **Limitation:** a thief who has the unlocked phone *and* passes its biometrics can still pay out the balance before the owner reacts. Rotation stops further use; it cannot undo payments. Spending limits or delays need a Soroban smart wallet (future stage).
 
+## 8. Payment review: new and look-alike recipients
+
+- Every review shows the full destination address.
+- A recipient that is neither a saved contact nor a previous payee is marked as new.
+- An address that shares the first 4 or last 4 characters with a known one (address poisoning) shows both addresses in groups of four.
+- Look-alike addresses, and large payments (≥ 100 XLM, ≥ 50 USDC or half the balance) to new recipients, need a second deliberate tap.
+- An identical payment (same source, destination, amount and asset) within 2 minutes is stopped; retrying the same transaction is always allowed.
+- Pins record when each contact address was verified.
+
+## 9. Movya PIN
+
+Optional 6-digit PIN that unlocks the app. It never encrypts or opens the key: signing still needs biometrics. Waits grow after 5 failures (30 s → 1 h); after 10 the PIN is erased and the password is required. Stored as a PBKDF2 hash. On a compromised phone the local counter could be reset, which is why the PIN alone never reaches the key.
+
+## 10. Devices and sessions
+
+- Each installation registers a random device id (`devices` table). The Security screen lists devices with first and last access.
+- A device can be revoked, or all other devices at once (also ends their Supabase sessions). A revoked device signs out and erases its local wallet the next time it reaches the server.
+- New devices trigger a "new sign-in" alert on the others.
+- Rotating with the recovery kit revokes every other device automatically.
+- Revoking a session never invalidates a key already copied off a phone; rotation does.
+
+## 11. Two-step verification (TOTP)
+
+- Optional factor through Supabase Auth MFA, enrolled with a QR code.
+- Sign-in, unlock with password and restore ask for the 6-digit code when enabled.
+- The database refuses backup replacement, device revocation, discoverability changes, contact-backup writes and wallet replacement without an `aal2` session (`movya_private.assert_sensitive_session`).
+- Revealing the backup checks the password against the encrypted backup instead of signing in again.
+
+## 12. Encrypted contact backup
+
+- A third HKDF output (`movya/v3/contacts`) encrypts the verified contact addresses in `contact_backups`, separately from the wallet backup.
+- Writes are compare-and-swap on a version number; each copy links the hash of the previous one.
+- A device remembers the last version it saw and refuses older or altered copies (partial rollback protection: a brand-new device can only trust what it receives).
+- On a new device, pins are restored from this backup, so contacts verified elsewhere do not need confirming again.
+
+## 13. Emergency transfer
+
+When rotation is impossible or the account configuration looks damaged, "Mover todo a una wallet nueva" creates a wallet with new words (written down and confirmed first), then in one transaction: creates it, opens its USDC line, moves USDC, closes the old line and merges the old account (or, if a recovery kit prevents the device from merging, pays out XLM and leaves the minimum reserve). The account then points to the new wallet (`replace_wallet_account`, at most once every 7 days, previous address kept). The new key waits behind biometrics until the switch completes, and an interrupted transfer is finished at the next sign-in. The signer accepts this shape only towards the wallet created in that flow.
+
+## 14. Web
+
+- Production builds ship a Content Security Policy: scripts only from the app's origin, network only to Supabase, Horizon Testnet, Friendbot and the leaked-password API, no plugins, no form posts.
+- `EXPO_PUBLIC_WEB_SIGNING=off` makes the web build view-only.
+- Keys on web live only in memory; sessions in `localStorage`.
+
+## Backup format versions
+
+| Version | Payload | Key | KDF |
+|---|---|---|---|
+| 1 | secret | PBKDF2-SHA256(password, random salt) | 600,000 iterations |
+| 2 | secret + words | same as v1 | 600,000 iterations |
+| 3 | secret + words (+ account after rotation) | HKDF-SHA256(PBKDF2(password, account salt), "movya/v3/backup") | 600,000 iterations |
+
+All versions use AES-256-GCM with a random 96-bit nonce and AAD `movya:testnet:v{version}:{user}:{account}`. The table keeps `created_at`, `updated_at`, `previous_backup` and, after an emergency transfer, `previous_public_key`.
+
 ## Supabase configuration checklist
 
 - Auth → Email: confirmations enabled.
 - Auth → Rate limits: keep defaults or stricter for sign-in, sign-up and OTP.
 - Auth → Sessions: set a time-box / inactivity timeout and short JWT expiry.
 - Auth → Secure password change: enabled (Movya changes the password right after sign-in).
-- MFA: available for the account; not yet enforced in the app.
+- Auth → Multi-factor: enable TOTP.
+- Run `supabase/migrations/20261019010000_devices_contacts_mfa.sql`.
 - Run `supabase/migrations/20261019000000_security_hardening.sql`.
+
+## Network provider
+
+Horizon's synchronous submit only reports success once the transaction is in a ledger; an uncertain result is never retried blindly but checked by hash, and identical payments are blocked for 2 minutes. There is no second public Testnet Horizon without API keys, so a fallback provider is left for Mainnet configuration.
 
 ## Not covered yet
 
-- External security audit and bug bounty.
-- Encrypted contact backup across devices (pins are per device).
-- Device/session list with remote sign-out.
+- External security audit, penetration test and bug bounty.
 - Argon2id instead of PBKDF2.
-- Soroban smart wallet with spending limits.
+- Soroban smart wallet with spending limits, delays and session keys.
+- A second network provider and response comparison.
+- Email alerts for new sign-ins (in-app alerts exist).
+- Organisational items: GitHub branch protection and 2FA, domain lock and DNSSEC, separate Testnet/Mainnet projects and keys, incident response process and security contact.

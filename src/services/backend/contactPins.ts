@@ -4,7 +4,8 @@
 // different answer stops the payment and is never applied automatically.
 // No dependencies on Expo or Supabase so the rules can be tested directly.
 
-export type PinnedAddress = { address: string; email?: string };
+// verifiedAt: when the person added or approved this address (ms since epoch).
+export type PinnedAddress = { address: string; email?: string; verifiedAt?: number };
 export type PinStore = {
   read: (owner: string, contactId: string) => Promise<PinnedAddress | null>;
   write: (owner: string, contactId: string, pin: PinnedAddress) => Promise<void>;
@@ -60,7 +61,7 @@ export function createContactPins(deps: {
       if (!address) throw new Error('Este contacto no tiene una dirección Stellar.');
       deps.validate(address);
       const owner = await requireOwner();
-      await deps.store.write(owner, contact.id, { address, ...(contact.email ? { email: contact.email } : {}) });
+      await deps.store.write(owner, contact.id, { address, ...(contact.email ? { email: contact.email } : {}), verifiedAt: Date.now() });
       await stillOwner(owner);
     },
     async unpin(contactId: string) {

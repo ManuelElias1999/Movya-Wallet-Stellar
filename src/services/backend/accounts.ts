@@ -1,8 +1,10 @@
 import { Keypair } from '@stellar/stellar-sdk/base';
 import { Platform } from 'react-native';
 import { requireBackend } from './client';
-import { assertKdfSalt, deriveAccountKeys, newKdfSalt, type AccountKeys } from './accountKeys';
-import { readWallet, updateWalletMeta, writeWallet, type StoredWallet } from './storage';
+import { assertKdfSalt, deriveAccountKeys, newKdfSalt, wipeKeys, type AccountKeys } from './accountKeys';
+import { rememberContactsKey } from './contactBackup';
+import { completeSecondFactor, MfaRequiredError, needsSecondFactor } from './mfa';
+import { clearPendingSweep, readPendingSweep, readWallet, updateWalletMeta, writeWallet, type StoredWallet } from './storage';
 import { decryptRecovery, encryptRecoveryV3, fingerprintBackup, type WalletBackup } from './vault';
 import { recoverWallet, type RecoveryProgress, type WalletRecord } from './walletRecovery';
 import { createRecoveryWallet, validateRecoveryMaterial, walletFromMnemonic, type RecoveryMaterial } from '../stellar/recovery';
@@ -29,22 +31,37 @@ export async function loginParams(email: string) {
   assertKdfSalt(salt);
   return salt;
 }
-export async function signInSecure(email: string, password: string) {
+// With two-step verification enabled, the 6-digit code is required before
+// the wallet opens; without it this throws MfaRequiredError (the caller asks
+// for the code and signs in again).
+async function secondFactor(mfaCode?: string) {
+  if (!await needsSecondFactor()) return;
+  if (!mfaCode) throw new MfaRequiredError();
+  await completeSecondFactor(mfaCode);
+}
+async function currentSession<T>(fallback: T) {
+  return (await db().auth.getSession()).data.session ?? fallback;
+}
+export async function signInSecure(email: string, password: string, mfaCode?: string) {
   const address = normalizeEmail(email);
   const keys = await deriveAccountKeys(password, await loginParams(address));
   const v3 = await db().auth.signInWithPassword({ email: address, password: keys.loginSecret });
-  if (!v3.error) return { session: v3.data.session, keys, legacy: false as const };
+  if (!v3.error) {
+    try { await secondFactor(mfaCode); } catch (error) { wipeKeys(keys); throw error; }
+    return { session: await currentSession(v3.data.session), keys, legacy: false as const };
+  }
+  wipeKeys(keys);
   if (!invalidCredentials(v3.error)) throw v3.error;
-  keys.backupKey.fill(0);
   const legacy = await db().auth.signInWithPassword({ email: address, password });
   if (legacy.error) throw invalidCredentials(legacy.error) ? new Error('Correo o contraseña incorrectos.') : legacy.error;
-  return { session: legacy.data.session, keys: undefined, legacy: true as const };
+  await secondFactor(mfaCode);
+  return { session: await currentSession(legacy.data.session), keys: undefined, legacy: true as const };
 }
 export async function signUpSecure(email: string, password: string, displayName: string) {
   const salt = newKdfSalt();
   const keys = await deriveAccountKeys(password, salt);
   const result = await db().auth.signUp({ email: normalizeEmail(email), password: keys.loginSecret, options: { data: { display_name: displayName, movya_kdf_salt: salt } } });
-  if (result.error) { keys.backupKey.fill(0); throw result.error; }
+  if (result.error) { wipeKeys(keys); throw result.error; }
   return { session: result.data.session, keys };
 }
 
@@ -88,7 +105,8 @@ async function rekey(userId: string, password: string, material: RecoveryMateria
     await promote(await stageVerified(userId, password, keys, material, accountId));
     const updated = await db().auth.updateUser({ password: keys.loginSecret });
     if (updated.error) throw updated.error;
-  } finally { keys.backupKey.fill(0); }
+    await rememberContactsKey(userId, keys.contactsKey);
+  } finally { wipeKeys(keys); }
 }
 
 // A staged backup left by an interrupted rotation or upgrade is finished
@@ -149,7 +167,8 @@ export async function unlockUserWallet(userId: string, password: string, options
     wallet = { ...wallet, backupFingerprint: fingerprint };
     await updateWalletMeta({ backupFingerprint: fingerprint }, userId);
   }
-  return wallet;
+  // An emergency transfer interrupted before the account switched is finished now.
+  return finishPendingSweep(userId, password, wallet).catch(() => wallet);
 }
 
 // ---------------------------------------------------------------------------
@@ -188,7 +207,8 @@ export async function restoreWithWords(userId: string, password: string, words: 
         await promote(staged);
         const updated = await db().auth.updateUser({ password: keys.loginSecret });
         if (updated.error) throw updated.error;
-      } finally { keys.backupKey.fill(0); }
+        await rememberContactsKey(userId, keys.contactsKey);
+      } finally { wipeKeys(keys); }
       kind = 'rotated';
     } else {
       material = { ...fromWords, ...(wordsKey.publicKey() !== row.public_key ? { accountId: row.public_key } : {}) };
@@ -212,8 +232,52 @@ export async function readDiscoverable(userId: string) {
   if (result.error) throw result.error;
   return (result.data as { discoverable?: boolean } | null)?.discoverable ?? true;
 }
-export async function setDiscoverable(userId: string, discoverable: boolean) {
-  const result = await db().from('profiles').update({ discoverable }).eq('id', userId).select('discoverable').single();
+export async function setDiscoverable(_userId: string, discoverable: boolean) {
+  const result = await db().rpc('set_discoverable', { value: discoverable });
   if (result.error) throw result.error;
-  return (result.data as { discoverable: boolean }).discoverable;
+  return result.data as boolean;
+}
+
+// Proves the password without creating a new session (so it works with
+// two-step verification): only the right password opens the backup.
+export async function verifyPasswordOffline(userId: string, password: string) {
+  const row = await readBackupRow(userId);
+  if (!row) throw new Error('Tu cuenta todavía no tiene una wallet.');
+  await decryptRecovery(row.backup, password, userId, row.public_key);
+}
+
+// ---------------------------------------------------------------------------
+// Emergency transfer: after the funds moved on-chain to a new wallet, the
+// account points to it. A transfer interrupted before this step is finished
+// at the next sign-in (the new wallet waits, protected, on this device).
+// ---------------------------------------------------------------------------
+export async function moveAccountToNewWallet(userId: string, password: string, fresh: RecoveryMaterial, from: string) {
+  const row = await readBackupRow(userId);
+  if (!row || row.public_key !== from) throw new Error('Tu cuenta ya no apunta a la wallet anterior.');
+  const to = validateRecoveryMaterial(fresh);
+  await verifyPasswordOffline(userId, password);
+  const keys = await deriveAccountKeys(password, await claimSalt());
+  try {
+    const result = await db().rpc('replace_wallet_account', { old_public_key: from, new_public_key: to, new_backup: encryptRecoveryV3(fresh, keys, userId) });
+    if (result.error) throw result.error;
+    const updated = await db().auth.updateUser({ password: keys.loginSecret });
+    if (updated.error) throw updated.error;
+    await rememberContactsKey(userId, keys.contactsKey);
+  } finally { wipeKeys(keys); }
+  const fresh_ = await readBackupRow(userId);
+  const wallet: StoredWallet = { ...fresh, oualiAddress: '', backupAcknowledged: false, ...(fresh_ ? { backupFingerprint: fingerprintBackup(fresh_.backup, userId, fresh_.public_key) } : {}) };
+  await writeWallet(wallet, userId);
+  await clearPendingSweep(userId);
+  return wallet;
+}
+async function finishPendingSweep(userId: string, password: string, current: StoredWallet) {
+  const pending = await readPendingSweep(userId).catch(() => null);
+  if (!pending) return current;
+  const to = Keypair.fromSecret(pending.secret).publicKey();
+  const funded = await readTestnetAccount(to).then(() => true, () => false);
+  const row = await readBackupRow(userId);
+  if (!funded || !row) return current;                      // transfer never happened: keep waiting
+  if (row.public_key === to) { await clearPendingSweep(userId); return current; }
+  if (row.public_key !== pending.from) return current;
+  return moveAccountToNewWallet(userId, password, { secret: pending.secret, mnemonic: pending.mnemonic }, pending.from);
 }

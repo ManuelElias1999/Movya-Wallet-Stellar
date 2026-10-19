@@ -15,7 +15,14 @@ export function ContactsProvider({ children }: { children: ReactNode }) {
     if (!auth.configured) { setContacts(demoContacts.map((c, i) => ({ ...c, favorite: i === 0 }))); return; }
     if (!auth.user || !auth.ready) { setContacts([]); setError(''); return; }
     setLoading(true); setError('');
-    try { const next = await api.listContacts(); if (current === generation.current) setContacts(next); }
+    try {
+      const next = await api.listContacts();
+      if (current === generation.current) setContacts(next);
+      // Best effort: a rollback warning is shown, the list stays usable.
+      await api.restorePinsFromBackup(next).catch(failure => {
+        if ((failure as { name?: string })?.name === 'ContactBackupRollbackError' && current === generation.current) setError((failure as Error).message);
+      });
+    }
     catch (e) { if (current === generation.current) setError(e instanceof Error ? e.message : 'No se pudieron cargar tus contactos.'); }
     finally { if (current === generation.current) setLoading(false); }
   }, [auth.configured, auth.user?.id, auth.ready]);

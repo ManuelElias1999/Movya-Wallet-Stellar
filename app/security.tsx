@@ -49,11 +49,15 @@ export default function SecurityScreen() {
       <Row icon="finger-print-outline" title={wallet.biometric ? 'Face ID o huella activos' : 'Biometría no disponible'}
         subtitle={wallet.biometric ? 'Se piden antes de cada envío, cambio o al ver tu respaldo' : 'Activa Face ID o huella en tu teléfono y vuelve a ingresar. Mientras tanto, Movya pedirá tu contraseña al abrirse.'} />
       <Row icon="lock-closed-outline" title="Bloquear ahora" subtitle="Movya también se bloquea tras 5 minutos sin uso o 30 segundos fuera de la app" onPress={() => { auth.lockNow(); router.replace('/'); }} />
+      <Row icon="keypad-outline" title="PIN de Movya" subtitle={auth.pinAvailable ? 'Activo para desbloquear la app' : 'Opcional: desbloqueo rápido con 6 números'} onPress={() => router.push('/pin')} />
+      <Row icon="shield-checkmark-outline" title="Verificación en dos pasos" subtitle="Código de una app de autenticación al ingresar y para cambios sensibles" onPress={() => router.push('/two-factor')} />
+      <Row icon="phone-portrait-outline" title="Dispositivos y sesiones" subtitle={auth.newDevices.length ? 'Hay un inicio de sesión nuevo por revisar' : 'Dónde está abierta tu cuenta y cerrar sesiones'} onPress={() => router.push('/devices')} />
       <Row icon="key-outline" title="Respaldo y claves" subtitle="Frase de recuperación y clave privada" onPress={() => router.push('/wallet-backup')} />
       <Row icon="medkit-outline" title="Kit de recuperación"
         subtitle={recovery?.kind === 'protected' ? 'Configurado. Úsalo si pierdes este teléfono' : recovery?.kind === 'unexpected' ? 'Tu cuenta tiene claves que Movya no configuró' : 'Recomendado: protege tu cuenta si pierdes este teléfono'}
         onPress={() => router.push('/recovery-kit')} />
       <Row icon="alert-circle-outline" title="Reportar dispositivo perdido" subtitle="Usa tu kit para desactivar la clave del teléfono perdido, o tus 12 palabras para restaurar" onPress={() => router.push('/restore-words')} />
+      <Row icon="swap-horizontal-outline" title="Mover todo a una wallet nueva" subtitle="Emergencia: transfiere tus fondos a una wallet nueva y cambia tu dirección" onPress={() => router.push('/emergency-transfer')} />
       {userId ? <Row icon="mail-outline" title="Encontrarme por correo"
         subtitle={discoverable === false ? 'Nadie puede agregarte escribiendo tu correo' : 'Otras personas de Movya pueden agregarte con tu correo exacto'}
         right={<Switch disabled={discoverable === null || saving} value={discoverable ?? true} onValueChange={toggleDiscoverable} trackColor={{ false: '#CED5E0', true: colors.brandIce }} thumbColor={discoverable === false ? '#FFFFFF' : colors.brand} />} /> : null}

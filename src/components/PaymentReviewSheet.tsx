@@ -1,10 +1,17 @@
 import { Text } from '@/i18n/primitives';
-import { useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PressableScale } from '@/components/PressableScale';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
+import { useAuth } from '@/context/AuthContext';
+import { useContacts } from '@/context/ContactsContext';
+import { RecipientRiskNotice } from '@/components/RecipientRiskNotice';
+import { assessRecipient, type KnownRecipient } from '@/services/security/recipientRisk';
+import { readRecentRecipients, rememberRecipient } from '@/services/security/recentRecipients';
+import { assertNotDuplicate, recordPayment } from '@/services/security/duplicateGuard';
+import { assetBalance } from '@/services/stellar/payments';
 import { checkSubmission, SubmissionUnknownError, submitPayment, type PaymentReceipt, type PaymentReview } from '@/services/stellar/payments';
 import { colors } from '@/theme/tokens';
 
@@ -16,16 +23,32 @@ export function PaymentReviewSheet({ review, onClose, onSuccess }: { review: Pay
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [unknownHash, setUnknownHash] = useState<string | null>(null);
+  const owner = useAuth().user?.id ?? 'developer';
+  const { contacts } = useContacts();
+  const [recent, setRecent] = useState<KnownRecipient[]>([]);
+  const [acknowledged, setAcknowledged] = useState(false);
+  useEffect(() => { setAcknowledged(false); void readRecentRecipients(owner).then(setRecent); }, [owner, review?.hash]);
+  const risk = useMemo(() => review ? assessRecipient({
+    destination: review.destination, amount: review.amount, asset: review.asset,
+    balance: wallet.account ? assetBalance(wallet.account, review.asset)?.balance : undefined,
+    known: [...contacts.filter(c => c.address).map(c => ({ address: c.address!, label: c.name })), ...recent],
+  }) : null, [review, contacts, recent, wallet.account]);
   const close = () => { if (!lock.current && !unknownHash) onClose(); };
   const submit = async () => {
     if (!review || lock.current || sent.current || unknownHash) return;
+    // Look-alike or large-to-new payments need a second, deliberate tap.
+    if (risk?.needsExtraConfirmation && !acknowledged) { setAcknowledged(true); return; }
     lock.current = true; setBusy(true); setError('');
     try {
+      assertNotDuplicate(review);
       const receipt = await submitPayment(review, wallet.sign, wallet.signerPublicKey ?? undefined);
+      recordPayment(review);
       sent.current = true;
+      const label = contacts.find(c => c.address === review.destination)?.name ?? `${review.destination.slice(0, 4)}…${review.destination.slice(-4)}`;
+      void rememberRecipient(owner, { address: review.destination, label });
       await wallet.refresh(); onSuccess(receipt);
     } catch (failure) {
-      if (failure instanceof SubmissionUnknownError) setUnknownHash(failure.hash);
+      if (failure instanceof SubmissionUnknownError) { recordPayment(review); setUnknownHash(failure.hash); }
       setError(failure instanceof Error ? failure.message : 'No se pudo confirmar el envío.');
     } finally { lock.current = false; setBusy(false); }
   };
@@ -46,7 +69,8 @@ export function PaymentReviewSheet({ review, onClose, onSuccess }: { review: Pay
           <Text style={styles.title}>Revisa tu transferencia</Text>
           <Text style={styles.amount}>{review?.amount} {review?.asset}</Text>
           <Text style={styles.label}>De tu wallet</Text><Text translate={false} selectable style={styles.address}>{review?.source}</Text>
-          <Text style={styles.label}>Dirección destinataria</Text><Text translate={false} selectable style={styles.address}>{review?.destination}</Text>
+          <Text style={styles.label}>Dirección destinataria completa</Text><Text translate={false} selectable style={styles.address}>{review?.destination}</Text>
+          {review && risk ? <RecipientRiskNotice risk={risk} destination={review.destination} /> : null}
           <Text style={styles.label}>Red</Text><Text style={styles.value}>Stellar Testnet · tokens de prueba</Text>
           {review?.issuer ? <><Text style={styles.label}>Emisor de USDC</Text><Text translate={false} selectable style={styles.address}>{review.issuer}</Text></> : null}
           <Text style={styles.label}>Comisión de red</Text><Text style={styles.value}>{review?.fee} XLM</Text>
@@ -57,7 +81,7 @@ export function PaymentReviewSheet({ review, onClose, onSuccess }: { review: Pay
             <PressableScale disabled={busy} onPress={() => void verify()} style={styles.primary}><Text style={styles.primaryText}>Verificar estado</Text></PressableScale>
             <PressableScale onPress={() => void Linking.openURL(`https://stellar.expert/explorer/testnet/tx/${unknownHash}`)} style={styles.secondary}><Text style={styles.secondaryText}>Abrir transacción</Text></PressableScale>
           </> : <>
-            <PressableScale disabled={busy || sent.current} onPress={() => void submit()} style={styles.primary}><Text style={styles.primaryText}>{busy ? 'Enviando…' : 'Confirmar y enviar'}</Text></PressableScale>
+            <PressableScale disabled={busy || sent.current} onPress={() => void submit()} style={styles.primary}><Text style={styles.primaryText}>{busy ? 'Enviando…' : risk?.needsExtraConfirmation && !acknowledged ? 'Revisé la dirección completa' : risk?.needsExtraConfirmation ? 'Sí, enviar a esta dirección' : 'Confirmar y enviar'}</Text></PressableScale>
             <PressableScale disabled={busy} onPress={close} style={styles.secondary}><Text style={styles.secondaryText}>Cancelar</Text></PressableScale>
           </>}
         </ScrollView>

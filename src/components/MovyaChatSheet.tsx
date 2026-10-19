@@ -14,9 +14,10 @@ import { useAuth } from '@/context/AuthContext';
 import { displayName } from '@/services/presentation';
 import { useContacts } from '@/context/ContactsContext';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
-import { assetBalance, checkSubmission, preparePayment, submitPayment, validateAddress } from '@/services/stellar/payments';
+import { assetBalance, checkSubmission, preparePayment, SubmissionUnknownError, submitPayment, validateAddress } from '@/services/stellar/payments';
 import { resolveContactWithConfirmation } from '@/components/confirmContactAddress';
 import { createChatPaymentFlow, matchChatContacts } from '@/services/chatPayment';
+import { assertNotDuplicate, recordPayment } from '@/services/security/duplicateGuard';
 import { ChatPaymentCard } from '@/components/ChatPaymentCard';
 import { SwapReviewCard } from '@/components/SwapReviewCard';
 import { useSwapFlow } from '@/context/useSwapFlow';
@@ -97,7 +98,11 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       return { destination, name: destination };
     },
     prepare: preparePayment,
-    submit: review => submitPayment(review, latest.current.wallet.sign, latest.current.wallet.signerPublicKey ?? undefined),
+    submit: async review => {
+      assertNotDuplicate(review);
+      try { const receipt = await submitPayment(review, latest.current.wallet.sign, latest.current.wallet.signerPublicKey ?? undefined); recordPayment(review); return receipt; }
+      catch (error) { if (error instanceof SubmissionUnknownError) recordPayment(review); throw error; }
+    },
     check: checkSubmission,
     refresh: () => latest.current.wallet.refresh(),
   }));
