@@ -63,7 +63,8 @@ test('Cambia 50 XLM a USDC quotes in chat and only the explicit swap confirmatio
   await send(tree, 'Cambia 50 XLM a USDC');
   assert.deepEqual(calls.swaps.at(-1), { source: 'GSENDER', amount: '50', from: 'XLM', to: 'USDC' });
   assert.equal(calls.swapSubmits.length, before);
-  assert.ok(content(tree).includes('43.7800000'));
+  assert.ok(content(tree).includes('44.0000000'));
+  assert.ok(!content(tree).includes('Mínimo que recibirás'));
   assert.ok(!content(tree).includes('Claro. Dime qué activo'));
   await act(async () => button(tree, 'Sí, cambiar').props.onPress());
   assert.equal(calls.swapSubmits.length, before + 1);
@@ -81,11 +82,14 @@ test('Swap form auto-quotes, shows spendable funds, and MAX replaces the draft w
   await act(() => input().props.onChangeText('50'));
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 450)); });
   assert.ok(content(tree).includes('44.0000000'));
+  assert.ok(!content(tree).includes('Comisión de Movya'));
   const before = calls.swapSubmits.length;
   await act(() => button(tree, 'Revisar cambio').props.onPress());
-  assert.ok(content(tree).includes('Mínimo que recibirás'));
+  assert.ok(content(tree).includes('Comisión de Movya'));
+  assert.ok(!content(tree).includes('Mínimo que recibirás'));
   assert.equal(calls.swapSubmits.length, before);
-  await act(() => button(tree, 'Volver').props.onPress());
+  const dismiss = buttons(tree).find(item => item.props.accessibilityLabel === 'Cerrar revisión')!;
+  await act(() => dismiss.props.onPress());
   await act(() => button(tree, 'Máximo').props.onPress());
   assert.equal(input().props.value, '97.4999900');
   assert.ok(!content(tree).includes('44.0000000'));

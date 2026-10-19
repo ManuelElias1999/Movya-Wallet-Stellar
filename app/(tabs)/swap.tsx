@@ -14,7 +14,7 @@ import { colors } from '@/theme/tokens';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { useSwapFlow } from '@/context/useSwapFlow';
 import { SwapReviewCard } from '@/components/SwapReviewCard';
-import { assetBalance, type PaymentAsset } from '@/services/stellar/payments';
+import { type PaymentAsset } from '@/services/stellar/payments';
 import { readSwapSpendable } from '@/services/stellar/swaps';
 import { swapBlocked } from '@/services/swapFlow';
 
@@ -38,8 +38,6 @@ export default function SwapScreen() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [spendable, setSpendable] = useState<Record<PaymentAsset, string> | null>(null);
   const [balanceError, setBalanceError] = useState('');
-  const balance = wallet.account ? assetBalance(wallet.account, from)?.balance ?? '0' : '—';
-
   useEffect(() => {
     let active = true;
     setSpendable(null); setBalanceError('');
@@ -97,10 +95,9 @@ export default function SwapScreen() {
         </View>
 
         <View style={styles.balanceRow}>
-          <View style={{ flex: 1 }}><Text style={styles.balance}>Saldo: {balance} {from}</Text><Text style={styles.balance}>Disponible: {spendable?.[from] ?? '…'} {from}</Text></View>
+          <View style={{ flex: 1 }}><Text style={styles.balance}>Saldo disponible: {spendable?.[from] ?? '…'} {from}</Text></View>
           <Pressable accessibilityRole="button" disabled={blocked || !spendable} accessibilityState={{ disabled: blocked || !spendable }} onPress={() => { if (spendable) editAmount(spendable[from]); }} style={styles.maxButton}><Text style={styles.maxText}>Máximo</Text></Pressable>
         </View>
-        <Text style={styles.help}>El disponible conserva la reserva y la comisión en XLM.</Text>
         {balanceError ? <Text style={styles.error}>{balanceError}</Text> : null}
 
         <PressableScale disabled={blocked} onPress={switchAssets} pressedScale={0.88} style={styles.switch}><Ionicons name="swap-vertical" size={22} color={colors.brand} /></PressableScale>
@@ -112,16 +109,8 @@ export default function SwapScreen() {
           <View style={[styles.amountToken, styles.outputToken]}><Text style={styles.amountTokenText}>{to}</Text></View>
         </View>
 
-        <Text style={styles.help}>El monto recibido es estimado hasta que se confirme el cambio.</Text>
         {state.phase === 'quoting' ? <View style={styles.quoteLoading}><ActivityIndicator color={colors.brand} /><Text>Buscando cotización en Stellar…</Text></View> : null}
         {state.error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{state.error}</Text> : null}
-        {state.review ? <View style={styles.rate}>
-          <Text style={styles.rateLabel}>Se cambiarán: {state.review.swapAmount} {from}</Text>
-          <Text style={styles.rateLabel}>Comisión de Movya (0,5 %): {state.review.appFee} {from}</Text>
-          <Text style={styles.rateLabel}>Mínimo que recibirás: {state.review.minimum} {to}</Text>
-          <Text style={styles.rateLabel}>Comisión máxima de red: {state.review.fee} XLM</Text>
-          <Text style={styles.rateValue}>Stellar DEX · Testnet</Text>
-        </View> : null}
         <PressableScale disabled={!amount || !wallet.publicKey || state.phase === 'quoting' || blocked} onPress={() => { if (state.phase === 'review' || state.phase === 'success') { Keyboard.dismiss(); setReviewOpen(true); } else requestQuote(); }} style={[styles.button, (!amount || !wallet.publicKey || state.phase === 'quoting' || blocked) && styles.disabled]}><Text style={styles.buttonText}>{state.phase === 'review' ? 'Revisar cambio' : state.phase === 'success' ? 'Ver comprobante' : 'Cotizar cambio'}</Text></PressableScale>
         <View style={styles.contextHelp}>
           <MovyaContextHelp
@@ -129,7 +118,7 @@ export default function SwapScreen() {
             explanationSteps={[
               'Abre la lista de Tú entregas y escoge el activo que quieres cambiar.',
               'Escribe el monto y luego elige, en la segunda lista, el activo que quieres recibir.',
-              'Movya mostrará la cotización, el mínimo recibido y cualquier comisión antes de confirmar.',
+              'Movya mostrará cuánto recibirás y el detalle del cambio antes de confirmar.',
               'Nada se cambiará hasta que revises y apruebes el resumen final.',
             ]}
             explanationTitle="Cómo cambiar activos"
@@ -148,11 +137,12 @@ export default function SwapScreen() {
         <View style={styles.sheet}><View style={styles.sheetHandle} /><Text style={styles.sheetTitle}>Activo que recibes</Text><TokenSelector options={['XLM', 'USDC']} onChange={chooseTo} value={to} /></View>
       </Modal>
       <Modal animationType="slide" transparent visible={reviewOpen} onRequestClose={closeReview}>
-        <View style={styles.reviewBackdrop}><View style={styles.reviewSheet}>
-          <ScrollView keyboardShouldPersistTaps="handled"><SwapReviewCard state={state} flow={flow} onCancel={closeReview} />
-            {!blocked ? <Pressable accessibilityRole="button" onPress={closeReview} style={styles.maxButton}><Text style={styles.maxText}>Volver</Text></Pressable> : null}
-          </ScrollView>
-        </View></View>
+        <View style={styles.reviewBackdrop}>
+          <Pressable accessibilityLabel="Cerrar revisión" accessibilityRole="button" onPress={closeReview} style={styles.reviewDismiss} />
+          <View style={styles.reviewSheet}>
+            <ScrollView keyboardShouldPersistTaps="handled"><SwapReviewCard state={state} flow={flow} onCancel={closeReview} /></ScrollView>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -177,13 +167,10 @@ const styles = StyleSheet.create({
   outputBox: { height: 76, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(225,239,255,0.95)', borderWidth: 1.5, borderColor: '#AFCDF4', borderRadius: 21, paddingLeft: 15, paddingRight: 10, marginTop: 10, shadowColor: colors.navy, shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   output: { flex: 1, color: colors.ink, fontSize: 30, fontWeight: '800' },
   outputToken: { borderColor: '#B9D5F7' },
-  rate: { gap: 7, marginTop: 18 },
   balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 }, balance: { color: colors.muted, fontSize: 12, lineHeight: 19 },
   maxButton: { minHeight: 44, paddingHorizontal: 15, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: '#E3EEFF' }, maxText: { color: colors.brand, fontSize: 12, fontWeight: '800' },
   help: { color: colors.muted, fontSize: 11, lineHeight: 17, marginTop: 8 }, error: { color: '#B52D42', fontSize: 12, lineHeight: 18, marginTop: 12 }, quoteLoading: { alignItems: 'center', gap: 8, marginTop: 16 },
-  reviewBackdrop: { flex: 1, backgroundColor: 'rgba(5,16,35,0.48)', justifyContent: 'flex-end' }, reviewSheet: { maxHeight: '90%', padding: 18, paddingBottom: 40, backgroundColor: '#F8FBFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, width: '100%', maxWidth: 760, alignSelf: 'center' },
-  rateLabel: { color: colors.muted, fontSize: 11 },
-  rateValue: { color: colors.text, fontSize: 11, fontWeight: '700' },
+  reviewBackdrop: { flex: 1, backgroundColor: 'rgba(5,16,35,0.48)', justifyContent: 'flex-end' }, reviewDismiss: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }, reviewSheet: { maxHeight: '90%', padding: 18, paddingBottom: 40, backgroundColor: '#F8FBFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, width: '100%', maxWidth: 760, alignSelf: 'center' },
   button: { height: 56, borderRadius: 18, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginTop: 30, shadowColor: colors.brandDark, shadowOpacity: 0.25, shadowRadius: 13, shadowOffset: { width: 0, height: 7 }, elevation: 5 },
   contextHelp: { marginTop: 24 },
   disabled: { backgroundColor: '#BAC5D5', shadowOpacity: 0.05 },
