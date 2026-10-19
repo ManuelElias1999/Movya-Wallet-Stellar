@@ -23,17 +23,20 @@ async function send(tree: ReactTestRenderer, value: string) {
 test('real chat stays open: saved email contact → inline review → Yes button → exact receipt', async () => {
   let tree!: ReactTestRenderer;
   await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => { calls.close++; } })); });
+  assert.ok(content(tree).includes('¿Cuánto dinero tengo?'));
   await send(tree, 'Envia 1 USDC a Prueba');
   assert.equal(calls.close, 0);
   assert.deepEqual(calls.prepare, [{ source: 'GSENDER', destination: 'GPRUEBA', amount: '1', asset: 'USDC' }]);
   assert.deepEqual(calls.resolve, ['prueba']);
   assert.equal(calls.submit.length, 0);
   assert.ok(content(tree).includes('Revisa tu transferencia'));
+  assert.ok(!content(tree).includes('¿Cuánto dinero tengo?'));
   assert.ok(content(tree).includes('GPRUEBA'));
   await act(async () => button(tree, 'Sí, confirmar').props.onPress());
   assert.equal(calls.close, 0);
   assert.equal(calls.submit.length, 1);
   assert.ok(content(tree).includes('Transacción exitosa'));
+  assert.ok(content(tree).includes('¿Cuánto dinero tengo?'));
   assert.ok(content(tree).includes('a'.repeat(64)));
   assert.ok(!content(tree).includes('Transacción demostrativa'));
   await act(() => tree.unmount());
@@ -63,12 +66,14 @@ test('Cambia 50 XLM a USDC quotes in chat and only the explicit swap confirmatio
   await send(tree, 'Cambia 50 XLM a USDC');
   assert.deepEqual(calls.swaps.at(-1), { source: 'GSENDER', amount: '50', from: 'XLM', to: 'USDC' });
   assert.equal(calls.swapSubmits.length, before);
+  assert.ok(!content(tree).includes('¿Cuánto dinero tengo?'));
   assert.ok(content(tree).includes('44.0000000'));
   assert.ok(!content(tree).includes('Mínimo que recibirás'));
   assert.ok(!content(tree).includes('Claro. Dime qué activo'));
   await act(async () => button(tree, 'Sí, cambiar').props.onPress());
   assert.equal(calls.swapSubmits.length, before + 1);
   assert.ok(content(tree).includes('Cambio confirmado'));
+  assert.ok(content(tree).includes('¿Cuánto dinero tengo?'));
   assert.equal(calls.close, 0);
   await act(() => tree.unmount());
 });

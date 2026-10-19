@@ -29,6 +29,7 @@ export function createChatPaymentFlow(deps: {
   const flow = {
     get: () => state,
     subscribe(fn: () => void) { listeners.add(fn); return () => { listeners.delete(fn); }; },
+    clear() { if (busy()) return false; revision++; publish({ phase: 'idle' }); return true; },
     async start(request: ChatPaymentRequest, contactId?: string) {
       if (busy()) return;
       const current = ++revision;

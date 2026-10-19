@@ -50,6 +50,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   const [recording, setRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [playingVoiceId, setPlayingVoiceId] = useState<number | null>(null);
+  const [suggestionsVisible, setSuggestionsVisible] = useState(true);
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, role: 'movya', kind: 'text', text: `Hola, ${name}. Puedo ayudarte a enviar, recibir o cambiar dinero en Stellar. Prueba escribiendo: “Envía 20 USDC a Ouali”.` },
   ]);
@@ -117,8 +118,11 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     if (!clean) return;
     const id = Date.now();
     const normalized = clean.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    const pending = flow.get();
-    const pendingSwap = swapFlow.get();
+    let pending = flow.get();
+    let pendingSwap = swapFlow.get();
+    if (pending.phase === 'success' || pending.phase === 'error') { flow.clear(); pending = flow.get(); }
+    if (pendingSwap.phase === 'success' || pendingSwap.phase === 'error') { swapFlow.clear(); pendingSwap = swapFlow.get(); }
+    setSuggestionsVisible(false);
     setMessages(current => [...current, { id, role: 'user', kind: 'text', text: clean }]);
     setText('');
     if (['preparing', 'submitting', 'unknown'].includes(pending.phase) || swapBlocked(pendingSwap) || pendingSwap.phase === 'quoting') return;
@@ -126,6 +130,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       if (/^(si|confirmar|confirmo|adelante|yes|confirm|go ahead)$/.test(normalized)) void swapFlow.confirm();
       else if (/^(no|cancelar|cancela|cancel)$/.test(normalized)) {
         swapFlow.clear();
+        setSuggestionsVisible(true);
         setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Cambio cancelado. No se movió ningún fondo.' }]);
       } else setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Responde Sí para confirmar el cambio o No para cancelarlo.' }]);
       return;
@@ -135,6 +140,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
         void flow.confirm();
       } else if (/^(no|cancelar|cancela|cancel)$/.test(normalized)) {
         flow.cancel();
+        setSuggestionsVisible(true);
         setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Transacción cancelada. No se movió ningún fondo. ¿Deseas hacer algo más?' }]);
       } else {
         setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: pending.phase === 'choosing' ? 'Elige un contacto de la lista o escribe No para cancelar.' : 'Antes de continuar, responde Sí para confirmar o No para cancelar la transacción pendiente.' }]);
@@ -156,6 +162,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     if (!open || !initialPrompt || consumedPrompt.current === initialPrompt) return;
     consumedPrompt.current = initialPrompt;
     const id = Date.now();
+    setSuggestionsVisible(false);
     const swap = parseSwapRequest(initialPrompt);
     if (swap) {
       setMessages(current => [...current, { id, role: 'user', kind: 'text', text: t(initialPrompt) }]);
@@ -169,6 +176,10 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     } else setMessages((current) => [...current, { id, role: 'user', kind: 'text', text: t(initialPrompt) }, createMovyaReply(initialPrompt, id + 1)]);
   }, [initialPrompt, open, t, flow, swapFlow]);
 
+  useEffect(() => {
+    if (payment.phase === 'success' || swapState.phase === 'success') setSuggestionsVisible(true);
+  }, [payment.phase, swapState.phase]);
+
   const send = () => {
     const clean = text.trim();
     if (!clean) return;
@@ -181,6 +192,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     const duration = Math.max(recordingSeconds, 1);
     const id = Date.now();
     setMessages((current) => [...current, { id, role: 'user', kind: 'voice', duration }, createMovyaReply('Quiero hacer una operación', id + 1)]);
+    setSuggestionsVisible(false);
     setRecording(false); setRecordingSeconds(0);
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
@@ -225,9 +237,9 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
               <LinearGradient colors={['#176BFF', '#064AAE']} end={{ x: 1, y: 1 }} style={[styles.bubble, styles.userBubble]}><Text translate={false} style={[styles.messageText, styles.userText]}>{message.text}</Text><Text style={styles.userTime}>Ahora</Text></LinearGradient>
             </View>
           ))}
-          <ChatPaymentCard state={payment} flow={flow} />
-          <SwapReviewCard state={swapState} flow={swapFlow} />
-          <View style={styles.suggestions}>{suggestions.map((suggestion) => <Pressable key={suggestion} disabled={paymentBusy} accessibilityState={{ disabled: paymentBusy }} onPress={() => sendDirect(t(suggestion))} style={styles.suggestion}><Ionicons name="sparkles-outline" size={14} color={colors.brand} /><Text style={styles.suggestionText}>{suggestion}</Text><Ionicons name="arrow-up-circle" size={15} color={colors.brand} /></Pressable>)}</View>
+          <ChatPaymentCard state={payment} flow={flow} onCancel={() => setSuggestionsVisible(true)} />
+          <SwapReviewCard state={swapState} flow={swapFlow} onCancel={() => setSuggestionsVisible(true)} />
+          {suggestionsVisible ? <View style={styles.suggestions}>{suggestions.map((suggestion) => <Pressable key={suggestion} disabled={paymentBusy} accessibilityState={{ disabled: paymentBusy }} onPress={() => sendDirect(t(suggestion))} style={styles.suggestion}><Ionicons name="sparkles-outline" size={14} color={colors.brand} /><Text style={styles.suggestionText}>{suggestion}</Text><Ionicons name="arrow-up-circle" size={15} color={colors.brand} /></Pressable>)}</View> : null}
         </ScrollView>
 
         <BlurView intensity={88} tint="light" style={[styles.composerArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
