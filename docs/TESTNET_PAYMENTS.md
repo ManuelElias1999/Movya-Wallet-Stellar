@@ -18,7 +18,11 @@ XLM transfers can be tested after step 3 without obtaining USDC. Recipients must
 
 ## Chat
 
-With a Testnet wallet active, `Envía 1 USDC a Ouali` opens the real payment screen with the amount and recipient filled in. The payment screen verifies the account, trustline, balance, and fee, then asks for confirmation before signing. The onboarding tutorial remains a simulated educational flow.
+With a Testnet wallet active, `Envía 1 USDC a Ouali` (or `Send 1 USDC to Ouali`) stays in the chat. It resolves an exact saved name/email or a public Stellar address. Accents and case are ignored for names; duplicate names show contact choices inside the chat instead of guessing. Email contacts use the existing verified-address lookup again before review.
+
+The same payment service as **Enviar** verifies accounts, trustlines, balances, receiving capacity, reserves and fees. The inline card shows the full destination/source, amount, network, USDC issuer and XLM fee. Press **Sí, confirmar** or type **Sí / Yes** to sign and submit; **No / Cancelar / Cancel** discards the pending review. No transaction is signed during preparation. The receipt shows the confirmed hash and exact explorer link inside the chat. The onboarding tutorial remains a separate simulated educational flow.
+
+Rapid confirmations share one submission lock. A network-uncertain result keeps its hash and offers **Verificar estado**; new sends and closing the chat are blocked while submission or status resolution is pending. It never automatically broadcasts the payment again. Pending transfer recovery after an app restart is still a future milestone.
 
 ## Network and asset boundaries
 
@@ -58,3 +62,5 @@ The smoke test generates two disposable accounts in memory, funds them through F
 The optional `--usdc` smoke test also creates the verified-issuer USDC trustlines, acquires two test USDC through existing Testnet DEX liquidity (spending at most ten test XLM), transfers one USDC with the payment service, and verifies the recipient's exact balance increase. This fixture setup does not enable swaps in the application and depends on available Testnet liquidity.
 
 USDC unit tests cover the configured issuer, both trustlines, authorization, liabilities, limits, reserve/fee checks, review integrity, signatures, and submission outcomes. For manual app testing, obtain USDC from Circle's faucet.
+
+Offline chat regression tests cover inline confirmation/cancellation in Spanish and English, both assets, exact contact resolution, duplicate names, missing wallets, session changes, double taps and uncertain submission checks. UI tests render the actual chat/card with mocked native/network boundaries; physical-device QA remains necessary.

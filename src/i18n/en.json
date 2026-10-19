@@ -488,5 +488,13 @@
   "Recibiste dinero de {0}": "You received money from {0}",
   "Stellar rechazó la operación: {0}.": "Stellar rejected the transaction: {0}.",
   "Quiero enviar {0} de {1}. Ayúdame a elegir el destinatario y preparar el envío.": "I want to send {0} {1}. Help me choose the recipient and prepare the transfer.",
-  "Quiero cambiar {0} de {1} a {2}. Ayúdame a prepararlo.": "I want to swap {0} {1} for {2}. Help me prepare it."
+  "Quiero cambiar {0} de {1} a {2}. Ayúdame a prepararlo.": "I want to swap {0} {1} for {2}. Help me prepare it.",
+  "Abre tu wallet antes de preparar un envío.": "Open your wallet before preparing a transfer.",
+  "Tus contactos se están cargando. Inténtalo en unos segundos.": "Your contacts are loading. Try again in a few seconds.",
+  "El contacto cambió. Escribe el envío de nuevo.": "The contact changed. Enter the transfer again.",
+  "No encontré ese contacto. Usa su nombre guardado, correo o dirección Stellar.": "I could not find that contact. Use their saved name, email or Stellar address.",
+  "Tienes varias personas con ese nombre. Elige a quién quieres enviar.": "Several contacts have that name. Choose who you want to send to.",
+  "Elige un contacto de la lista o escribe No para cancelar.": "Choose a contact from the list or type No to cancel.",
+  "Enviando o verificando la transacción…": "Sending or checking the transaction…",
+  "Envía 1 USDC a Prueba": "Send 1 USDC to Prueba"
 }

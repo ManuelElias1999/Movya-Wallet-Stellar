@@ -52,7 +52,7 @@ This repository contains the Expo wallet application. The marketing website is a
 | Contacts | Add by public address or registered email; search, rename, favorite and delete | Email lookup requires an exact verified account; no public directory |
 | Balances and activity | Live Horizon balances, sent/received payments, saved contact names and explorer receipts | Main account balance is shown in XLM; no fabricated USD conversion |
 | Funding | Friendbot XLM request; USDC trustline setup and Circle faucet shortcut | Circle's request is completed externally; token delivery is not automatic |
-| Movya chat | Basic text intents, balance answers and preparation of a send to a saved contact | Rule-based parser, not an integrated LLM; final review opens in the Send screen |
+| Movya chat | Basic text intents, balance answers, contact selection and in-chat payment review, confirmation and receipts | Rule-based parser, not an integrated LLM; XLM/USDC signing uses the same validated payment service as Send |
 | Onboarding and UI | First-registration guide, wallet forge animation, fixed bottom navigation and password visibility controls | Guide is simulated; visual and keyboard behavior still require device QA |
 | Native acceleration | Local CommonCrypto/JCA module for backup key derivation outside JavaScript | Requires a compiled app; Expo Go uses the portable engine |
 | Swaps and voice | Interface prototypes | Live swap quotes/execution and actual voice recording/transcription are not implemented |
@@ -223,7 +223,7 @@ docs/                        Setup, testing, UX and migration notes
 ## Next milestones
 
 1. Complete physical-device QA and measure first-account creation with native acceleration.
-2. Expand the assistant beyond fixed text patterns and keep review/confirmation/receipts inside the conversation.
+2. Expand the assistant beyond fixed text patterns and add durable recovery of pending payments across app restarts.
 3. Connect real swap quotes and execution with slippage and expiry controls.
 4. Implement actual voice recording and transcription.
 5. Design production recovery and safer authentication options, including password lifecycle handling.
