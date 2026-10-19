@@ -51,7 +51,7 @@ export const checkSubmission = async () => null;
 export const USDC_ISSUER = 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5';
 export const prepareSwap = async (input: any) => {
   calls.swaps.push(input);
-  return { ...input, amount: input.amount, estimated: '44.0000000', minimum: '43.7800000', fee: '0.0000100', slippageBps: 50, path: [], expiresAt: Math.floor(Date.now() / 1000) + 60, hash: 'b'.repeat(64), xdr: 'swap-xdr' };
+  return { ...input, amount: input.amount, swapAmount: '49.7500000', appFee: '0.2500000', estimated: '44.0000000', minimum: '43.7800000', fee: '0.0000200', slippageBps: 50, appFeeBps: 50, treasury: 'GB4PASUU4VUFIREIQS2Y4QUJW7NZLYGDCRQQVSCUY4BC5OXNXMVXGTWB', path: [], expiresAt: Math.floor(Date.now() / 1000) + 60, hash: 'b'.repeat(64), xdr: 'swap-xdr' };
 };
 export const submitSwap = async (review: any) => { calls.swapSubmits.push(review); return { hash: review.hash, explorerUrl: `https://stellar.expert/explorer/testnet/tx/${review.hash}` }; };
 export const readSwapSpendable = async () => ({ XLM: '97.4999900', USDC: '10.0000000' });

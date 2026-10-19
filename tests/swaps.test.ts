@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { Keypair, Networks, Transaction } from '@stellar/stellar-sdk/base';
-import { prepareSwap, submitSwap, validateSwapReview, swapSpendable, swapMinimum } from '../src/services/stellar/swaps';
+import { MOVYA_SWAP_FEE_BPS, MOVYA_TREASURY, prepareSwap, splitSwapAmount, submitSwap, validateSwapReview, swapSpendable, swapMinimum } from '../src/services/stellar/swaps';
 import { SubmissionUnknownError, transactionHash, USDC_ISSUER, type TestnetAccount } from '../src/services/stellar/payments';
 import { parseSwapRequest } from '../src/services/chatIntent';
 import { createSwapFlow } from '../src/services/swapFlow';
@@ -10,6 +10,7 @@ const key = Keypair.fromRawEd25519Seed(new Uint8Array(32).fill(7));
 const originalFetch = globalThis.fetch;
 const originalNetwork = process.env.EXPO_PUBLIC_STELLAR_NETWORK;
 let account: TestnetAccount;
+let treasury: TestnetAccount;
 let paths: any[];
 let posts: Transaction[];
 let mode: 'success' | 'timeout' | 'price' = 'success';
@@ -19,7 +20,11 @@ function setup() {
     { asset_type: 'native', balance: '100', selling_liabilities: '2' },
     { asset_type: 'credit_alphanum4', asset_code: 'USDC', asset_issuer: USDC_ISSUER, balance: '50', selling_liabilities: '5', buying_liabilities: '1', limit: '100', is_authorized: true },
   ] };
-  paths = [{ source_asset_type: 'native', source_amount: '50.0000000', destination_asset_type: 'credit_alphanum4', destination_asset_code: 'USDC', destination_asset_issuer: USDC_ISSUER, destination_amount: '10.1234567', path: [] }];
+  treasury = { account_id: MOVYA_TREASURY, sequence: '456', subentry_count: 1, balances: [
+    { asset_type: 'native', balance: '10030', selling_liabilities: '0' },
+    { asset_type: 'credit_alphanum4', asset_code: 'USDC', asset_issuer: USDC_ISSUER, balance: '0', selling_liabilities: '0', buying_liabilities: '0', limit: '922337203685.4775807', is_authorized: true },
+  ] };
+  paths = [{ source_asset_type: 'native', source_amount: '49.7500000', destination_asset_type: 'credit_alphanum4', destination_asset_code: 'USDC', destination_asset_issuer: USDC_ISSUER, destination_amount: '10.1234567', path: [] }];
   posts = []; queries = []; mode = 'success';
   globalThis.fetch = async (url, options) => {
     const target = new URL(String(url)); queries.push(target);
@@ -29,6 +34,7 @@ function setup() {
       if (mode === 'price') return Response.json({ extras: { result_codes: { transaction: 'tx_failed', operations: ['op_under_destmin'] } } }, { status: 400 });
       return Response.json({ hash: transactionHash(tx), successful: true });
     }
+    if (target.pathname === `/accounts/${MOVYA_TREASURY}`) return Response.json(treasury);
     if (target.pathname.startsWith('/accounts/')) return Response.json(account);
     if (target.pathname === '/fee_stats') return Response.json({ fee_charged: { p95: '200' }, last_ledger_base_fee: '100' });
     if (target.pathname === '/ledgers') return Response.json({ _embedded: { records: [{ base_reserve_in_stroops: 5000000 }] } });
@@ -46,23 +52,28 @@ test('Cambia 50 XLM a USDC and English commands preserve seven decimals and asse
   assert.deepEqual(parseSwapRequest('Change 50 XLM to USDC'), parseSwapRequest('Cambiar 50 XLM por USDC'));
   assert.equal(parseSwapRequest('Cambia XLM a USDC'), null);
 });
-test('live path query produces a same-wallet, strict-send quote with a protected minimum, fee and 60-second expiry', async () => {
+test('quote includes an atomic 0.5% Movya payment and swaps the remaining 99.5%', async () => {
   setup(); const before = Math.floor(Date.now() / 1000); const quote = await prepare();
-  const tx = validateSwapReview(quote); const op = tx.operations[0];
-  assert.equal(op.type, 'pathPaymentStrictSend');
-  if (op.type !== 'pathPaymentStrictSend') throw new Error('wrong operation');
-  assert.equal(op.destination, key.publicKey()); assert.equal(op.sendAmount, '50.0000000');
-  assert.equal(op.destAsset.issuer, USDC_ISSUER); assert.equal(op.destMin, '10.0728394');
-  assert.equal(quote.fee, '0.0000200'); assert.ok(quote.expiresAt >= before + 60 && quote.expiresAt <= before + 61);
+  const tx = validateSwapReview(quote); const [feeOp, swapOp] = tx.operations;
+  assert.equal(feeOp.type, 'payment'); assert.equal(swapOp.type, 'pathPaymentStrictSend');
+  if (feeOp.type !== 'payment' || swapOp.type !== 'pathPaymentStrictSend') throw new Error('wrong operations');
+  assert.equal(feeOp.destination, MOVYA_TREASURY); assert.equal(feeOp.amount, '0.2500000'); assert.ok(feeOp.asset.isNative());
+  assert.equal(swapOp.destination, key.publicKey()); assert.equal(swapOp.sendAmount, '49.7500000');
+  assert.equal(swapOp.destAsset.issuer, USDC_ISSUER); assert.equal(swapOp.destMin, '10.0728394');
+  assert.equal(quote.amount, '50.0000000'); assert.equal(quote.swapAmount, '49.7500000'); assert.equal(quote.appFee, '0.2500000');
+  assert.equal(quote.appFeeBps, MOVYA_SWAP_FEE_BPS); assert.equal(quote.treasury, MOVYA_TREASURY);
+  assert.equal(quote.fee, '0.0000400'); assert.ok(quote.expiresAt >= before + 60 && quote.expiresAt <= before + 61);
   const query = queries.find(u => u.pathname === '/paths/strict-send')!;
   assert.equal(query.searchParams.get('destination_assets'), `USDC:${USDC_ISSUER}`);
-  assert.equal(query.searchParams.get('source_amount'), '50.0000000'); assert.equal(posts.length, 0);
+  assert.equal(query.searchParams.get('source_amount'), '49.7500000'); assert.equal(posts.length, 0);
 });
 test('MAX preserves reserves, sponsorship, current fee and selling liabilities without floating-point arithmetic', () => {
-  setup(); assert.deepEqual(swapSpendable(account, 200n, 15_000_000n), { XLM: '96.4999800', USDC: '45.0000000' });
+  setup(); assert.deepEqual(swapSpendable(account, 400n, 15_000_000n), { XLM: '96.4999600', USDC: '45.0000000' });
   account.balances[0].balance = '3.0000000';
-  assert.deepEqual(swapSpendable(account, 200n, 15_000_000n), { XLM: '0.0000000', USDC: '0.0000000' });
+  assert.deepEqual(swapSpendable(account, 400n, 15_000_000n), { XLM: '0.0000000', USDC: '0.0000000' });
   assert.equal(swapMinimum('1.0000001'), '0.9950000');
+  assert.deepEqual(splitSwapAmount('1.0000001'), { appFee: '0.0050000', swapAmount: '0.9950001' });
+  assert.throws(() => splitSwapAmount('0.0000199'), /demasiado pequeño/);
 });
 test('best valid route wins; impostor USDC and mismatched amounts are ignored', async () => {
   setup(); const base = paths[0];
@@ -80,16 +91,26 @@ test('missing or unauthorized USDC, insufficient balance/reserve and receiving c
   setup(); account.balances[1].limit = '60'; await assert.rejects(prepare(), /capacidad/);
 });
 test('USDC to XLM uses verified source issuer and authorized spendable balance', async () => {
-  setup(); paths = [{ source_asset_type: 'credit_alphanum4', source_asset_code: 'USDC', source_asset_issuer: USDC_ISSUER, source_amount: '1', destination_asset_type: 'native', destination_amount: '5', path: [] }];
+  setup(); paths = [{ source_asset_type: 'credit_alphanum4', source_asset_code: 'USDC', source_asset_issuer: USDC_ISSUER, source_amount: '0.9950000', destination_asset_type: 'native', destination_amount: '5', path: [] }];
   const quote = await prepareSwap({ source: key.publicKey(), amount: '1', from: 'USDC', to: 'XLM' });
-  assert.equal(quote.estimated, '5.0000000');
+  assert.equal(quote.estimated, '5.0000000'); assert.equal(quote.appFee, '0.0050000'); assert.equal(quote.swapAmount, '0.9950000');
+  const tx = validateSwapReview(quote); const feeOp = tx.operations[0];
+  assert.equal(feeOp.type, 'payment');
+  if (feeOp.type !== 'payment') throw new Error('wrong fee operation');
+  assert.equal(feeOp.destination, MOVYA_TREASURY); assert.equal(feeOp.amount, '0.0050000'); assert.equal(feeOp.asset.code, 'USDC'); assert.equal(feeOp.asset.issuer, USDC_ISSUER);
   const query = queries.find(u => u.pathname === '/paths/strict-send')!;
-  assert.equal(query.searchParams.get('source_asset_issuer'), USDC_ISSUER);
+  assert.equal(query.searchParams.get('source_asset_issuer'), USDC_ISSUER); assert.equal(query.searchParams.get('source_amount'), '0.9950000');
   await assert.rejects(prepareSwap({ source: key.publicKey(), amount: '46', from: 'USDC', to: 'XLM' }), /saldo disponible/);
 });
-test('changed source, amount, assets, fee, minimum, path, estimates and expired quotes cannot be signed', async () => {
+test('USDC-source swaps require the exact authorized treasury trustline and receiving capacity', async () => {
+  setup(); paths = [{ source_asset_type: 'credit_alphanum4', source_asset_code: 'USDC', source_asset_issuer: USDC_ISSUER, source_amount: '0.9950000', destination_asset_type: 'native', destination_amount: '5', path: [] }];
+  treasury.balances.pop(); await assert.rejects(prepareSwap({ source: key.publicKey(), amount: '1', from: 'USDC', to: 'XLM' }), /USDC correcto/);
+  setup(); treasury.balances[1].is_authorized = false; await assert.rejects(prepareSwap({ source: key.publicKey(), amount: '1', from: 'USDC', to: 'XLM' }), /USDC correcto/);
+  setup(); treasury.balances[1].limit = '0.001'; await assert.rejects(prepareSwap({ source: key.publicKey(), amount: '1', from: 'USDC', to: 'XLM' }), /capacidad/);
+});
+test('changed source, amounts, assets, fees, treasury, path, estimates and expired quotes cannot be signed', async () => {
   setup(); const quote = await prepare(); let signatures = 0;
-  for (const patch of [{ source: Keypair.random().publicKey() }, { amount: '1.0000000' }, { from: 'USDC' as const, to: 'XLM' as const }, { fee: '1.0000000' }, { minimum: '0.0000001' }, { path: ['native'] }, { estimated: '20.0000000' }, { slippageBps: 100 }, { expiresAt: 1 }]) {
+  for (const patch of [{ source: Keypair.random().publicKey() }, { amount: '1.0000000' }, { swapAmount: '49.0000000' }, { appFee: '1.0000000' }, { appFeeBps: 100 }, { treasury: Keypair.random().publicKey() }, { from: 'USDC' as const, to: 'XLM' as const }, { fee: '1.0000000' }, { minimum: '0.0000001' }, { path: ['native'] }, { estimated: '20.0000000' }, { slippageBps: 100 }, { expiresAt: 1 }]) {
     await assert.rejects(submitSwap({ ...quote, ...patch }, async xdr => { signatures++; return sign(xdr); }));
   }
   const originalNow = Date.now;

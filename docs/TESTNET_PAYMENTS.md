@@ -71,8 +71,8 @@ Offline chat regression tests cover inline confirmation/cancellation in Spanish 
 
 - Enter an amount to obtain a quote automatically. Changing the amount or either asset immediately invalidates the old review; late responses cannot overwrite the new draft.
 - **Saldo** shows the token balance; **Disponible** and **Máximo** exclude selling liabilities, the XLM reserve and the current maximum network fee. The swap service checks those amounts again when preparing the quote.
-- Review the estimated amount, minimum received, maximum network fee, wallet, issuer and network before confirming. The limit is 0.5% below the quote, rounded down at seven decimals. Quotes expire after 60 seconds. A worse execution is rejected; Stellar can still charge its transaction fee for a rejected transaction.
-- The fee shown is the maximum fee budget in the reviewed transaction; the network can charge less. No app fee is added. Pool costs, when applicable, are reflected in the routed quote.
+- Review the gross amount, amount exchanged, 0.5% Movya fee, estimated output, minimum received, maximum network fee, wallets, issuer and network before confirming. The entered amount is the total debit: 0.5% goes to Movya in the source asset and the remaining 99.5% is exchanged. The app fee and swap are two operations in one atomic Stellar transaction, so neither operation remains confirmed if the other fails.
+- The minimum is 0.5% below the quote, rounded down at seven decimals. Quotes expire after 60 seconds. A worse execution is rejected; Stellar can still charge its transaction fee for a rejected transaction. The network fee is separate from Movya's fee and is shown as the transaction's maximum fee budget; the network can charge less. Pool costs, when applicable, are reflected in the routed quote.
 - `Cambia 50 XLM a USDC` / `Swap 50 XLM for USDC` requests the same review in the chat. Confirm using its button or **Sí / Yes**; cancel with **No**. Neither preparation nor a suggestion signs a transaction.
 - Insufficient liquidity is an explicit error. Testnet exchange rates depend on test liquidity and are not a market-price feed.
 - A confirmed swap links to its exact transaction. Actual received amounts can vary above the reviewed minimum; the quote is labeled as an estimate. Uncertain submissions can only be checked, never automatically resent. Pending state does not survive a full app restart yet.
@@ -83,11 +83,11 @@ Run the dedicated test with disposable keys held only in memory:
 node --import tsx scripts/testnet-swap-smoke.ts
 ```
 
-It activates a disposable account, enables verified USDC, exchanges 50 XLM to USDC and exchanges the received USDC back to XLM. It verifies balance changes against actual charged fees and each protected minimum, and prints only public receipts. It requires Friendbot and live Testnet DEX liquidity. Offline tests additionally cover stale quotes, exact seven-decimal arithmetic, trustline capacity, tampered reviews/signatures, expiry, double confirmation and uncertain status checks. Native UI/network boundaries are mocked in component tests; the amount-field layout still requires a physical-device check.
+It activates a disposable account, enables verified USDC, exchanges 50 XLM to USDC and exchanges the received USDC back to XLM. It verifies the user's exact debit, Movya's exact 0.5% receipt in the source asset, actual charged network fees and each protected minimum, and prints only public receipts. It requires Friendbot, the treasury's verified-USDC trustline and live Testnet DEX liquidity. Offline tests additionally cover stale quotes, exact seven-decimal arithmetic, source and treasury trustline capacity, tampered reviews/signatures, expiry, double confirmation and uncertain status checks. Native UI/network boundaries are mocked in component tests; the amount-field layout still requires a physical-device check.
 
-Verified on October 18, 2026 (Bolivia), with a disposable wallet and the app’s swap service:
+Verified on October 19, 2026, with a disposable wallet and the app’s swap service. Both rows also verify that the treasury received the exact fee in the source asset:
 
-| Direction | Amount sent | Confirmed transaction | Check |
-| --- | --- | --- | --- |
-| XLM → USDC | 50 XLM | [5edd5cd3](https://stellar.expert/explorer/testnet/tx/5edd5cd33cdb74050ba5be51d2a1ec2566871ed7b6d0522d0b3dff13f0535768) | Exact debit and received balance above protected minimum |
-| USDC → XLM | 44.2490034 USDC | [78ba3cf0](https://stellar.expert/explorer/testnet/tx/78ba3cf0de19fea26f6c5cd850425c781cc29f8dfe98b59fa3a324f1c2ef5780) | Exact debit and received balance above protected minimum after actual network fee |
+| Direction | Total entered | Movya fee | Amount exchanged | Confirmed transaction | Check |
+| --- | --- | --- | --- | --- | --- |
+| XLM → USDC | 50 XLM | 0.25 XLM | 49.75 XLM | [2e44bcc0](https://stellar.expert/explorer/testnet/tx/2e44bcc0e92dc77d6326f69a7e5ff6f69fe5999a096dbc8efafada5f6dec3955) | Exact user debit, treasury receipt and output above the protected minimum |
+| USDC → XLM | 44.027706 USDC | 0.2201385 USDC | 43.8075675 USDC | [2dd9d17a](https://stellar.expert/explorer/testnet/tx/2dd9d17ac92e6482d926dbba4869a37e449aac70761d6d8ac76b257394ab5140) | Exact user debit, treasury receipt and output above the protected minimum after the actual network fee |

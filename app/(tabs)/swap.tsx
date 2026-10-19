@@ -116,6 +116,8 @@ export default function SwapScreen() {
         {state.phase === 'quoting' ? <View style={styles.quoteLoading}><ActivityIndicator color={colors.brand} /><Text>Buscando cotización en Stellar…</Text></View> : null}
         {state.error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{state.error}</Text> : null}
         {state.review ? <View style={styles.rate}>
+          <Text style={styles.rateLabel}>Se cambiarán: {state.review.swapAmount} {from}</Text>
+          <Text style={styles.rateLabel}>Comisión de Movya (0,5 %): {state.review.appFee} {from}</Text>
           <Text style={styles.rateLabel}>Mínimo que recibirás: {state.review.minimum} {to}</Text>
           <Text style={styles.rateLabel}>Comisión máxima de red: {state.review.fee} XLM</Text>
           <Text style={styles.rateValue}>Stellar DEX · Testnet</Text>
