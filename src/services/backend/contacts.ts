@@ -1,5 +1,7 @@
 import { requireBackend } from './client';
 import { validateAddress } from '../stellar/payments';
+import { createContactPins } from './contactPins';
+import { contactPinStore } from './contactPinStore';
 
 export type Contact = { id: string; name: string; email?: string; address?: string; favorite: boolean; handle: string; initials: string; color: string };
 type Row = { id: string; name: string; email: string | null; address: string; favorite: boolean };
@@ -27,7 +29,11 @@ export async function addContact(input: { name: string; identifier: string; type
   const result = await requireBackend().from('contacts').insert({ name, email, address }).select('id,name,email,address,favorite').single();
   if (result.error?.code === '23505') throw new Error('Esa persona ya está en tus contactos.');
   if (result.error) throw result.error;
-  return presentContact(result.data as Row);
+  const contact = presentContact(result.data as Row);
+  // Pin the address resolved here, not whatever the server echoes back. A
+  // different echo is caught as a change before the first payment.
+  await pins.pin(contact, address);
+  return contact;
 }
 export async function updateContact(id: string, patch: { name?: string; favorite?: boolean }) {
   const result = await requireBackend().from('contacts').update(patch).eq('id', id).select('id,name,email,address,favorite').single();
@@ -37,10 +43,36 @@ export async function updateContact(id: string, patch: { name?: string; favorite
 export async function deleteContact(id: string) {
   const result = await requireBackend().from('contacts').delete().eq('id', id).select('id').single();
   if (result.error) throw result.error;
+  await pins.unpin(id).catch(() => undefined);
 }
-export async function contactDestination(contact: Contact) {
-  const address = contact.email ? await resolveEmail(contact.email) : contact.address;
-  if (!address) throw new Error('Este contacto no tiene una dirección Stellar.');
+
+const pins = createContactPins({
+  store: contactPinStore,
+  owner: async () => (await requireBackend().auth.getSession()).data.session?.user.id ?? null,
+  validate: validateAddress,
+  lookup: async email => {
+    const result = await requireBackend().rpc('resolve_movya_email', { contact_email: email.trim().toLowerCase() });
+    if (result.error) throw result.error;
+    return (result.data as string | null) ?? null;
+  },
+});
+// The only address a payment to a saved contact may use. Throws
+// ContactPinRequired when the person must confirm a first use on this device
+// or a changed address; it never switches addresses on its own.
+export function contactDestination(contact: Contact) {
+  return pins.destination(contact);
+}
+// Called only after the person explicitly approved `address` for this contact.
+export async function acceptContactAddress(contact: Contact, address: string) {
   validateAddress(address);
-  return address;
+  let next = contact;
+  if (contact.address !== address) {
+    const result = await requireBackend().from('contacts').update({ address }).eq('id', contact.id).select('id,name,email,address,favorite').single();
+    if (result.error?.code === '23505') throw new Error('Esa dirección ya pertenece a otro de tus contactos.');
+    if (result.error) throw result.error;
+    next = presentContact(result.data as Row);
+    if (next.address !== address) throw new Error('No pudimos guardar la dirección aprobada. Vuelve a intentarlo.');
+  }
+  await pins.pin(next, address);
+  return next;
 }

@@ -16,7 +16,7 @@ import { PaymentReviewSheet } from '@/components/PaymentReviewSheet';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance, preparePayment, type PaymentAsset, type PaymentReceipt, type PaymentReview } from '@/services/stellar/payments';
 import { useContacts } from '@/context/ContactsContext';
-import { contactDestination } from '@/services/backend/contacts';
+import { resolveContactWithConfirmation } from '@/components/confirmContactAddress';
 import { colors, radius } from '@/theme/tokens';
 
 export default function SendScreen() {
@@ -52,7 +52,7 @@ export default function SendScreen() {
     if (lock.current || !wallet.publicKey) return;
     lock.current = true; setPreparing(true); setError('');
     try {
-      const destination = selected ? saved.persistent ? await contactDestination(selected) : selected.name === 'Ouali' ? wallet.oualiAddress : selected.address ?? '' : address.trim();
+      const destination = selected ? saved.persistent ? await resolveContactWithConfirmation(selected, () => void saved.refresh()) : selected.name === 'Ouali' ? wallet.oualiAddress : selected.address ?? '' : address.trim();
       if (selected && !destination) throw new Error('Este contacto todavía no tiene una dirección vinculada. Guarda su dirección en Contactos o pega una dirección.');
       const next = await preparePayment({ source: wallet.publicKey, destination, amount, asset: token });
       setReview(next);
