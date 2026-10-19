@@ -1,7 +1,7 @@
-import { Alert, Pressable, Text, TextInput } from '@/i18n/primitives';
+import { Pressable, Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { InternalScreenBackground } from '@/components/InternalScreenBackground';
@@ -11,6 +11,12 @@ import { PressableScale } from '@/components/PressableScale';
 import { TokenSelector } from '@/components/TokenSelector';
 import { TokenIcon } from '@/components/TokenIcon';
 import { colors } from '@/theme/tokens';
+import { useTestnetWallet } from '@/context/TestnetWalletContext';
+import { useSwapFlow } from '@/context/useSwapFlow';
+import { SwapReviewCard } from '@/components/SwapReviewCard';
+import { assetBalance, type PaymentAsset } from '@/services/stellar/payments';
+import { readSwapSpendable } from '@/services/stellar/swaps';
+import { swapBlocked } from '@/services/swapFlow';
 
 const tokenInfo: Record<string, { name: string; color: string }> = {
   USDC: { name: 'USD digital', color: '#2775CA' },
@@ -20,31 +26,56 @@ const tokenInfo: Record<string, { name: string; color: string }> = {
 };
 
 export default function SwapScreen() {
-  const [from, setFrom] = useState('USDC');
-  const [to, setTo] = useState('XLM');
+  const [from, setFrom] = useState<PaymentAsset>('XLM');
+  const [to, setTo] = useState<PaymentAsset>('USDC');
   const [amount, setAmount] = useState('');
   const [fromOpen, setFromOpen] = useState(false);
   const [toOpen, setToOpen] = useState(false);
 
+  const wallet = useTestnetWallet();
+  const { flow, state } = useSwapFlow();
+  const blocked = swapBlocked(state);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [spendable, setSpendable] = useState<Record<PaymentAsset, string> | null>(null);
+  const [balanceError, setBalanceError] = useState('');
+  const balance = wallet.account ? assetBalance(wallet.account, from)?.balance ?? '0' : '—';
+
+  useEffect(() => {
+    let active = true;
+    setSpendable(null); setBalanceError('');
+    if (wallet.publicKey) void readSwapSpendable(wallet.publicKey)
+      .then(next => { if (active) setSpendable(next); })
+      .catch(error => { if (active) setBalanceError(error instanceof Error ? error.message : 'No se pudo leer el balance.'); });
+    return () => { active = false; };
+  }, [wallet.publicKey, wallet.account]);
+
+  useEffect(() => {
+    flow.clear();
+    if (!wallet.publicKey || !amount.trim()) return;
+    const source = wallet.publicKey;
+    const timer = setTimeout(() => void flow.start({ source, amount, from, to }), 400);
+    return () => { clearTimeout(timer); flow.clear(); };
+  }, [amount, from, to, wallet.publicKey, flow]);
+
+  const editAmount = (value: string) => { if (!blocked) { flow.clear(); setAmount(value); } };
   const chooseFrom = (value: string) => {
+    if (blocked) return;
+    flow.clear();
     if (value === to) setTo(from);
-    setFrom(value);
-    setFromOpen(false);
+    setFrom(value as PaymentAsset); setFromOpen(false);
   };
-
   const chooseTo = (value: string) => {
+    if (blocked) return;
+    flow.clear();
     if (value === from) setFrom(to);
-    setTo(value);
-    setToOpen(false);
+    setTo(value as PaymentAsset); setToOpen(false);
   };
-
-  const switchAssets = () => {
-    setFrom(to);
-    setTo(from);
-  };
+  const switchAssets = () => { if (!blocked) { flow.clear(); setFrom(to); setTo(from); } };
+  const requestQuote = () => { if (wallet.publicKey) void flow.start({ source: wallet.publicKey, amount, from, to }); };
+  const closeReview = () => { if (!swapBlocked(flow.get())) setReviewOpen(false); };
 
   const assetSelector = (code: string, onPress: () => void) => (
-    <PressableScale onPress={onPress} pressedScale={0.97} style={styles.assetBox}>
+    <PressableScale disabled={blocked} onPress={onPress} pressedScale={0.97} style={styles.assetBox}>
       <View style={styles.assetDot}><TokenIcon code={code} color={tokenInfo[code].color} size={37} /></View>
       <View style={styles.assetCopy}><Text style={styles.assetName}>{tokenInfo[code].name}</Text><Text style={styles.assetNetwork}>Activo en Stellar</Text></View>
       <Text style={styles.code}>{code}</Text>
@@ -61,24 +92,38 @@ export default function SwapScreen() {
         <Text style={styles.label}>Tú entregas</Text>
         {assetSelector(from, () => setFromOpen(true))}
         <View style={styles.amountBox}>
-          <TextInput keyboardType="decimal-pad" onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#94A5BE" style={styles.amountInput} value={amount} />
+          <TextInput keyboardType="decimal-pad" accessibilityLabel="Monto que entregas" editable={!blocked} onChangeText={editAmount} placeholder="0.00" placeholderTextColor="#94A5BE" style={styles.amountInput} value={amount} />
           <View style={styles.amountToken}><Text style={styles.amountTokenText}>{from}</Text></View>
         </View>
 
-        <PressableScale onPress={switchAssets} pressedScale={0.88} style={styles.switch}><Ionicons name="swap-vertical" size={22} color={colors.brand} /></PressableScale>
+        <View style={styles.balanceRow}>
+          <View style={{ flex: 1 }}><Text style={styles.balance}>Saldo: {balance} {from}</Text><Text style={styles.balance}>Disponible: {spendable?.[from] ?? '…'} {from}</Text></View>
+          <Pressable accessibilityRole="button" disabled={blocked || !spendable} accessibilityState={{ disabled: blocked || !spendable }} onPress={() => { if (spendable) editAmount(spendable[from]); }} style={styles.maxButton}><Text style={styles.maxText}>Máximo</Text></Pressable>
+        </View>
+        <Text style={styles.help}>El disponible conserva la reserva y la comisión en XLM.</Text>
+        {balanceError ? <Text style={styles.error}>{balanceError}</Text> : null}
+
+        <PressableScale disabled={blocked} onPress={switchAssets} pressedScale={0.88} style={styles.switch}><Ionicons name="swap-vertical" size={22} color={colors.brand} /></PressableScale>
 
         <Text style={styles.label}>Tú recibes</Text>
         {assetSelector(to, () => setToOpen(true))}
         <View style={styles.outputBox}>
-          <Text style={styles.output}>{amount ? '—' : '0.00'}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5} style={styles.output}>{state.review?.estimated ?? (amount ? '—' : '0.00')}</Text>
           <View style={[styles.amountToken, styles.outputToken]}><Text style={styles.amountTokenText}>{to}</Text></View>
         </View>
 
-        <View style={styles.rate}><Text style={styles.rateLabel}>Tipo de cambio estimado</Text><Text style={styles.rateValue}>Disponible al conectar Stellar DEX</Text></View>
-        <PressableScale disabled={!amount} onPress={() => Alert.alert('Vista previa', 'La cotización y confirmación se conectarán en una fase posterior.')} style={[styles.button, !amount && styles.disabled]}><Text style={styles.buttonText}>Revisar cambio</Text></PressableScale>
+        <Text style={styles.help}>El monto recibido es estimado hasta que se confirme el cambio.</Text>
+        {state.phase === 'quoting' ? <View style={styles.quoteLoading}><ActivityIndicator color={colors.brand} /><Text>Buscando cotización en Stellar…</Text></View> : null}
+        {state.error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{state.error}</Text> : null}
+        {state.review ? <View style={styles.rate}>
+          <Text style={styles.rateLabel}>Mínimo que recibirás: {state.review.minimum} {to}</Text>
+          <Text style={styles.rateLabel}>Comisión máxima de red: {state.review.fee} XLM</Text>
+          <Text style={styles.rateValue}>Stellar DEX · Testnet</Text>
+        </View> : null}
+        <PressableScale disabled={!amount || !wallet.publicKey || state.phase === 'quoting' || blocked} onPress={() => { if (state.phase === 'review' || state.phase === 'success') { Keyboard.dismiss(); setReviewOpen(true); } else requestQuote(); }} style={[styles.button, (!amount || !wallet.publicKey || state.phase === 'quoting' || blocked) && styles.disabled]}><Text style={styles.buttonText}>{state.phase === 'review' ? 'Revisar cambio' : state.phase === 'success' ? 'Ver comprobante' : 'Cotizar cambio'}</Text></PressableScale>
         <View style={styles.contextHelp}>
           <MovyaContextHelp
-            actionPrompt={`Quiero cambiar ${amount || 'un monto'} de ${from} a ${to}. Ayúdame a prepararlo.`}
+            actionPrompt={amount ? `Cambia ${amount} ${from} a ${to}` : 'Quiero cambiar XLM a USDC. Ayúdame a prepararlo.'}
             explanationSteps={[
               'Abre la lista de Tú entregas y escoge el activo que quieres cambiar.',
               'Escribe el monto y luego elige, en la segunda lista, el activo que quieres recibir.',
@@ -94,11 +139,18 @@ export default function SwapScreen() {
 
       <Modal animationType="slide" onRequestClose={() => setFromOpen(false)} transparent visible={fromOpen}>
         <Pressable onPress={() => setFromOpen(false)} style={styles.backdrop} />
-        <View style={styles.sheet}><View style={styles.sheetHandle} /><Text style={styles.sheetTitle}>Activo que entregas</Text><TokenSelector onChange={chooseFrom} value={from} /></View>
+        <View style={styles.sheet}><View style={styles.sheetHandle} /><Text style={styles.sheetTitle}>Activo que entregas</Text><TokenSelector options={['XLM', 'USDC']} onChange={chooseFrom} value={from} /></View>
       </Modal>
       <Modal animationType="slide" onRequestClose={() => setToOpen(false)} transparent visible={toOpen}>
         <Pressable onPress={() => setToOpen(false)} style={styles.backdrop} />
-        <View style={styles.sheet}><View style={styles.sheetHandle} /><Text style={styles.sheetTitle}>Activo que recibes</Text><TokenSelector onChange={chooseTo} value={to} /></View>
+        <View style={styles.sheet}><View style={styles.sheetHandle} /><Text style={styles.sheetTitle}>Activo que recibes</Text><TokenSelector options={['XLM', 'USDC']} onChange={chooseTo} value={to} /></View>
+      </Modal>
+      <Modal animationType="slide" transparent visible={reviewOpen} onRequestClose={closeReview}>
+        <View style={styles.reviewBackdrop}><View style={styles.reviewSheet}>
+          <ScrollView keyboardShouldPersistTaps="handled"><SwapReviewCard state={state} flow={flow} onCancel={closeReview} />
+            {!blocked ? <Pressable accessibilityRole="button" onPress={closeReview} style={styles.maxButton}><Text style={styles.maxText}>Volver</Text></Pressable> : null}
+          </ScrollView>
+        </View></View>
       </Modal>
     </SafeAreaView>
   );
@@ -115,15 +167,19 @@ const styles = StyleSheet.create({
   assetName: { color: colors.ink, fontSize: 14, fontWeight: '800' },
   assetNetwork: { color: colors.muted, fontSize: 9, marginTop: 2 },
   code: { color: colors.ink, fontSize: 12, fontWeight: '900', marginRight: 7 },
-  amountBox: { height: 76, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(235,245,255,0.94)', borderWidth: 1.5, borderColor: '#BCD5F5', borderRadius: 21, paddingLeft: 15, paddingRight: 10, marginTop: 10, shadowColor: colors.navy, shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
-  amountInput: { flex: 1, minWidth: 0, color: colors.ink, fontSize: 30, fontWeight: '800', paddingHorizontal: 0 },
+  amountBox: { minHeight: 88, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(235,245,255,0.94)', borderWidth: 1.5, borderColor: '#BCD5F5', borderRadius: 21, paddingLeft: 15, paddingRight: 10, marginTop: 10, shadowColor: colors.navy, shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
+  amountInput: { flex: 1, minWidth: 0, color: colors.ink, fontSize: 30, fontWeight: '800', minHeight: 56, paddingHorizontal: 0, paddingVertical: 8, textAlignVertical: 'center', includeFontPadding: false },
   amountToken: { width: 70, height: 43, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.88)', borderWidth: 1, borderColor: '#C8DDF6', alignItems: 'center', justifyContent: 'center' },
   amountTokenText: { color: colors.brandDark, fontSize: 12, fontWeight: '900' },
   switch: { width: 46, height: 46, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.9)', borderWidth: 2, borderColor: '#CDE0FA', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginVertical: -2, zIndex: 2, shadowColor: colors.navy, shadowOpacity: 0.16, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 5 },
   outputBox: { height: 76, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(225,239,255,0.95)', borderWidth: 1.5, borderColor: '#AFCDF4', borderRadius: 21, paddingLeft: 15, paddingRight: 10, marginTop: 10, shadowColor: colors.navy, shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   output: { flex: 1, color: colors.ink, fontSize: 30, fontWeight: '800' },
   outputToken: { borderColor: '#B9D5F7' },
-  rate: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
+  rate: { gap: 7, marginTop: 18 },
+  balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 }, balance: { color: colors.muted, fontSize: 12, lineHeight: 19 },
+  maxButton: { minHeight: 44, paddingHorizontal: 15, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: '#E3EEFF' }, maxText: { color: colors.brand, fontSize: 12, fontWeight: '800' },
+  help: { color: colors.muted, fontSize: 11, lineHeight: 17, marginTop: 8 }, error: { color: '#B52D42', fontSize: 12, lineHeight: 18, marginTop: 12 }, quoteLoading: { alignItems: 'center', gap: 8, marginTop: 16 },
+  reviewBackdrop: { flex: 1, backgroundColor: 'rgba(5,16,35,0.48)', justifyContent: 'flex-end' }, reviewSheet: { maxHeight: '90%', padding: 18, paddingBottom: 40, backgroundColor: '#F8FBFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, width: '100%', maxWidth: 760, alignSelf: 'center' },
   rateLabel: { color: colors.muted, fontSize: 11 },
   rateValue: { color: colors.text, fontSize: 11, fontWeight: '700' },
   button: { height: 56, borderRadius: 18, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginTop: 30, shadowColor: colors.brandDark, shadowOpacity: 0.25, shadowRadius: 13, shadowOffset: { width: 0, height: 7 }, elevation: 5 },

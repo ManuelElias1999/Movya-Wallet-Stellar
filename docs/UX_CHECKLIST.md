@@ -48,3 +48,7 @@ Los idiomas se prueban en Expo Go con `npx expo start --go --clear`, sin Xcode. 
 - Verificar etiquetas, ayuda, alertas, etapas de creación y avisos de error de la app. Errores desconocidos de proveedores externos se muestran sin inventar una traducción.
 - Comprobar que nombres, correos, mensajes del usuario, direcciones, claves privadas y las 12 palabras no cambian. Una persona llamada «Inicio» no debe convertirse en «Home».
 - Probar las sugerencias del chat en ambos idiomas. «Send 1 XLM to Aya» y «Envía 1 XLM a Aya» deben abrir la misma revisión, sin firmar automáticamente.
+
+- En Swap, comprobar que «Tú entregas» centra el monto sin cortar números, incluso con texto grande. Revisar Saldo, Disponible y Máximo para ambos activos; XLM debe conservar reserva y comisión máxima.
+- Escribir «Cambia 50 XLM a USDC» en el chat y comprobar cotización, mínimo, comisión, confirmación/cancelación y comprobante sin salir del chat. Probar también «Swap 50 XLM for USDC».
+- Editar monto o invertir activos mientras se cotiza: la respuesta anterior no puede reaparecer ni firmarse. Dejar expirar 60 segundos y actualizar la cotización antes de confirmar.

@@ -18,8 +18,12 @@ import { assetBalance, checkSubmission, preparePayment, submitPayment, validateA
 import { contactDestination } from '@/services/backend/contacts';
 import { createChatPaymentFlow, matchChatContacts } from '@/services/chatPayment';
 import { ChatPaymentCard } from '@/components/ChatPaymentCard';
+import { SwapReviewCard } from '@/components/SwapReviewCard';
+import { useSwapFlow } from '@/context/useSwapFlow';
+import { swapBlocked } from '@/services/swapFlow';
+import type { PaymentAsset } from '@/services/stellar/payments';
 import { useLanguage } from '@/i18n/Language';
-import { chatTopic, parseSendRequest } from '@/services/chatIntent';
+import { chatTopic, parseSendRequest, parseSwapRequest } from '@/services/chatIntent';
 
 type TextMessage = { id: number; role: 'movya' | 'user'; kind: 'text'; text: string };
 type VoiceMessage = { id: number; role: 'user'; kind: 'voice'; duration: number };
@@ -35,6 +39,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   const { t } = useLanguage();
   const wallet = useTestnetWallet();
   const auth = useAuth();
+  const { flow: swapFlow, state: swapState } = useSwapFlow();
   const name = displayName(auth.user?.user_metadata).split(/\s+/)[0];
   const saved = useContacts();
   const insets = useSafeAreaInsets();
@@ -96,16 +101,16 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     refresh: () => latest.current.wallet.refresh(),
   }));
   const payment = useSyncExternalStore(flow.subscribe, flow.get, flow.get);
-  const paymentBusy = ['preparing', 'submitting', 'unknown'].includes(payment.phase);
+  const paymentBusy = ['preparing', 'submitting', 'unknown'].includes(payment.phase) || swapBlocked(swapState) || swapState.phase === 'quoting';
   const closeChat = () => {
-    if (['submitting', 'unknown'].includes(flow.get().phase)) return;
+    if (['submitting', 'unknown'].includes(flow.get().phase) || swapBlocked(swapFlow.get())) return;
     Keyboard.dismiss(); onClose();
   };
   useEffect(() => {
     if (!open) return;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => { closeChat(); return true; });
     return () => subscription.remove();
-  }, [open, onClose, flow]);
+  }, [open, onClose, flow, swapFlow]);
 
   const sendDirect = (message: string) => {
     const clean = message.trim();
@@ -113,9 +118,18 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     const id = Date.now();
     const normalized = clean.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const pending = flow.get();
+    const pendingSwap = swapFlow.get();
     setMessages(current => [...current, { id, role: 'user', kind: 'text', text: clean }]);
     setText('');
-    if (['preparing', 'submitting', 'unknown'].includes(pending.phase)) return;
+    if (['preparing', 'submitting', 'unknown'].includes(pending.phase) || swapBlocked(pendingSwap) || pendingSwap.phase === 'quoting') return;
+    if (pendingSwap.phase === 'review') {
+      if (/^(si|confirmar|confirmo|adelante|yes|confirm|go ahead)$/.test(normalized)) void swapFlow.confirm();
+      else if (/^(no|cancelar|cancela|cancel)$/.test(normalized)) {
+        swapFlow.clear();
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Cambio cancelado. No se movió ningún fondo.' }]);
+      } else setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Responde Sí para confirmar el cambio o No para cancelarlo.' }]);
+      return;
+    }
     if (pending.phase === 'review' || pending.phase === 'choosing') {
       if (/^(si|confirmar|confirmo|adelante|yes|confirm|go ahead)$/.test(normalized) && pending.phase === 'review') {
         void flow.confirm();
@@ -127,8 +141,13 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       }
       return;
     }
+    const swap = parseSwapRequest(clean);
+    if (swap) {
+      void swapFlow.start({ source: wallet.publicKey ?? '', amount: swap.amount, from: swap.from as PaymentAsset, to: swap.to as PaymentAsset });
+      return;
+    }
     const transaction = parseSendRequest(clean);
-    if (transaction) void flow.start(transaction);
+    if (transaction) { swapFlow.clear(); void flow.start(transaction); }
     else setMessages(current => [...current, createMovyaReply(clean, id + 1)]);
     void Haptics.selectionAsync();
   };
@@ -137,12 +156,18 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     if (!open || !initialPrompt || consumedPrompt.current === initialPrompt) return;
     consumedPrompt.current = initialPrompt;
     const id = Date.now();
+    const swap = parseSwapRequest(initialPrompt);
+    if (swap) {
+      setMessages(current => [...current, { id, role: 'user', kind: 'text', text: t(initialPrompt) }]);
+      void swapFlow.start({ source: wallet.publicKey ?? '', amount: swap.amount, from: swap.from as PaymentAsset, to: swap.to as PaymentAsset });
+      return;
+    }
     const request = parseSendRequest(initialPrompt);
     if (request) {
       setMessages(current => [...current, { id, role: 'user', kind: 'text', text: t(initialPrompt) }]);
       void flow.start(request);
     } else setMessages((current) => [...current, { id, role: 'user', kind: 'text', text: t(initialPrompt) }, createMovyaReply(initialPrompt, id + 1)]);
-  }, [initialPrompt, open, t, flow]);
+  }, [initialPrompt, open, t, flow, swapFlow]);
 
   const send = () => {
     const clean = text.trim();
@@ -167,7 +192,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       <View style={styles.chatBackdrop} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
         <BlurView intensity={78} tint="light" style={[styles.header, { minHeight: 76 + insets.top, paddingTop: insets.top }]}>
-          <Pressable accessibilityLabel="Cerrar chat" accessibilityState={{ disabled: ['submitting', 'unknown'].includes(payment.phase) }} disabled={['submitting', 'unknown'].includes(payment.phase)} onPress={closeChat} style={styles.closeButton}><Ionicons name="chevron-down" size={24} color={colors.ink} /></Pressable>
+          <Pressable accessibilityLabel="Cerrar chat" accessibilityState={{ disabled: (['submitting', 'unknown'].includes(payment.phase) || swapBlocked(swapState)) }} disabled={(['submitting', 'unknown'].includes(payment.phase) || swapBlocked(swapState))} onPress={closeChat} style={styles.closeButton}><Ionicons name="chevron-down" size={24} color={colors.ink} /></Pressable>
           <View style={styles.identity}>
             <View style={styles.logoWrap}><MovyaLogo size={45} /><View style={styles.statusDot} /></View>
             <View><Text style={styles.title}>Movya</Text><Text style={styles.status}>Asistente financiero · En línea</Text></View>
@@ -201,6 +226,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
             </View>
           ))}
           <ChatPaymentCard state={payment} flow={flow} />
+          <SwapReviewCard state={swapState} flow={swapFlow} />
           <View style={styles.suggestions}>{suggestions.map((suggestion) => <Pressable key={suggestion} disabled={paymentBusy} accessibilityState={{ disabled: paymentBusy }} onPress={() => sendDirect(t(suggestion))} style={styles.suggestion}><Ionicons name="sparkles-outline" size={14} color={colors.brand} /><Text style={styles.suggestionText}>{suggestion}</Text><Ionicons name="arrow-up-circle" size={15} color={colors.brand} /></Pressable>)}</View>
         </ScrollView>
 
