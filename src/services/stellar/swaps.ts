@@ -126,9 +126,9 @@ export function validateSwapReview(review: SwapReview) {
   return transaction;
 }
 
-export async function submitSwap(review: SwapReview, sign: LocalSigner) {
+export async function submitSwap(review: SwapReview, sign: LocalSigner, signerPublicKey = review.source) {
   validateSwapReview(review);
   const signed = new Transaction(await sign(review.xdr), Networks.TESTNET);
-  if (transactionHash(signed) !== review.hash || signed.signatures.length !== 1 || !Keypair.fromPublicKey(review.source).verify(signed.hash(), signed.signatures[0].signature)) throw new Error('La firma no corresponde al cambio revisado.');
+  if (transactionHash(signed) !== review.hash || signed.signatures.length !== 1 || !Keypair.fromPublicKey(signerPublicKey).verify(signed.hash(), signed.signatures[0].signature)) throw new Error('La firma no corresponde al cambio revisado.');
   return broadcastTransaction(signed.toXDR(), review.hash);
 }

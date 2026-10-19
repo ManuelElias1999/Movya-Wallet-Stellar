@@ -87,7 +87,7 @@ export default function WelcomeScreen() {
               </View> : null}
 
               <View style={styles.cardHeading}>
-                <Text style={styles.title}>{pendingEmail ? 'Confirma tu correo' : authMode === 'login' ? 'Bienvenido de nuevo' : 'Crea tu cuenta Movya'}</Text>
+                <Text style={styles.title}>{pendingEmail ? 'Confirma tu correo' : auth.locked && auth.user ? 'Tu wallet está bloqueada' : authMode === 'login' ? 'Bienvenido de nuevo' : 'Crea tu cuenta Movya'}</Text>
                 <Text style={styles.description}>{pendingEmail ? `Escribe el código que enviamos a ${pendingEmail}.` : authMode === 'login' ? 'Tu cuenta, tus contactos y tu wallet te esperan.' : 'Ingresa tus datos y tendrás tu propia wallet.'}</Text>
               </View>
 
@@ -140,6 +140,12 @@ export default function WelcomeScreen() {
                 </LinearGradient>
               </PressableScale>
               {busy && auth.accessStage ? <PressableScale onPress={auth.cancelAccess} style={styles.demoButton}><Text style={styles.demoText}>Cancelar y volver a intentar</Text></PressableScale> : null}
+              {auth.user && auth.locked && auth.deviceUnlockAvailable && !busy ? <PressableScale onPress={() => { setBusy(true); setMessage(''); void auth.unlockWithDevice().catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}>
+                <Ionicons color={colors.brand} name="finger-print-outline" size={18} /><Text style={styles.demoText}>Desbloquear con Face ID o huella</Text>
+              </PressableScale> : null}
+              {auth.user && auth.needsRestore && !busy ? <PressableScale onPress={() => router.push('/restore-words')} style={styles.demoButton}>
+                <Ionicons color={colors.brand} name="reader-outline" size={18} /><Text style={styles.demoText}>Restaurar con mis 12 palabras</Text>
+              </PressableScale> : null}
 
               {pendingEmail ? <>
                 <PressableScale disabled={busy} onPress={() => { setBusy(true); void auth.resendEmail(pendingEmail).then(() => setMessage('Enviamos otro código. Revisa tu correo.')).catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}><Text style={styles.demoText}>Reenviar código</Text></PressableScale>

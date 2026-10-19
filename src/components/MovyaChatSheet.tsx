@@ -97,7 +97,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       return { destination, name: destination };
     },
     prepare: preparePayment,
-    submit: review => submitPayment(review, latest.current.wallet.sign),
+    submit: review => submitPayment(review, latest.current.wallet.sign, latest.current.wallet.signerPublicKey ?? undefined),
     check: checkSubmission,
     refresh: () => latest.current.wallet.refresh(),
   }));
