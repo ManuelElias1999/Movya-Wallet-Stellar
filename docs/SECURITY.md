@@ -1,0 +1,83 @@
+# Movya security model
+
+Movya is a self-custodial wallet: keys are created and used on the device. Supabase stores profiles, contacts and an **encrypted** backup it cannot open. This document describes the protections added on the `security` branch, their limits and the configuration they need. It is not an audit; an external audit is still required before Mainnet.
+
+## 1. Pinned contact addresses
+
+- When a contact is added, the address resolved on the device is pinned in SecureStore (one item per contact, per account).
+- A payment to a saved contact uses **only** the pinned address. The contact row and the email directory are consulted to *detect* a change, never to choose the destination.
+- Any difference stops the payment and shows the saved and new address. Nothing changes without an explicit tap.
+- Contacts without a local pin (new device, contacts saved before this change) require confirming the full address before the first payment.
+- Code: `src/services/backend/contactPins.ts`, `contactPinStore.ts`, `src/components/confirmContactAddress.ts`. Tests: `tests/contact-pins.test.ts`.
+
+## 2. Biometrics and automatic lock
+
+- The local wallet is split: metadata (account, signer public key, flags) and the **secret** (key and words). The secret is stored with `requireAuthentication`, so every signature and every backup reveal shows Face ID / Touch ID / fingerprint.
+- Existing wallets are migrated on first read; the key leaves the plain metadata item.
+- If biometrics change or the prompt is dismissed at sign-in, the wallet opens from the encrypted backup with the password.
+- Devices without biometrics keep an unprotected item (reported in Seguridad); the app lock and password are the protection there.
+- Cold start never opens the wallet by itself. The app locks after 30 s in the background or 5 min without touches.
+- Code: `walletStore.ts`, `storage.ts`, `src/services/security/appLock.ts`, `AuthContext.tsx`. Tests: `wallet-store.test.ts`, `app-lock.test.ts`.
+
+## 3. Restricted signer
+
+The device key signs only the transaction shapes Movya offers, independently of the upstream review checks:
+
+| Allowed | Shape |
+|---|---|
+| Payment | 1 `payment`, XLM or verified USDC, to another account |
+| Swap | `payment` fee to the Movya treasury + `pathPaymentStrictSend` back to the same account |
+| Trustline | 1 `changeTrust` for verified USDC, never limit 0 |
+| Recovery setup | 1 `setOptions` with exactly the kit key (weight 2), master weight 1, thresholds 1/1/2 |
+
+Also required: source = the wallet's account, no prior signatures, no memo, fee ≤ 0.1 XLM, expiration ≤ 10 minutes. Before the biometric prompt the signer checks on-chain that this device key is still active. Code: `signingPolicy.ts`, `TestnetWalletContext.tsx`. Tests: `signing-policy.test.ts`, `signing-policy-sdk.test.ts`.
+
+## 4. Email discovery
+
+- Each person can turn off "Encontrarme por correo" (Seguridad).
+- `resolve_movya_email` allows 30 different emails per account per rolling day; repeating a known email (saved contacts are re-checked before each payment) is not counted. Only an md5 of the normalized email is stored.
+
+## 5. Backup v3: separate login and encryption keys
+
+```
+password ─PBKDF2-SHA256 (600k, per-account salt)─▶ master ─HKDF "movya/v3/login"──▶ login secret → Supabase Auth
+                                                          └HKDF "movya/v3/backup"─▶ backup key  → never leaves the device
+```
+
+- Supabase Auth receives only the login secret (`Mv3!` + 64 hex). Capturing it allows signing in, not decrypting the backup without guessing the password offline. HKDF does not strengthen a weak password; the slow KDF and the 12-character minimum do.
+- The salt is fetched before sign-in from `movya_login_params`. Unknown emails get a stable fake salt, so the endpoint does not reveal whether an account exists. Salts are immutable once set.
+- Because Supabase no longer sees the real password, the leaked-password check runs on the device (Have I Been Pwned range API, 5-character SHA-1 prefix; fails open offline).
+- **Migration** of existing accounts happens after a successful legacy sign-in: claim salt → encrypt v3 → stage → download and decrypt → promote → change the Supabase password to the login secret. The typed password opens the active backup at every step, so an interruption never locks anyone out; the next sign-in finishes it. The previous backup is kept in `previous_backup`.
+- Sign-in tries v3 first and falls back to the legacy password.
+
+## 6. Restore with 12 words
+
+A password reset by email restores account access but not the backup. "Recuperar acceso" accepts the wallet's own 12 words (restores the same key and re-encrypts it as v3 with the current password) or the recovery kit (next section).
+
+## 7. Recovery kit and key rotation
+
+| Signer | Weight |
+|---|---|
+| Device key | 1 |
+| Recovery kit (12 separate words, on paper only) | 2 |
+
+Thresholds: low 1, medium 1, high 2. The phone can pay and swap but cannot add or remove signers. From another device, the kit authorizes a new device key and disables every other device key (`setOptions`, master weight 0). The new key's backup is staged before the on-chain rotation and promoted after it; a failed rotation changes nothing.
+
+**Limitation:** a thief who has the unlocked phone *and* passes its biometrics can still pay out the balance before the owner reacts. Rotation stops further use; it cannot undo payments. Spending limits or delays need a Soroban smart wallet (future stage).
+
+## Supabase configuration checklist
+
+- Auth → Email: confirmations enabled.
+- Auth → Rate limits: keep defaults or stricter for sign-in, sign-up and OTP.
+- Auth → Sessions: set a time-box / inactivity timeout and short JWT expiry.
+- Auth → Secure password change: enabled (Movya changes the password right after sign-in).
+- MFA: available for the account; not yet enforced in the app.
+- Run `supabase/migrations/20261019000000_security_hardening.sql`.
+
+## Not covered yet
+
+- External security audit and bug bounty.
+- Encrypted contact backup across devices (pins are per device).
+- Device/session list with remote sign-out.
+- Argon2id instead of PBKDF2.
+- Soroban smart wallet with spending limits.

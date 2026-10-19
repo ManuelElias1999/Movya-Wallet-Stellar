@@ -1,0 +1,17 @@
+# Controlled dependency updates: grouped weekly PRs that must pass CI and be
+# reviewed before merging. Wallet crypto and Stellar packages are kept apart so
+# their changes are reviewed on their own.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    groups:
+      wallet-crypto:
+        patterns: ["@noble/*", "@scure/*", "@stellar/*", "micro-key-producer"]
+      expo:
+        patterns: ["expo", "expo-*", "@expo/*", "react-native*", "react", "react-dom"]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
