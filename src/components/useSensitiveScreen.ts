@@ -11,14 +11,16 @@ export function useSensitiveScreen(name: string, hide: () => void) {
   const [failed, setFailed] = useState(false);
   useFocusEffect(useCallback(() => {
     let active = true; const key = `movya-${name}-${Date.now()}`;
-    if (Platform.OS === 'web') return () => { active = false; hide(); };
+    setFailed(false);
+    if (Platform.OS === 'web') { setReady(true); return () => { active = false; setReady(false); hide(); }; }
+    setReady(false);
     const protection = (async () => {
       await ScreenCapture.preventScreenCaptureAsync(key);
       if (Platform.OS === 'ios') await ScreenCapture.enableAppSwitcherProtectionAsync();
       if (active) setReady(true);
     })().catch(() => { if (active) setFailed(true); });
     return () => {
-      active = false; hide();
+      active = false; setReady(false); hide();
       void protection.then(async () => {
         await ScreenCapture.allowScreenCaptureAsync(key).catch(() => undefined);
         if (Platform.OS === 'ios') await ScreenCapture.disableAppSwitcherProtectionAsync().catch(() => undefined);

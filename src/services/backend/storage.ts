@@ -41,7 +41,7 @@ export function biometricProtectionAvailable() { return keyValue.canProtect(); }
 
 // The new wallet of an emergency transfer, kept behind biometrics until the
 // account points to it, so an interruption never loses its key.
-export type PendingSweep = { secret: string; mnemonic: string; from: string };
+export type PendingSweep = { secret: string; mnemonic: string; from: string; hash?: string; createdAt?: number };
 const sweepKey = (owner: string) => `movya.sweep.pending.${owner.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 export async function writePendingSweep(owner: string, pending: PendingSweep) {
   await keyValue.set(sweepKey(owner), JSON.stringify(pending), keyValue.canProtect());

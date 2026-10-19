@@ -12,7 +12,7 @@ function setup() {
 }
 
 test('rejects predictable PINs', () => {
-  for (const pin of ['111111', '123456', '987654', '12345', 'abcdef']) assert.throws(() => assertPinFormat(pin), undefined, pin);
+  for (const pin of ['111111', '123456', '987654', '12345', 'abcdef']) assert.throws(() => assertPinFormat(pin), Error, pin);
   assertPinFormat('284719');
 });
 

@@ -2,10 +2,13 @@ import { Keypair, Networks, Transaction } from '@stellar/stellar-sdk/base';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
 import { useAuth } from './AuthContext';
-import { readWallet, readWalletMeta, updateWalletMeta, writeWallet, type WalletMeta } from '@/services/backend/storage';
+import { readPendingSweep, readWallet, readWalletMeta, removeWallet, updateWalletMeta, writeWallet, type WalletMeta } from '@/services/backend/storage';
+import { DeviceRevokedError, touchDevice } from '@/services/backend/devices';
 import { createRecoveryWallet } from '@/services/stellar/recovery';
-import { assertTestnet, readTestnetAccount, USDC_ISSUER, validateAddress, type TestnetAccount } from '@/services/stellar/payments';
-import { MOVYA_TREASURY } from '@/services/stellar/swaps';
+import { assertTestnet, readTestnetAccount, transactionHash, USDC_ISSUER, validateAddress, validateReview, type PaymentReview, type TestnetAccount } from '@/services/stellar/payments';
+import { MOVYA_TREASURY, validateSwapReview, type SwapReview } from '@/services/stellar/swaps';
+import type { PreparedSweep } from '@/services/stellar/sweep';
+import type { PreparedRecoverySetup } from '@/services/stellar/signerTransactions';
 import { classifyTransaction, type TransactionLike } from '@/services/stellar/signingPolicy';
 import { assertDeviceCanSign } from '@/services/stellar/signers';
 
@@ -18,12 +21,13 @@ type WalletContext = {
   // Re-reads the local wallet after it changed (restore, rotation, emergency transfer).
   reload: () => Promise<void>;
   saveOuali: (address: string) => Promise<void>;
-  // Signs only transaction shapes Movya offers (see signingPolicy.ts), only
-  // while this device key is active on-chain, and only after biometrics.
-  sign: (xdr: string) => Promise<string>;
-  signRecoverySetup: (xdr: string, recoveryPublicKey: string) => Promise<string>;
-  // Emergency transfer: only towards the new wallet created on this device.
-  signSweep: (xdr: string, newPublicKey: string) => Promise<string>;
+  // Callers pass the immutable review the person saw, never an arbitrary XDR.
+  signPayment: (review: PaymentReview) => Promise<string>;
+  signSwap: (review: SwapReview) => Promise<string>;
+  signTrustline: (xdr: string) => Promise<string>;
+  signRecoverySetup: (prepared: PreparedRecoverySetup, recoveryPublicKey: string) => Promise<string>;
+  // The destination must also match the pending wallet stored by this flow.
+  signSweep: (prepared: PreparedSweep) => Promise<string>;
 };
 const Context = createContext<WalletContext | null>(null);
 
@@ -91,16 +95,29 @@ export function TestnetWalletProvider({ children }: { children: ReactNode }) {
     setMeta(await updateWalletMeta({ oualiAddress: clean }, userId));
   };
 
-  const signWith = async (xdr: string, extra: { recoverySigner?: string; sweepTo?: string } = {}) => {
+  const signWith = async (xdr: string, extra: { recoverySigner?: string; sweepTo?: string; expectedHash?: string } = {}) => {
     assertTestnet();
     // The web build has no protected key storage; it can be made view-only.
-    if (Platform.OS === 'web' && process.env.EXPO_PUBLIC_WEB_SIGNING === 'off') throw new Error('En la versión web solo puedes consultar. Usa la app para enviar.');
+    if (Platform.OS === 'web' && process.env.EXPO_PUBLIC_WEB_SIGNING !== 'on') throw new Error('En la versión web solo puedes consultar. Usa la app para enviar.');
     const scope = currentScope.current;
     if (!scope) throw new Error('Ingresa para abrir tu wallet antes de confirmar.');
     const stored = await readMeta();
     if (!stored) throw new Error('Crea una wallet de Testnet antes de confirmar.');
+    if (auth.configured && stored.protection !== 'biometric') throw new Error('Este dispositivo no puede proteger firmas con Face ID, Touch ID o huella. Por seguridad úsalo solo para consultar y firma desde un dispositivo compatible.');
     const transaction = new Transaction(xdr, Networks.TESTNET);
+    if (extra.expectedHash && transactionHash(transaction) !== extra.expectedHash) throw new Error('La operación ya no coincide con la revisión confirmada.');
     classifyTransaction(transaction as unknown as TransactionLike, { account: stored.accountId, usdcIssuer: USDC_ISSUER, treasury: MOVYA_TREASURY, ...extra });
+    if (auth.configured) {
+      if (!userId) throw new Error('La sesión cambió. Vuelve a ingresar.');
+      try { await touchDevice(userId); }
+      catch (failure) {
+        if (failure instanceof DeviceRevokedError) {
+          await removeWallet(userId).catch(() => undefined);
+          await auth.logout().catch(() => undefined);
+        }
+        throw failure;
+      }
+    }
     // A key rotated out from another device must stop here, before biometrics.
     assertDeviceCanSign(await readTestnetAccount(stored.accountId), stored.signerPublicKey);
     if (scope !== currentScope.current) throw new Error('La sesión cambió. Revisa el envío nuevamente.');
@@ -117,8 +134,18 @@ export function TestnetWalletProvider({ children }: { children: ReactNode }) {
     publicKey, signerPublicKey: meta?.signerPublicKey ?? null, biometric: meta?.protection === 'biometric',
     oualiAddress: meta?.oualiAddress ?? '', account, loading, error, initialized, create, refresh, saveOuali,
     reload: async () => { setMeta(await readMeta()); },
-    sign: xdr => signWith(xdr), signRecoverySetup: (xdr, recoverySigner) => signWith(xdr, { recoverySigner }),
-    signSweep: (xdr, sweepTo) => signWith(xdr, { sweepTo }),
+    signPayment: review => { validateReview(review); return signWith(review.xdr, { expectedHash: review.hash }); },
+    signSwap: review => { validateSwapReview(review); return signWith(review.xdr, { expectedHash: review.hash }); },
+    signTrustline: xdr => signWith(xdr),
+    signRecoverySetup: (prepared, recoverySigner) => signWith(prepared.xdr, { recoverySigner, expectedHash: prepared.hash }),
+    signSweep: async prepared => {
+      if (!userId) throw new Error('Ingresa antes de realizar una transferencia de emergencia.');
+      const pending = await readPendingSweep(userId);
+      if (!pending || pending.from !== prepared.from || Keypair.fromSecret(pending.secret).publicKey() !== prepared.to || pending.hash !== prepared.hash) {
+        throw new Error('La wallet nueva no coincide con la transferencia de emergencia guardada.');
+      }
+      return signWith(prepared.xdr, { sweepTo: prepared.to, expectedHash: prepared.hash });
+    },
   }}>{children}</Context.Provider>;
 }
 

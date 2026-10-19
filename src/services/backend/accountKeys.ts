@@ -1,6 +1,6 @@
 import { hkdf } from '@noble/hashes/hkdf.js';
 import { sha256 } from '@noble/hashes/sha2.js';
-import { bytesToHex, hexToBytes, randomBytes } from '@noble/hashes/utils.js';
+import { bytesToHex, hexToBytes, randomBytes, utf8ToBytes } from '@noble/hashes/utils.js';
 import { Buffer } from 'buffer';
 import { deriveBackupKey } from './passwordKey';
 
@@ -38,10 +38,10 @@ export async function deriveAccountKeys(password: string, salt: string): Promise
   try {
     const derived: Uint8Array = await deriveBackupKey(passwordBytes, saltBytes);
     master = derived;
-    const loginBytes: Uint8Array = hkdf(sha256, derived, saltBytes, V3_LOGIN_LABEL, 32);
+    const loginBytes: Uint8Array = hkdf(sha256, derived, saltBytes, utf8ToBytes(V3_LOGIN_LABEL), 32);
     login = loginBytes;
-    const backupKey = hkdf(sha256, derived, saltBytes, V3_BACKUP_LABEL, 32);
-    const contactsKey = hkdf(sha256, derived, saltBytes, V3_CONTACTS_LABEL, 32);
+    const backupKey = hkdf(sha256, derived, saltBytes, utf8ToBytes(V3_BACKUP_LABEL), 32);
+    const contactsKey = hkdf(sha256, derived, saltBytes, utf8ToBytes(V3_CONTACTS_LABEL), 32);
     return { salt, loginSecret: loginSecretFromBytes(loginBytes), backupKey, contactsKey };
   } finally { master?.fill(0); login?.fill(0); passwordBytes.fill(0); }
 }

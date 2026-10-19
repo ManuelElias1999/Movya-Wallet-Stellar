@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { Keypair, Networks, Transaction } from '@stellar/stellar-sdk/base';
-import { assertTestnet, checkSubmission, enableUSDC, normalizeAmount, preparePayment, SubmissionUnknownError, submitPayment, transactionHash, USDC_ISSUER, validateAddress, type Balance, type TestnetAccount } from '../src/services/stellar/payments';
+import { assertTestnet, checkSubmission, enableUSDC, normalizeAmount, preparePayment, SubmissionFailedError, SubmissionUnknownError, submitPayment, transactionHash, USDC_ISSUER, validateAddress, type Balance, type TestnetAccount } from '../src/services/stellar/payments';
 
 const sender = Keypair.fromRawEd25519Seed(new Uint8Array(32).fill(1));
 const receiver = Keypair.fromRawEd25519Seed(new Uint8Array(32).fill(2));
@@ -9,7 +9,7 @@ const wrongIssuer = Keypair.fromRawEd25519Seed(new Uint8Array(32).fill(3)).publi
 const native = (balance = '100'): Balance => ({ asset_type: 'native', balance });
 const usdc = (balance = '25', patch: Partial<Balance> = {}): Balance => ({ asset_type: 'credit_alphanum4', asset_code: 'USDC', asset_issuer: USDC_ISSUER, balance, limit: '922337203685.4775807', is_authorized: true, ...patch });
 const account = (key: string, balances: Balance[]): TestnetAccount => ({ account_id: key, sequence: '123', balances, subentry_count: balances.length - 1 });
-let from: TestnetAccount, to: TestnetAccount, posts: string[], mode: 'success' | 'timeout' | 'bad-seq', requests: number;
+let from: TestnetAccount, to: TestnetAccount, posts: string[], mode: 'success' | 'timeout' | 'bad-seq' | 'failed-check', requests: number;
 const originalFetch = globalThis.fetch;
 const originalNetwork = process.env.EXPO_PUBLIC_STELLAR_NETWORK;
 const originalHorizon = process.env.EXPO_PUBLIC_STELLAR_HORIZON_URL;
@@ -31,7 +31,7 @@ function setup() {
     if (path.endsWith(`/accounts/${receiver.publicKey()}`)) return Response.json(to);
     if (path.endsWith('/fee_stats')) return Response.json({ fee_charged: { p95: '200' }, last_ledger_base_fee: '100' });
     if (path.includes('/ledgers?')) return Response.json({ _embedded: { records: [{ base_reserve_in_stroops: 5000000 }] } });
-    if (path.includes('/transactions/')) return Response.json({}, { status: 404 });
+    if (path.includes('/transactions/')) return mode === 'failed-check' ? Response.json({ hash: path.slice(-64), successful: false }) : Response.json({}, { status: 404 });
     throw new Error(`Unexpected request: ${path}`);
   };
 }
@@ -114,6 +114,10 @@ test('network uncertainty exposes the hash and never automatically submits again
   setup(); const review = await prepare(); mode = 'timeout';
   await assert.rejects(submitPayment(review, sign), (error) => error instanceof SubmissionUnknownError && error.hash === review.hash);
   assert.equal(posts.length, 1); assert.equal(await checkSubmission(review.hash), null); assert.equal(posts.length, 1);
+});
+test('a confirmed failed hash is distinguished from temporary network uncertainty', async () => {
+  setup(); mode = 'failed-check'; const hash = 'a'.repeat(64);
+  await assert.rejects(checkSubmission(hash), error => error instanceof SubmissionFailedError && error.hash === hash);
 });
 test('sequence failure requires a fresh review', async () => {
   setup(); const review = await prepare(); mode = 'bad-seq';

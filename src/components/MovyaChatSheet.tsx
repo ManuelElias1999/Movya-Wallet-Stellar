@@ -100,7 +100,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     prepare: preparePayment,
     submit: async review => {
       assertNotDuplicate(review);
-      try { const receipt = await submitPayment(review, latest.current.wallet.sign, latest.current.wallet.signerPublicKey ?? undefined); recordPayment(review); return receipt; }
+      try { const receipt = await submitPayment(review, () => latest.current.wallet.signPayment(review), latest.current.wallet.signerPublicKey ?? undefined); recordPayment(review); return receipt; }
       catch (error) { if (error instanceof SubmissionUnknownError) recordPayment(review); throw error; }
     },
     check: checkSubmission,

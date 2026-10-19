@@ -9,12 +9,15 @@ import type { PropsWithChildren } from 'react';
 const supabase = (() => { try { return new URL(process.env.EXPO_PUBLIC_SUPABASE_URL ?? '').origin; } catch { return ''; } })();
 const policy = [
   "default-src 'self'",
-  "script-src 'self'",
+  // Expo Router emits this exact, constant hydration marker inline. A hash
+  // allows only that marker without opening script-src to all inline code.
+  "script-src 'self' 'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
   `connect-src 'self' ${supabase} https://horizon-testnet.stellar.org https://friendbot.stellar.org https://api.pwnedpasswords.com`.replace(/\s+/g, ' '),
   "object-src 'none'",
+  "frame-src 'none'",
   "base-uri 'self'",
   "form-action 'none'",
 ].join('; ');

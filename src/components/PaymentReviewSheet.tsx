@@ -41,7 +41,7 @@ export function PaymentReviewSheet({ review, onClose, onSuccess }: { review: Pay
     lock.current = true; setBusy(true); setError('');
     try {
       assertNotDuplicate(review);
-      const receipt = await submitPayment(review, wallet.sign, wallet.signerPublicKey ?? undefined);
+      const receipt = await submitPayment(review, () => wallet.signPayment(review), wallet.signerPublicKey ?? undefined);
       recordPayment(review);
       sent.current = true;
       const label = contacts.find(c => c.address === review.destination)?.name ?? `${review.destination.slice(0, 4)}…${review.destination.slice(-4)}`;

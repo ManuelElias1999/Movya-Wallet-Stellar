@@ -136,6 +136,9 @@ Run these migrations in order in your project's SQL Editor:
 
 1. [`20261002010000_accounts_contacts.sql`](supabase/migrations/20261002010000_accounts_contacts.sql)
 2. [`20261002020000_recovery_words.sql`](supabase/migrations/20261002020000_recovery_words.sql)
+3. [`20261019000000_security_hardening.sql`](supabase/migrations/20261019000000_security_hardening.sql)
+4. [`20261019010000_devices_contacts_mfa.sql`](supabase/migrations/20261019010000_devices_contacts_mfa.sql)
+5. [`20261019205037_bind_device_sessions.sql`](supabase/migrations/20261019205037_bind_device_sessions.sql)
 
 Enable email/password authentication and configure confirmation templates and SMTP for verified-email onboarding. For a private Testnet test without SMTP, confirmation can be temporarily disabled; those email identities have not been proven to belong to the registrant. Restore verification before a public rollout.
 

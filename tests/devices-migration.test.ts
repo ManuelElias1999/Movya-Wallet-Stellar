@@ -18,12 +18,13 @@ test('devices, contact backup, MFA enforcement, login rate limit and wallet repl
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
       create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
       grant usage on schema auth, public to authenticated, anon; grant execute on function auth.uid(), auth.jwt() to authenticated, anon;`);
-    for (const file of ['20261002010000_accounts_contacts.sql', '20261002020000_recovery_words.sql', '20261019000000_security_hardening.sql', '20261019010000_devices_contacts_mfa.sql']) {
+    for (const file of ['20261002010000_accounts_contacts.sql', '20261002020000_recovery_words.sql', '20261019000000_security_hardening.sql', '20261019010000_devices_contacts_mfa.sql', '20261019205037_bind_device_sessions.sql']) {
       await db.exec(await readFile(`supabase/migrations/${file}`, 'utf8'));
     }
     await db.query('insert into auth.users values ($1,$2,now(),$4),($3,$5,now(),$4)', [alice, 'alice@movya.test', bob, '{}', 'bob@movya.test']);
     const as = async (id: string, claims = '{}', role = 'authenticated') => {
-      await db.exec('reset role'); await db.query("select set_config('request.jwt.claim.sub', $1, false), set_config('request.jwt.claims', $2, false)", [id, claims]); await db.exec(`set role ${role}`);
+      const withSession = JSON.stringify({ aal: 'aal1', session_id: id === alice ? 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' : 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', ...JSON.parse(claims) });
+      await db.exec('reset role'); await db.query("select set_config('request.jwt.claim.sub', $1, false), set_config('request.jwt.claims', $2, false)", [id, withSession]); await db.exec(`set role ${role}`);
     };
     await as(alice);
     const old = Keypair.random().publicKey();
@@ -31,10 +32,14 @@ test('devices, contact backup, MFA enforcement, login rate limit and wallet repl
 
     // Devices: register, revoke others, revoked device learns it on next touch.
     await db.query('select public.touch_device($1, $2, $3)', [phone, 'iPhone', 'ios']);
+    await as(alice, '{"session_id":"cccccccc-cccc-4ccc-8ccc-cccccccccccc"}');
     await db.query('select public.touch_device($1, $2, $3)', [tablet, 'Android', 'android']);
+    await as(alice);
     assert.equal((await db.query<{ n: number }>('select public.revoke_other_devices($1) n', [phone])).rows[0].n, 1);
-    const touched = (await db.query<{ r: { revoked_at: string | null } }>('select public.touch_device($1, $2, $3) r', [tablet, 'Android', 'android'])).rows[0].r;
+    await as(alice, '{"session_id":"cccccccc-cccc-4ccc-8ccc-cccccccccccc"}');
+    const touched = (await db.query<{ revoked_at: string | null }>('select (public.touch_device($1, $2, $3)).*', [tablet, 'Android', 'android'])).rows[0];
     assert.ok(touched.revoked_at);
+    await assert.rejects(db.query('select public.set_discoverable(false)'), /Device session revoked/);
     await as(bob);
     assert.equal((await db.query('select * from public.devices')).rows.length, 0);
     await assert.rejects(db.query('select public.touch_device($1, $2, $3)', [phone, 'x', 'ios']), /another account/);

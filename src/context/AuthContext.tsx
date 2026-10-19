@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (active) {
           setSession(result.data.session); setNeedsBackup(false); setNeedsOnboarding(false); setReady(false);
           setLocked(Boolean(meta)); setDeviceUnlockAvailable(meta?.protection === 'biometric');
-          setPinAvailable(await pinLockFor(validated.data.user.id).isSet().catch(() => false));
+          setPinAvailable(meta?.protection === 'biometric' && await pinLockFor(validated.data.user.id).isSet().catch(() => false));
         }
       }
     })().catch(() => { if (active) { setError('No pudimos recuperar tu sesión. Vuelve a ingresar.'); setSession(null); setReady(false); } })
@@ -134,23 +134,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Registers this device and checks it was not revoked from another one.
-  // A revoked device signs out and erases its local wallet. Offline unlocks
-  // still work; the check runs again on the next connection.
-  const checkDevice = async (owner: string) => {
+  // A revoked device signs out and erases its local wallet. Unlocking fails
+  // closed when the device registry cannot be checked.
+  const checkDevice = useCallback(async (owner: string) => {
     try {
-      await touchDevice();
+      await touchDevice(owner);
       const devices = await listDevices();
-      setNewDevices(await newDevicesSinceLastReview(owner, devices, await currentDeviceId()));
+      setNewDevices(await newDevicesSinceLastReview(owner, devices, await currentDeviceId(owner)));
     } catch (failure) {
-      if ((failure as { name?: string })?.name !== 'DeviceRevokedError') return;
+      if ((failure as { name?: string })?.name !== 'DeviceRevokedError') throw failure;
       await removeWallet(owner).catch(() => undefined);
       await pinLockFor(owner).remove().catch(() => undefined);
-      await forgetDeviceId().catch(() => undefined);
+      await forgetDeviceId(owner).catch(() => undefined);
       revision.current++; setReady(false); setLocked(false); setSession(null); sessionOwner.current = null;
       await requireBackend().auth.signOut({ scope: 'local' }).catch(() => undefined);
       throw failure;
     }
-  };
+  }, []);
+  useEffect(() => {
+    const owner = session?.user.id;
+    if (!owner) return;
+    const verify = () => { if (readyRef.current && AppState.currentState === 'active') void checkDevice(owner).catch(failure => setError(failure instanceof Error ? failure.message : 'No pudimos verificar este dispositivo.')); };
+    const timer = setInterval(verify, 60_000);
+    const subscription = AppState.addEventListener('change', state => { if (state === 'active') verify(); });
+    return () => { clearInterval(timer); subscription.remove(); };
+  }, [session?.user.id, checkDevice]);
   const acknowledgeDevices = async () => {
     if (session) await markDevicesReviewed(session.user.id);
     setNewDevices([]);
@@ -166,13 +174,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       decrypting: 'Abriendo tu respaldo. Esto puede tardar un momento…', local: 'Abriendo la wallet guardada en tu teléfono…', saving: 'Guardando tu wallet en este dispositivo…',
     };
     try {
+      // Bind this authenticated Supabase session to this installation before
+      // any backup-changing RPC runs.
+      await checkDevice(next.user.id);
       const local = await unlockUserWallet(next.user.id, password, { signal, onProgress: stage => setAccessStage(stages[stage]), ...credentials });
       assertAccessActive(signal);
       if (current !== revision.current) throw new Error('La sesión cambió. Vuelve a ingresar.');
       const meta = await readWalletMeta(next.user.id);
       if (credentials.keys) await rememberContactsKey(next.user.id, credentials.keys.contactsKey).catch(() => undefined);
-      await checkDevice(next.user.id);
-      setPinAvailable(await pinLockFor(next.user.id).isSet().catch(() => false));
+      setPinAvailable(meta?.protection === 'biometric' && await pinLockFor(next.user.id).isSet().catch(() => false));
       opened(Boolean(local.backupAcknowledged), newAccount, meta?.protection === 'biometric');
     } catch (failure) {
       if (isDecryptFailure(failure)) {
@@ -246,16 +256,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const meta = await readWalletMeta(owner);
       if (!meta) throw new Error('Ingresa tu contraseña para abrir tu wallet.');
+      if (meta.protection !== 'biometric') {
+        await pinLockFor(owner).remove().catch(() => undefined); setPinAvailable(false);
+        throw new Error('Este dispositivo no puede proteger la clave con biometría. Ingresa tu contraseña para abrir la wallet.');
+      }
       let result: Awaited<ReturnType<ReturnType<typeof pinLockFor>['verify']>>;
       try { result = await pinLockFor(owner).verify(pin); }
       catch (failure) { if (failure instanceof PinWipedError) setPinAvailable(false); throw failure; }
       if (!result.ok) throw new Error(`PIN incorrecto. Te quedan ${result.remaining} intentos.`);
       await checkDevice(owner);
-      opened(Boolean(meta.backupAcknowledged), false, meta.protection === 'biometric');
+      opened(Boolean(meta.backupAcknowledged), false, true);
     } finally { operation.current = false; }
   };
   const setPin = async (password: string, pin: string) => {
     if (!session || !ready) throw new Error('Abre tu wallet antes de crear un PIN.');
+    const meta = await readWalletMeta(session.user.id);
+    if (meta?.protection !== 'biometric') throw new Error('El PIN solo está disponible cuando Face ID, Touch ID o la huella protegen la clave de la wallet.');
     await verifyPasswordOffline(session.user.id, password);
     await pinLockFor(session.user.id).set(pin);
     setPinAvailable(true);
@@ -273,7 +289,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const signed = await signInSecure(email, password, mfaCode);
       wipeKeys(signed.keys);
       assertAccessActive(signal);
+      // Restoring also re-encrypts the backup and changes the derived Auth
+      // secret, so the same rules as registration must protect this password.
+      assertStrongPassword(password, password, { email });
+      await assertPasswordNotLeaked(password);
+      assertAccessActive(signal);
       setSession(signed.session);
+      await checkDevice(signed.session.user.id);
       setAccessStage('Restaurando tu wallet…');
       const result = await restoreWalletWithWords(signed.session.user.id, password, words);
       assertAccessActive(signal);
@@ -283,7 +305,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // and every other device (the lost one) is signed out and revoked.
       if (result.kind === 'rotated') {
         setNeedsBackup(true);
-        await revokeOtherDevices().catch(() => undefined);
+        await revokeOtherDevices(signed.session.user.id).catch(() => undefined);
       }
       await checkDevice(signed.session.user.id).catch(() => undefined);
       return result.kind;

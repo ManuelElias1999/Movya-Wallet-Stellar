@@ -57,7 +57,7 @@ export default function RecoveryKitScreen() {
     submitting.current = true; setBusy(true); setMessage('');
     try {
       const prepared = await prepareRecoverySetup(wallet.publicKey, wallet.signerPublicKey, recovery);
-      await submitRecoverySetup(prepared, xdr => wallet.signRecoverySetup(xdr, recovery), wallet.signerPublicKey);
+      await submitRecoverySetup(prepared, () => wallet.signRecoverySetup(prepared, recovery), wallet.signerPublicKey);
       setStep('done'); void wallet.refresh();
     } catch (e) {
       setMessage(`${e instanceof Error ? e.message : 'No se pudo registrar el kit.'} No se cambió nada en tu cuenta; crea un kit nuevo para intentarlo otra vez.`);

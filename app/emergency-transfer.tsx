@@ -14,6 +14,7 @@ import { moveAccountToNewWallet, verifyPasswordOffline } from '@/services/backen
 import { clearPendingSweep, writePendingSweep } from '@/services/backend/storage';
 import { createRecoveryWallet } from '@/services/stellar/recovery';
 import { prepareSweep, submitSweep } from '@/services/stellar/sweep';
+import { SubmissionUnknownError } from '@/services/stellar/payments';
 import { colors } from '@/theme/tokens';
 
 type Step = 'intro' | 'words' | 'confirm' | 'done';
@@ -53,14 +54,27 @@ export default function EmergencyTransferScreen() {
     const newKey = Keypair.fromSecret(material.secret);
     try {
       // Saved first: if anything stops after the transfer, the next sign-in finishes it.
-      await writePendingSweep(owner, { ...material, from });
-      const prepared = await prepareSweep(from, wallet.signerPublicKey, newKey.publicKey());
-      try { await submitSweep(prepared, xdr => wallet.signSweep(xdr, newKey.publicKey()), newKey); }
+      const createdAt = Date.now();
+      await writePendingSweep(owner, { ...material, from, createdAt });
+      let prepared: Awaited<ReturnType<typeof prepareSweep>>;
+      try { prepared = await prepareSweep(from, wallet.signerPublicKey, newKey.publicKey()); }
       catch (error) { await clearPendingSweep(owner).catch(() => undefined); throw error; }
+      await writePendingSweep(owner, { ...material, from, createdAt, hash: prepared.hash });
+      try { await submitSweep(prepared, () => wallet.signSweep(prepared), newKey); }
+      catch (error) {
+        // A timeout can happen after Stellar accepted the transaction. Keep
+        // the new key so the next sign-in can check the hash and finish safely.
+        if (!(error instanceof SubmissionUnknownError)) await clearPendingSweep(owner).catch(() => undefined);
+        throw error;
+      }
       await moveAccountToNewWallet(owner, password, material, from);
       await wallet.reload();
       setNewAddress(newKey.publicKey()); setWords(null); setPassword(''); setStep('done');
-    } catch (e) { setMessage(e instanceof Error ? e.message : 'No se pudo completar la transferencia.'); }
+    } catch (e) {
+      setMessage(e instanceof SubmissionUnknownError
+        ? 'Stellar recibió la operación, pero todavía no podemos confirmar el resultado. No vuelvas a enviarla: Movya conservará la wallet nueva y verificará esta misma transacción.'
+        : e instanceof Error ? e.message : 'No se pudo completar la transferencia.');
+    }
     finally { working.current = false; setBusy(false); }
   };
 

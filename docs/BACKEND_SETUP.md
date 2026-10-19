@@ -5,7 +5,7 @@
 The code is implemented; a Supabase project must be configured before email registration is live. Without both public environment values, the app offers **Continuar con mi wallet de pruebas** and retains the existing developer wallet. It does not pretend to register users.
 
 1. Create a Supabase project dedicated to Movya Testnet.
-2. In its **SQL Editor**, run the SQL migrations in order: `supabase/migrations/20261002010000_accounts_contacts.sql`, then `supabase/migrations/20261002020000_recovery_words.sql`. If the first migration was already applied, run only the second. This creates profiles, encrypted wallet backups, contacts, row-level security policies, and the two RPCs.
+2. In its **SQL Editor**, run the SQL migrations in filename order: `20261002010000_accounts_contacts.sql`, `20261002020000_recovery_words.sql`, `20261019000000_security_hardening.sql`, `20261019010000_devices_contacts_mfa.sql`, and `20261019205037_bind_device_sessions.sql`. Skip only migrations that are already recorded as applied. This creates profiles, encrypted wallet and contact backups, contacts, devices, row-level security policies, and the required RPCs.
 3. In **Authentication**, enable Email/password, keep email confirmation enabled, and require passwords of at least 12 characters.
 4. In **Email Templates → Confirm signup**, include the code in the template:
 
