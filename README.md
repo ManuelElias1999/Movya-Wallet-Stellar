@@ -55,7 +55,7 @@ This repository contains the Expo wallet application. The marketing website is a
 | Movya chat | Basic text intents, balance answers, contact selection and in-chat payment review, confirmation and receipts | Rule-based parser, not an integrated LLM; XLM/USDC signing uses the same validated payment service as Send |
 | Onboarding and UI | First-registration guide, wallet forge animation, fixed bottom navigation and password visibility controls | Guide is simulated; visual and keyboard behavior still require device QA |
 | Native acceleration | Local CommonCrypto/JCA module for backup key derivation outside JavaScript | Requires a compiled app; Expo Go uses the portable engine |
-| Swaps | Live XLM ↔ USDC Testnet quotes and locally signed swaps, in Swap and chat | Stellar DEX liquidity required; 0.5% minimum-received protection and 60-second quotes; no mainnet |
+| Swaps | Live XLM ↔ USDC Testnet quotes and locally signed swaps, in Swap and chat | Stellar DEX liquidity required; 0.5% Movya fee, 0.5% minimum-received protection and 60-second quotes; no mainnet |
 | Voice | Interface prototype | Actual recording/transcription is not implemented |
 
 Earlier wallets created without a mnemonic retain their original address and private key. Movya does not generate unrelated recovery words for an existing wallet.
@@ -72,6 +72,8 @@ Earlier wallets created without a mnemonic retain their original address and pri
 8. **Check the result.** A confirmed payment returns its hash and a link to that specific transaction in Stellar Expert. Activity uses the saved contact's name when there is an address match.
 
 For an initial USDC test, activate both accounts with XLM, enable their USDC trustlines, obtain test USDC from Circle and refresh the balance before sending. The funding button does not bypass faucet eligibility checks, CAPTCHA or rate limits.
+
+Each Testnet swap charges a 0.5% Movya fee in the asset the user provides. The entered amount already includes this fee: 99.5% is routed through Stellar DEX and 0.5% is sent to Movya's public treasury in the same atomic transaction. The review shows both portions, the separate maximum network fee and the complete treasury address before the user confirms.
 
 ## Architecture
 
