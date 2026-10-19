@@ -1,6 +1,6 @@
 import { createElement, useImperativeHandle } from 'react';
 import type { PaymentReview } from '../../src/services/stellar/payments';
-export const calls = { prepare: [] as any[], submit: [] as any[], resolve: [] as string[], close: 0 };
+export const calls = { prepare: [] as any[], submit: [] as any[], resolve: [] as string[], close: 0, swaps: [] as any[], swapSubmits: [] as any[] };
 export const wallet = { publicKey: 'GSENDER', account: null, oualiAddress: '', refresh: async () => {}, sign: async () => 'signed-xdr' };
 export const contacts = [{ id: 'prueba', name: 'Prueba', handle: 'prueba@example.com', email: 'prueba@example.com', address: 'GPRUEBA' }];
 export const useTestnetWallet = () => wallet;
@@ -47,3 +47,19 @@ export const preparePayment = async (input: any): Promise<PaymentReview> => {
 export const submitPayment = async (review: PaymentReview) => { calls.submit.push(review); return { hash: review.hash, explorerUrl: `https://stellar.expert/explorer/testnet/tx/${review.hash}` }; };
 export const checkSubmission = async () => null;
 // This fixture never sends a network transaction; service tests cover Horizon validation.
+
+export const USDC_ISSUER = 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5';
+export const prepareSwap = async (input: any) => {
+  calls.swaps.push(input);
+  return { ...input, amount: input.amount, estimated: '44.0000000', minimum: '43.7800000', fee: '0.0000100', slippageBps: 50, path: [], expiresAt: Math.floor(Date.now() / 1000) + 60, hash: 'b'.repeat(64), xdr: 'swap-xdr' };
+};
+export const submitSwap = async (review: any) => { calls.swapSubmits.push(review); return { hash: review.hash, explorerUrl: `https://stellar.expert/explorer/testnet/tx/${review.hash}` }; };
+export const readSwapSpendable = async () => ({ XLM: '97.4999900', USDC: '10.0000000' });
+export const SafeAreaView = host('SafeAreaView');
+export const Modal = (props: any) => props.visible ? createElement('Modal', props) : null;
+export const PressableScale = Pressable;
+export const PageHeader = host('PageHeader');
+export const InternalScreenBackground = host('InternalScreenBackground');
+export const MovyaContextHelp = host('MovyaContextHelp');
+export const TokenIcon = host('TokenIcon');
+export const TokenSelector = host('TokenSelector');

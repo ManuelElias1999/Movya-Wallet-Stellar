@@ -55,7 +55,8 @@ This repository contains the Expo wallet application. The marketing website is a
 | Movya chat | Basic text intents, balance answers, contact selection and in-chat payment review, confirmation and receipts | Rule-based parser, not an integrated LLM; XLM/USDC signing uses the same validated payment service as Send |
 | Onboarding and UI | First-registration guide, wallet forge animation, fixed bottom navigation and password visibility controls | Guide is simulated; visual and keyboard behavior still require device QA |
 | Native acceleration | Local CommonCrypto/JCA module for backup key derivation outside JavaScript | Requires a compiled app; Expo Go uses the portable engine |
-| Swaps and voice | Interface prototypes | Live swap quotes/execution and actual voice recording/transcription are not implemented |
+| Swaps | Live XLM ↔ USDC Testnet quotes and locally signed swaps, in Swap and chat | Stellar DEX liquidity required; 0.5% minimum-received protection and 60-second quotes; no mainnet |
+| Voice | Interface prototype | Actual recording/transcription is not implemented |
 
 Earlier wallets created without a mnemonic retain their original address and private key. Movya does not generate unrelated recovery words for an existing wallet.
 
@@ -196,7 +197,7 @@ npm run test:testnet
 npm run test:testnet -- --usdc
 ~~~
 
-The scripts create disposable in-memory accounts, request test XLM and verify a payment's exact recipient balance change. The USDC variant additionally needs Testnet DEX liquidity for fixture funding; this does not enable in-app swaps. These network-dependent checks are separate from offline CI. Historical Testnet receipts are linked in the [payment guide](docs/TESTNET_PAYMENTS.md); they are not evidence of a new live test on every commit.
+The scripts create disposable in-memory accounts, request test XLM and verify a payment's exact recipient balance change. The USDC variant additionally needs Testnet DEX liquidity for fixture funding; the separate swap smoke test exercises the in-app swap service in both directions. These network-dependent checks are separate from offline CI. Historical Testnet receipts are linked in the [payment guide](docs/TESTNET_PAYMENTS.md); they are not evidence of a new live test on every commit.
 
 Use the [device UX checklist](docs/UX_CHECKLIST.md) to verify onboarding, password visibility, keyboard behavior, the forge animation and recovery disclosure on real devices.
 
@@ -224,7 +225,7 @@ docs/                        Setup, testing, UX and migration notes
 
 1. Complete physical-device QA and measure first-account creation with native acceleration.
 2. Expand the assistant beyond fixed text patterns and add durable recovery of pending payments across app restarts.
-3. Connect real swap quotes and execution with slippage and expiry controls.
+3. Expand swap asset coverage and refine liquidity/error handling through physical-device testing.
 4. Implement actual voice recording and transcription.
 5. Design production recovery and safer authentication options, including password lifecycle handling.
 6. Add fee/reserve sponsorship, email-lookup abuse protection and operational monitoring.

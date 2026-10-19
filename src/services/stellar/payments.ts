@@ -144,6 +144,9 @@ async function broadcast(xdr: string, hash: string): Promise<PaymentReceipt> {
   }
 }
 
+// Shared Testnet transport and exact reserve/fee calculations for reviewed swaps.
+export { request as horizonRequest, costs as accountCosts, available as availableBalance, broadcast as broadcastTransaction };
+
 export async function submitPayment(review: PaymentReview, sign: LocalSigner) {
   assertTestnet();
   validateReview(review);
