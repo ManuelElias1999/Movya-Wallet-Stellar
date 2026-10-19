@@ -26,9 +26,7 @@ export function SwapReviewCard({ state, flow, onCancel }: { state: SwapState; fl
       <Text style={styles.label}>Comisión de Movya (0,5 %)</Text><Text style={styles.value}>{review.appFee} {review.from}</Text>
       <Text style={styles.note}>La comisión de Movya ya está incluida en el monto que entregas.</Text>
       <Text style={styles.label}>Recibes aproximadamente</Text><Text style={styles.amount}>{review.estimated} {review.to}</Text>
-      <Text style={styles.label}>Mínimo que recibirás</Text><Text style={styles.value}>{review.minimum} {review.to}</Text>
       <Text style={styles.label}>Comisión máxima de red</Text><Text style={styles.value}>{review.fee} XLM</Text>
-      <Text style={styles.note}>Variación máxima del precio: 0,5 %. Si recibes menos del mínimo, el cambio no se ejecuta.</Text>
       <Text style={styles.label}>Red</Text><Text style={styles.value}>Stellar DEX · Testnet</Text>
       <Text style={styles.label}>Tu wallet recibe el cambio</Text><Text translate={false} selectable style={styles.address}>{review.source}</Text>
       <Text style={styles.label}>Wallet de Movya</Text><Text translate={false} selectable style={styles.address}>{review.treasury}</Text>
