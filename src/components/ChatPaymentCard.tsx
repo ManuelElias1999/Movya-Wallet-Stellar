@@ -3,10 +3,11 @@ import { Pressable, Text } from '@/i18n/primitives';
 import type { ChatPaymentState, createChatPaymentFlow } from '@/services/chatPayment';
 import { colors } from '@/theme/tokens';
 
-export function ChatPaymentCard({ state, flow }: { state: ChatPaymentState; flow: ReturnType<typeof createChatPaymentFlow> }) {
+export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentState; flow: ReturnType<typeof createChatPaymentFlow>; onCancel?: () => void }) {
   if (state.phase === 'idle') return null;
   const { review, request, receipt } = state;
   const busy = state.phase === 'preparing' || state.phase === 'submitting';
+  const cancel = () => { if (flow.cancel()) onCancel?.(); };
   return <View style={styles.card} accessibilityLiveRegion="polite">
     <Text style={styles.title}>{state.phase === 'success' ? 'Transacción exitosa' : state.phase === 'choosing' ? 'Elegir contacto' : 'Revisa tu transferencia'}</Text>
     {request ? <Text style={styles.amount}>{review?.amount ?? request.amount} {request.token}</Text> : null}
@@ -15,7 +16,7 @@ export function ChatPaymentCard({ state, flow }: { state: ChatPaymentState; flow
       {state.choices?.map(contact => <Pressable accessibilityRole="button" key={contact.id} onPress={() => void flow.start(request!, contact.id)} style={styles.secondary}>
         <Text translate={false} style={styles.title}>{contact.name}</Text><Text translate={false} style={styles.address}>{contact.handle}</Text>
       </Pressable>)}
-      <Pressable accessibilityRole="button" onPress={() => flow.cancel()} style={styles.secondary}><Text>Cancelar</Text></Pressable>
+      <Pressable accessibilityRole="button" onPress={cancel} style={styles.secondary}><Text>Cancelar</Text></Pressable>
     </> : null}
     {review ? <>
       <Text style={styles.label}>Destinatario</Text><Text translate={false} style={styles.copy}>{state.recipient}</Text>
@@ -28,7 +29,7 @@ export function ChatPaymentCard({ state, flow }: { state: ChatPaymentState; flow
     {state.phase === 'review' ? <>
       <Text style={styles.copy}>Al confirmar, Movya firma y envía esta operación desde tu dispositivo. La revisión expira en 3 minutos.</Text>
       <View style={styles.actions}>
-        <Pressable accessibilityRole="button" onPress={() => flow.cancel()} style={[styles.secondary, styles.flex]}><Text>No</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={cancel} style={[styles.secondary, styles.flex]}><Text>No</Text></Pressable>
         <Pressable accessibilityRole="button" onPress={() => void flow.confirm()} style={[styles.primary, styles.flex]}><Text style={styles.primaryText}>Sí, confirmar</Text></Pressable>
       </View>
     </> : null}

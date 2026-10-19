@@ -22,6 +22,8 @@ With a Testnet wallet active, `Envía 1 USDC a Ouali` (or `Send 1 USDC to Ouali`
 
 The same payment service as **Enviar** verifies accounts, trustlines, balances, receiving capacity, reserves and fees. The inline card shows the full destination/source, amount, network, USDC issuer and XLM fee. Press **Sí, confirmar** or type **Sí / Yes** to sign and submit; **No / Cancelar / Cancel** discards the pending review. No transaction is signed during preparation. The receipt shows the confirmed hash and exact explorer link inside the chat. The onboarding tutorial remains a separate simulated educational flow.
 
+Chat suggestions appear at the start, disappear after the user begins a conversation or operation, and return only after a confirmed or cancelled payment/swap. Completed cards ask whether the user wants to do anything else, while pending reviews remain focused on confirmation.
+
 Rapid confirmations share one submission lock. A network-uncertain result keeps its hash and offers **Verificar estado**; new sends and closing the chat are blocked while submission or status resolution is pending. It never automatically broadcasts the payment again. Pending transfer recovery after an app restart is still a future milestone.
 
 ## Network and asset boundaries
@@ -76,6 +78,7 @@ Offline chat regression tests cover inline confirmation/cancellation in Spanish 
 - `Cambia 50 XLM a USDC` / `Swap 50 XLM for USDC` requests the same review in the chat. Confirm using its button or **Sí / Yes**; cancel with **No**. Neither preparation nor a suggestion signs a transaction.
 - Insufficient liquidity is an explicit error. Testnet exchange rates depend on test liquidity and are not a market-price feed.
 - A confirmed swap links to its exact transaction. Actual received amounts can vary above the reviewed minimum; the quote is labeled as an estimate. Uncertain submissions can only be checked, never automatically resent. Pending state does not survive a full app restart yet.
+- Activity recognizes the verified self-directed path-payment operation as a swap, combines it with the matching 0.5% treasury payment, and shows one row with the total source amount and actual destination amount. The fee operation is not shown as a separate transfer.
 
 Run the dedicated test with disposable keys held only in memory:
 

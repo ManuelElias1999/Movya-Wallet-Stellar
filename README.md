@@ -50,7 +50,7 @@ This repository contains the Expo wallet application. The marketing website is a
 | Payments | Review, local signing and submission of XLM and verified-issuer USDC transfers | Recipient must be active; USDC requires compatible, authorized trustlines and sufficient capacity |
 | Receive | QR code, public address, copy and native share | For receiving tokens on Stellar Testnet |
 | Contacts | Add by public address or registered email; search, rename, favorite and delete | Email lookup requires an exact verified account; no public directory |
-| Balances and activity | Live Horizon balances, sent/received payments, saved contact names and explorer receipts | Main account balance is shown in XLM; no fabricated USD conversion |
+| Balances and activity | Live Horizon balances, sent/received payments, grouped swaps, saved contact names and explorer receipts | Main account balance is shown in XLM; no fabricated USD conversion |
 | Funding | Friendbot XLM request; USDC trustline setup and Circle faucet shortcut | Circle's request is completed externally; token delivery is not automatic |
 | Movya chat | Basic text intents, balance answers, contact selection and in-chat payment review, confirmation and receipts | Rule-based parser, not an integrated LLM; XLM/USDC signing uses the same validated payment service as Send |
 | Onboarding and UI | First-registration guide, wallet forge animation, fixed bottom navigation and password visibility controls | Guide is simulated; visual and keyboard behavior still require device QA |
@@ -69,7 +69,7 @@ Earlier wallets created without a mnemonic retain their original address and pri
 5. **Fund the account.** Use **Pedir fondos en XLM** and **Pedir fondos en USDC** below the main dashboard actions.
 6. **Save someone.** Add a contact using a Stellar address or the exact email of another registered Movya user.
 7. **Send a payment.** Use Send or a command such as `Envía 0.1 XLM a Aya`. Review the full recipient, amount, asset, network and fee before confirming.
-8. **Check the result.** A confirmed payment returns its hash and a link to that specific transaction in Stellar Expert. Activity uses the saved contact's name when there is an address match.
+8. **Check the result.** A confirmed payment or swap returns its hash and a link to that specific transaction in Stellar Expert. Activity uses the saved contact's name for transfers and groups each swap with its Movya fee into one movement.
 
 For an initial USDC test, activate both accounts with XLM, enable their USDC trustlines, obtain test USDC from Circle and refresh the balance before sending. The funding button does not bypass faucet eligibility checks, CAPTCHA or rate limits.
 

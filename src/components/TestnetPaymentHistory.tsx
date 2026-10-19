@@ -4,7 +4,7 @@ import { Linking, StyleSheet, View } from 'react-native';
 import { ActivityRow } from '@/components/ActivityRow';
 import { PressableScale } from '@/components/PressableScale';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
-import { getPaymentHistory, type PaymentRecord } from '@/services/stellar/payments';
+import { type StellarActivity, getActivityHistory } from '@/services/stellar/activity';
 import { useContacts } from '@/context/ContactsContext';
 import { paymentDescription } from '@/services/presentation';
 import { colors } from '@/theme/tokens';
@@ -14,23 +14,27 @@ export function TestnetPaymentHistory({ hidden = false }: { hidden?: boolean }) 
   const { locale } = useLanguage();
   const wallet = useTestnetWallet();
   const { contacts } = useContacts();
-  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [activities, setActivities] = useState<StellarActivity[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   useEffect(() => {
     let active = true;
-    setPayments([]); setError('');
+    setActivities([]); setError('');
     if (wallet.publicKey && wallet.account) {
       setLoading(true);
-      void getPaymentHistory(wallet.publicKey).then((records) => { if (active) setPayments(records); })
+      void getActivityHistory(wallet.publicKey).then((records) => { if (active) setActivities(records); })
         .catch(() => { if (active) setError('No se pudo consultar el historial. Actualiza el balance para reintentar.'); })
         .finally(() => { if (active) setLoading(false); });
     }
     return () => { active = false; };
   }, [wallet.publicKey, wallet.account]);
   return <View>
-    {!payments.length ? <Text style={styles.empty}>{loading ? 'Cargando movimientos…' : error || 'Tus transferencias de Testnet aparecerán aquí.'}</Text> : null}
-    {payments.map((payment) => {
+    {!activities.length ? <Text style={styles.empty}>{loading ? 'Cargando movimientos…' : error || 'Tus movimientos de Testnet aparecerán aquí.'}</Text> : null}
+    {activities.map((activity) => {
+      if (activity.kind === 'swap') return <PressableScale accessibilityLabel="Ver swap en Stellar Expert" key={activity.id} onPress={() => void Linking.openURL(`https://stellar.expert/explorer/testnet/tx/${activity.transactionHash}`)}>
+        <ActivityRow hidden={hidden} type="Swap" detail={`${activity.sourceAmount} ${activity.fromAsset} → ${activity.destinationAmount} ${activity.toAsset}`} amount={`+ ${activity.destinationAmount} ${activity.toAsset}`} time={new Date(activity.createdAt).toLocaleString(locale)} positive />
+      </PressableScale>;
+      const payment = activity.payment;
       const received = payment.to === wallet.publicKey;
       const other = received ? payment.from : payment.to;
       const description = paymentDescription(received, other, contacts);
