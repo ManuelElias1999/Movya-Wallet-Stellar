@@ -584,7 +584,7 @@
   "Movya nunca te pedirá estas palabras por correo, chat o teléfono. Escríbelas solo aquí, en la app.": "Movya will never ask for these words by email, chat or phone. Enter them only here, in the app.",
   "{0}/12 palabras": "{0}/12 words",
   "Tu contraseña actual de Movya": "Your current Movya password",
-  "Tu wallet se volverá a cifrar con esta contraseña. Por seguridad, la contraseña que usarás desde ahora debe tener al menos 12 caracteres.": "Your wallet will be encrypted again with this password. For security, the password you use from now on must contain at least 12 characters.",
+  "Tu wallet se volverá a cifrar con esta contraseña. Usa al menos 12 caracteres y evita contraseñas comunes, predecibles o filtradas.": "Your wallet will be encrypted again with this password. Use at least 12 characters and avoid common, predictable or breached passwords.",
   "Recuperar mi wallet": "Recover my wallet",
   "Recuperando…": "Recovering…",
   "Restaurando tu wallet…": "Restoring your wallet…",

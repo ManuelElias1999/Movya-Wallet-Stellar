@@ -67,7 +67,7 @@ export default function RestoreWordsScreen() {
             <TextInput value={password} onChangeText={setPassword} secureTextEntry={!visibility.visible} placeholder="Contraseña" placeholderTextColor={colors.muted} autoCapitalize="none" autoCorrect={false} editable={!busy} style={styles.input} />
             <PasswordVisibilityButton visible={visibility.visible} onPress={visibility.toggle} disabled={busy} />
           </View>
-          <Text style={styles.hint}>Tu wallet se volverá a cifrar con esta contraseña. Por seguridad, la contraseña que usarás desde ahora debe tener al menos 12 caracteres.</Text>
+          <Text style={styles.hint}>Tu wallet se volverá a cifrar con esta contraseña. Usa al menos 12 caracteres y evita contraseñas comunes, predecibles o filtradas.</Text>
           {needsCode ? <>
             <Text style={styles.label}>Código de verificación en dos pasos</Text>
             <View style={styles.field}><TextInput value={mfaCode} onChangeText={setMfaCode} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={6} placeholder="123456" placeholderTextColor={colors.muted} editable={!busy} style={styles.input} /></View>

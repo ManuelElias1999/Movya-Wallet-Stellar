@@ -88,7 +88,7 @@ Optional 6-digit PIN that unlocks the app. It never encrypts or opens the key: s
 - New devices trigger a "new sign-in" alert on the others.
 - Rotating with the recovery kit revokes every other device automatically.
 - Revoking a session never invalidates a key already copied off a phone; rotation does.
-- Unlock and signing fail closed when the device status cannot be checked online. The app explains that an internet connection is required to prove the device has not been revoked; offline access to funds is not currently supported.
+- Unlock and signing fail closed when the device status cannot be checked online. Transport failures are identified from structured signals (`status: 0`, `TypeError`, `AbortError` or `ABORT_ERR`), never by matching localized message text. The app explains that an internet connection is required to prove the device has not been revoked; offline access to funds is not currently supported.
 - The installed Supabase Auth client uses its built-in lockless refresh coordination. A custom `processLock` is intentionally not configured because that option is deprecated in the installed v2 client and is being removed in v3.
 
 ## 11. Two-step verification (TOTP)
