@@ -15,8 +15,9 @@ Movya is a self-custodial wallet: keys are created and used on the device. Supab
 - The local wallet is split: metadata (account, signer public key, flags) and the **secret** (key and words). The secret is stored with `requireAuthentication`, so every signature and every backup reveal shows Face ID / Touch ID / fingerprint.
 - Existing wallets are migrated on first read; the key leaves the plain metadata item.
 - If biometrics change or the prompt is dismissed at sign-in, the wallet opens from the encrypted backup with the password.
-- Devices without biometrics keep an unprotected item (reported in Seguridad); the app lock and password are the protection there.
+- Devices without enrolled biometrics are **view-only**: they can open the app with the account password but cannot sign payments, swaps, trustlines, rotation or emergency transfers. Movya never silently falls back from biometric signing to the phone passcode or its own PIN.
 - Cold start never opens the wallet by itself. The app locks after 30 s in the background or 5 min without touches.
+- `requireAuthentication` must be validated in a development build on a real iOS/Android device. Expo Go can be used for the interface, but cannot validate Face ID protection correctly.
 - Code: `walletStore.ts`, `storage.ts`, `src/services/security/appLock.ts`, `AuthContext.tsx`. Tests: `wallet-store.test.ts`, `app-lock.test.ts`.
 
 ## 3. Restricted signer
@@ -30,7 +31,7 @@ The device key signs only the transaction shapes Movya offers, independently of 
 | Trustline | 1 `changeTrust` for verified USDC, never limit 0 |
 | Recovery setup | 1 `setOptions` with exactly the kit key (weight 2), master weight 1, thresholds 1/1/2 |
 
-Also required: source = the wallet's account, no prior signatures, no memo, fee ≤ 0.1 XLM, expiration ≤ 10 minutes. Before the biometric prompt the signer checks on-chain that this device key is still active. Code: `signingPolicy.ts`, `TestnetWalletContext.tsx`. Tests: `signing-policy.test.ts`, `signing-policy-sdk.test.ts`.
+Also required: source = the wallet's account, no prior signatures, no memo, fee ≤ 0.1 XLM, expiration ≤ 10 minutes. Each public signer entry point must match its exact declared kind (`payment`, `swap`, `trustline`, `recovery-setup` or `sweep`); a trustline entry point cannot sign a payment-shaped XDR. Before the biometric prompt the signer checks on-chain that this device key is still active. Code: `signingPolicy.ts`, `TestnetWalletContext.tsx`. Tests: `signing-policy.test.ts`, `signing-policy-sdk.test.ts`.
 
 ## 4. Email discovery
 
@@ -65,6 +66,8 @@ Thresholds: low 1, medium 1, high 2. The phone can pay and swap but cannot add o
 
 **Limitation:** a thief who has the unlocked phone *and* passes its biometrics can still pay out the balance before the owner reacts. Rotation stops further use; it cannot undo payments. Spending limits or delays need a Soroban smart wallet (future stage).
 
+The recovery kit currently rotates through Movya and therefore still requires access to the Supabase account. Configure more than one TOTP authenticator and keep the recovery words offline; a recovery path that works without Supabase login remains future work.
+
 ## 8. Payment review: new and look-alike recipients
 
 - Every review shows the full destination address.
@@ -85,6 +88,8 @@ Optional 6-digit PIN that unlocks the app. It never encrypts or opens the key: s
 - New devices trigger a "new sign-in" alert on the others.
 - Rotating with the recovery kit revokes every other device automatically.
 - Revoking a session never invalidates a key already copied off a phone; rotation does.
+- Unlock and signing fail closed when the device status cannot be checked online. The app explains that an internet connection is required to prove the device has not been revoked; offline access to funds is not currently supported.
+- The installed Supabase Auth client uses its built-in lockless refresh coordination. A custom `processLock` is intentionally not configured because that option is deprecated in the installed v2 client and is being removed in v3.
 
 ## 11. Two-step verification (TOTP)
 
@@ -107,6 +112,8 @@ When rotation is impossible or the account configuration looks damaged, "Mover t
 ## 14. Web
 
 - Production builds ship a Content Security Policy: scripts only from the app's origin, network only to Supabase, Horizon Testnet, Friendbot and the leaked-password API, no plugins, no form posts.
+- CI exports the web build and runs `npm run verify:web-csp`, which recalculates every inline-script SHA-256 hash and fails if either the HTML meta policy or `vercel.json` is stale.
+- A custom Supabase domain must be added to both `app/+html.tsx` and `vercel.json`; the default Vercel policy only permits `*.supabase.co`.
 - Web signing is off by default. Set `EXPO_PUBLIC_WEB_SIGNING=on` only for an explicitly reviewed deployment.
 - Keys on web live only in memory; sessions in `localStorage`.
 

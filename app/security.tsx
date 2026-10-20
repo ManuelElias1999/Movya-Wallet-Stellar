@@ -47,7 +47,7 @@ export default function SecurityScreen() {
     <PageHeader title="Seguridad" subtitle="Protege el acceso a tu wallet" backTo="/settings" />
     <ScrollView contentContainerStyle={styles.content}>
       <Row icon="finger-print-outline" title={wallet.biometric ? 'Face ID o huella activos' : 'Biometría no disponible'}
-        subtitle={wallet.biometric ? 'Se piden antes de cada envío, cambio o al ver tu respaldo' : 'Activa Face ID o huella en tu teléfono y vuelve a ingresar. Mientras tanto, Movya pedirá tu contraseña al abrirse.'} />
+        subtitle={wallet.biometric ? 'Se piden antes de cada envío, cambio o al ver tu respaldo' : 'Puedes abrir Movya con tu contraseña, pero este dispositivo será solo de consulta hasta que actives Face ID o huella.'} />
       <Row icon="lock-closed-outline" title="Bloquear ahora" subtitle="Movya también se bloquea tras 5 minutos sin uso o 30 segundos fuera de la app" onPress={() => { auth.lockNow(); router.replace('/'); }} />
       <Row icon="keypad-outline" title="PIN de Movya" subtitle={auth.pinAvailable ? 'Activo para desbloquear la app' : 'Opcional: desbloqueo rápido con 6 números'} onPress={() => router.push('/pin')} />
       <Row icon="shield-checkmark-outline" title="Verificación en dos pasos" subtitle="Código de una app de autenticación al ingresar y para cambios sensibles" onPress={() => router.push('/two-factor')} />

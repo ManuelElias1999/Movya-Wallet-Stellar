@@ -21,8 +21,8 @@ const keyValue: KeyValue = {
     else await SecureStore.setItemAsync(key, value, protectedItem ? guarded : plain);
   },
   remove: async key => { if (Platform.OS === 'web') memory.delete(key); else await SecureStore.deleteItemAsync(key); },
-  // Biometric protection needs enrolled biometrics; otherwise the app lock and
-  // password re-entry are the protection (see AuthContext).
+  // Biometric protection needs enrolled biometrics. Without it the wallet can
+  // be viewed after password authentication, but signing stays disabled.
   canProtect: () => {
     if (Platform.OS === 'web') return false;
     try { return SecureStore.canUseBiometricAuthentication(); } catch { return false; }

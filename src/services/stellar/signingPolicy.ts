@@ -80,6 +80,15 @@ export function classifyTransaction(tx: TransactionLike, policy: SigningPolicy):
   return refuse('Movya no ofrece este tipo de transacción');
 }
 
+// Every public signer entry point also declares the one transaction kind it
+// expects. This prevents a future call-site mistake from routing an otherwise
+// valid payment through, for example, the trustline signer.
+export function assertTransactionKind(tx: TransactionLike, policy: SigningPolicy, expected: SigningKind): SigningKind {
+  const actual = classifyTransaction(tx, policy);
+  if (actual !== expected) refuse(`se esperaba ${expected}, no ${actual}`);
+  return actual;
+}
+
 // Emergency transfer to a new wallet created on this device: create it, move
 // USDC (adding its trustline, signed by the new key) and XLM, remove the old
 // trustline and, when allowed, merge the old account into the new one.

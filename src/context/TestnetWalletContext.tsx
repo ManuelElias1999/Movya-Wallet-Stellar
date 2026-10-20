@@ -9,7 +9,7 @@ import { assertTestnet, readTestnetAccount, transactionHash, USDC_ISSUER, valida
 import { MOVYA_TREASURY, validateSwapReview, type SwapReview } from '@/services/stellar/swaps';
 import type { PreparedSweep } from '@/services/stellar/sweep';
 import type { PreparedRecoverySetup } from '@/services/stellar/signerTransactions';
-import { classifyTransaction, type TransactionLike } from '@/services/stellar/signingPolicy';
+import { assertTransactionKind, type SigningKind, type TransactionLike } from '@/services/stellar/signingPolicy';
 import { assertDeviceCanSign } from '@/services/stellar/signers';
 
 type WalletContext = {
@@ -95,7 +95,7 @@ export function TestnetWalletProvider({ children }: { children: ReactNode }) {
     setMeta(await updateWalletMeta({ oualiAddress: clean }, userId));
   };
 
-  const signWith = async (xdr: string, extra: { recoverySigner?: string; sweepTo?: string; expectedHash?: string } = {}) => {
+  const signWith = async (xdr: string, expectedKind: SigningKind, extra: { recoverySigner?: string; sweepTo?: string; expectedHash?: string } = {}) => {
     assertTestnet();
     // The web build has no protected key storage; it can be made view-only.
     if (Platform.OS === 'web' && process.env.EXPO_PUBLIC_WEB_SIGNING !== 'on') throw new Error('En la versión web solo puedes consultar. Usa la app para enviar.');
@@ -106,7 +106,7 @@ export function TestnetWalletProvider({ children }: { children: ReactNode }) {
     if (auth.configured && stored.protection !== 'biometric') throw new Error('Este dispositivo no puede proteger firmas con Face ID, Touch ID o huella. Por seguridad úsalo solo para consultar y firma desde un dispositivo compatible.');
     const transaction = new Transaction(xdr, Networks.TESTNET);
     if (extra.expectedHash && transactionHash(transaction) !== extra.expectedHash) throw new Error('La operación ya no coincide con la revisión confirmada.');
-    classifyTransaction(transaction as unknown as TransactionLike, { account: stored.accountId, usdcIssuer: USDC_ISSUER, treasury: MOVYA_TREASURY, ...extra });
+    assertTransactionKind(transaction as unknown as TransactionLike, { account: stored.accountId, usdcIssuer: USDC_ISSUER, treasury: MOVYA_TREASURY, ...extra }, expectedKind);
     if (auth.configured) {
       if (!userId) throw new Error('La sesión cambió. Vuelve a ingresar.');
       try { await touchDevice(userId); }
@@ -134,17 +134,17 @@ export function TestnetWalletProvider({ children }: { children: ReactNode }) {
     publicKey, signerPublicKey: meta?.signerPublicKey ?? null, biometric: meta?.protection === 'biometric',
     oualiAddress: meta?.oualiAddress ?? '', account, loading, error, initialized, create, refresh, saveOuali,
     reload: async () => { setMeta(await readMeta()); },
-    signPayment: review => { validateReview(review); return signWith(review.xdr, { expectedHash: review.hash }); },
-    signSwap: review => { validateSwapReview(review); return signWith(review.xdr, { expectedHash: review.hash }); },
-    signTrustline: xdr => signWith(xdr),
-    signRecoverySetup: (prepared, recoverySigner) => signWith(prepared.xdr, { recoverySigner, expectedHash: prepared.hash }),
+    signPayment: review => { validateReview(review); return signWith(review.xdr, 'payment', { expectedHash: review.hash }); },
+    signSwap: review => { validateSwapReview(review); return signWith(review.xdr, 'swap', { expectedHash: review.hash }); },
+    signTrustline: xdr => signWith(xdr, 'trustline'),
+    signRecoverySetup: (prepared, recoverySigner) => signWith(prepared.xdr, 'recovery-setup', { recoverySigner, expectedHash: prepared.hash }),
     signSweep: async prepared => {
       if (!userId) throw new Error('Ingresa antes de realizar una transferencia de emergencia.');
       const pending = await readPendingSweep(userId);
       if (!pending || pending.from !== prepared.from || Keypair.fromSecret(pending.secret).publicKey() !== prepared.to || pending.hash !== prepared.hash) {
         throw new Error('La wallet nueva no coincide con la transferencia de emergencia guardada.');
       }
-      return signWith(prepared.xdr, { sweepTo: prepared.to, expectedHash: prepared.hash });
+      return signWith(prepared.xdr, 'sweep', { sweepTo: prepared.to, expectedHash: prepared.hash });
     },
   }}>{children}</Context.Provider>;
 }
