@@ -116,9 +116,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const opened = (backupAcknowledged: boolean, newAccount: boolean, protection: boolean) => {
     const steps = accessSteps(newAccount, backupAcknowledged);
-    // If a newly-created account locks while the person is saving the words,
-    // reopening with Face ID must return to that unfinished backup flow.
-    setNeedsBackup(current => current || steps.needsBackup);
+    // An unconfirmed backup remains pending across a lock, app restart or
+    // password login. Face ID must reopen the unfinished words flow, not skip
+    // straight to the dashboard.
+    setNeedsBackup(current => current || !backupAcknowledged || steps.needsBackup);
     setNeedsOnboarding(current => current || steps.needsOnboarding);
     setLocked(false); setNeedsRestore(false); setDeviceUnlockAvailable(protection);
     setReady(true);
