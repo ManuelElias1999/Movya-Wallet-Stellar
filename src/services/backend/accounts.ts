@@ -3,7 +3,7 @@ import { requireBackend } from './client';
 import { assertKdfSalt, deriveAccountKeys, newKdfSalt, wipeKeys, type AccountKeys } from './accountKeys';
 import { rememberContactsKey } from './contactBackup';
 import { completeSecondFactor, MfaRequiredError, needsSecondFactor } from './mfa';
-import { clearPendingSweep, readPendingSweep, readWallet, readWalletMeta, updateWalletMeta, writeWallet, type StoredWallet } from './storage';
+import { clearPendingSweep, readPendingSweep, readWallet, readWalletMeta, replaceWalletAfterPassword, updateWalletMeta, writeWallet, type StoredWallet } from './storage';
 import { decryptRecovery, encryptRecoveryV3, fingerprintBackup, type WalletBackup } from './vault';
 import { recoverWallet, type RecoveryProgress, type WalletRecord } from './walletRecovery';
 import { createRecoveryWallet, validateRecoveryMaterial, walletFromMnemonic, type RecoveryMaterial } from '../stellar/recovery';
@@ -143,7 +143,7 @@ export async function unlockUserWallet(userId: string, password: string, options
     // biometric set changed, fall back to the encrypted backup.
     readLocal: async owner => { try { return await readWallet(owner); } catch { return null; } },
     readMeta: readWalletMeta,
-    writeLocal: async (wallet, owner) => { await writeWallet(wallet, owner); opened = wallet; },
+    writeLocal: async (wallet, owner) => { await replaceWalletAfterPassword(wallet, owner); opened = wallet; },
   }, userId, password, false, { signal: options.signal, onProgress: options.onProgress, keys: options.keys, allowLocalCache: false });
   if (!opened) throw new Error('No pudimos abrir tu wallet. Vuelve a intentarlo.');
   let wallet: StoredWallet = opened;

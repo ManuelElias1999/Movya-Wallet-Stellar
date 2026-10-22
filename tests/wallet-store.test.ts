@@ -102,3 +102,13 @@ test('view-only mode removes the signing key but preserves public wallet metadat
   assert.equal(await wallets.readFull('u1'), null);
   assert.deepEqual(prompts, []);
 });
+
+test('password login replaces a protected key without reading it first', async () => {
+  const { store, prompts } = kv();
+  const wallets = createWalletStore(store, signerOf);
+  await wallets.write({ secret: SECRET, oualiAddress: 'old' }, 'u1');
+  await wallets.replaceAfterPassword({ secret: SECRET, oualiAddress: 'new', backupAcknowledged: true }, 'u1');
+  assert.deepEqual(prompts, []);
+  assert.equal((await wallets.readMeta('u1'))?.oualiAddress, 'new');
+  assert.equal((await wallets.readMeta('u1'))?.backupAcknowledged, true);
+});

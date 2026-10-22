@@ -800,5 +800,10 @@
   "Continuar en modo consulta": "Continue in view-only mode",
   "Ya las guardé · comprobar respaldo": "I saved them · verify backup",
   "Ingresa con tu correo antes de cambiar la protección de este dispositivo.": "Sign in with your email before changing this device's protection.",
-  "No hay una wallet guardada en este dispositivo.": "There is no wallet saved on this device."
+  "No hay una wallet guardada en este dispositivo.": "There is no wallet saved on this device.",
+  "Bloquear Movya": "Lock Movya",
+  "Podrás volver a entrar directamente con Face ID": "You can return directly with Face ID",
+  "Movya se bloquea automáticamente después de 5 minutos fuera de la app": "Movya locks automatically after 5 minutes outside the app",
+  "Completa únicamente los recuadros {0} usando el respaldo que guardaste.": "Complete only boxes {0} using the backup you saved.",
+  "Escribe aquí": "Enter here"
 }

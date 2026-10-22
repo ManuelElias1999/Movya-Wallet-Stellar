@@ -2,7 +2,6 @@ import { Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
-import * as Clipboard from 'expo-clipboard';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,10 +11,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import type { RecoveryMaterial } from '@/services/stellar/recovery';
 import { colors } from '@/theme/tokens';
-import { createSensitiveClipboard } from '@/services/sensitiveClipboard';
 import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
 
-const copySensitive = createSensitiveClipboard(Clipboard);
 const challengePositions = () => {
   const available = [...Array(12).keys()]; const selected: number[] = [];
   while (selected.length < 3) selected.push(available.splice(Math.floor(Math.random() * available.length), 1)[0]);
@@ -64,17 +61,16 @@ export default function WalletBackupScreen() {
     };
   }, [hide]));
   useEffect(() => {
-    // iOS reports `inactive` while the Face ID sheet is visible. Clearing the
-    // material there invalidates the in-flight reveal and sends the person
-    // back to the password field after a successful biometric check. The
-    // app-switcher preview is already protected above; erase secrets when the
-    // app actually reaches the background.
-    const subscription = AppState.addEventListener('change', state => { if (state === 'background') hide(); });
-    const visibility = () => { if (typeof document !== 'undefined' && document.visibilityState !== 'visible') hide(); };
+    // During first-time backup the person must be able to switch to a secure
+    // place where they are recording the words and return to the exact same
+    // step. The app-switcher preview remains protected. Later disclosures from
+    // Security still clear immediately on background.
+    const subscription = AppState.addEventListener('change', state => { if (state === 'background' && !auth.needsBackup) hide(); });
+    const visibility = () => { if (typeof document !== 'undefined' && document.visibilityState !== 'visible' && !auth.needsBackup) hide(); };
     if (Platform.OS === 'web' && typeof document !== 'undefined') document.addEventListener('visibilitychange', visibility);
     return () => { subscription.remove(); if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', visibility); };
-  }, [hide]);
-  useEffect(() => { if (!material) return; const timer = setTimeout(hide, 60_000); return () => clearTimeout(timer); }, [material, hide]);
+  }, [auth.needsBackup, hide]);
+  useEffect(() => { if (!material || auth.needsBackup) return; const timer = setTimeout(hide, 60_000); return () => clearTimeout(timer); }, [material, auth.needsBackup, hide]);
   useEffect(() => { if (done && !auth.needsBackup) router.replace(auth.needsOnboarding ? '/onboarding' : '/(tabs)'); }, [done, auth.needsBackup, auth.needsOnboarding, router]);
 
   const reveal = async (requested: 'phrase' | 'key') => {
@@ -114,18 +110,6 @@ export default function WalletBackupScreen() {
     catch (e) { setMessage(e instanceof Error ? e.message : 'No se pudo continuar.'); }
     finally { lock.current = false; setBusy(false); }
   };
-  const copy = async () => {
-    if (!material || !captureReady || lock.current) return;
-    const current = generation.current;
-    const value = mode === 'phrase' ? material.mnemonic : material.secret;
-    if (!value) return;
-    lock.current = true; setBusy(true);
-    try {
-      await copySensitive(value, () => generation.current === current);
-      if (generation.current === current) setMessage(mode === 'phrase' ? 'Frase copiada.' : 'Clave privada copiada.');
-    } catch (e) { if (generation.current === current) setMessage(e instanceof Error ? e.message : 'No pudimos copiar el respaldo.'); }
-    finally { lock.current = false; setBusy(false); }
-  };
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
     <PageHeader backTo={auth.needsBackup ? undefined : '/security'} title={auth.needsBackup ? 'Respalda tu wallet' : 'Respaldo y claves'} subtitle="Stellar Testnet · tu cuenta de pruebas" />
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -142,7 +126,7 @@ export default function WalletBackupScreen() {
           {step === 'reveal' && !auth.user ? <>
             <Text style={styles.copy}>Ingresa con tu correo para consultar el respaldo de tu cuenta.</Text>
             <PressableScale onPress={() => router.replace('/')} style={styles.button}><Text style={styles.buttonText}>Crear cuenta o ingresar</Text></PressableScale>
-          </> : step === 'reveal' ? <>
+          </> : step === 'reveal' ? (material ? null : <>
             <Text style={styles.label}>Confirma tu contraseña para mostrar el respaldo</Text>
             <View style={styles.passwordField}>
               <TextInput ref={passwordInput} value={password} onChangeText={setPassword} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} placeholder="Tu contraseña de Movya" placeholderTextColor={colors.muted} secureTextEntry={!passwordVisibility.visible} autoCapitalize="none" autoCorrect={false} editable={!busy} style={styles.input} />
@@ -150,13 +134,12 @@ export default function WalletBackupScreen() {
             </View>
             <PressableScale disabled={busy || !password || !captureReady} onPress={() => void reveal('phrase')} style={[styles.button, (busy || !password || !captureReady) && styles.disabled]}><Ionicons name="key-outline" size={20} color="white" /><Text style={styles.buttonText}>Ver frase de recuperación</Text></PressableScale>
             <PressableScale disabled={busy || !password || !captureReady} onPress={() => void reveal('key')} style={[styles.button, (busy || !password || !captureReady) && styles.disabled]}><Ionicons name="lock-closed-outline" size={20} color="white" /><Text style={styles.buttonText}>Ver clave privada · opción avanzada</Text></PressableScale>
-          </> : step === 'confirm' ? <>
-            {positions.map(position => <View key={position}>
-              <Text style={styles.label}>{`Palabra ${position + 1}`}</Text>
-              <View style={styles.passwordField}><TextInput value={answers[position] ?? ''} onChangeText={value => setAnswers(current => ({ ...current, [position]: value }))} autoCapitalize="none" autoCorrect={false} editable={!busy} placeholder={`Escribe la palabra ${position + 1}`} placeholderTextColor={colors.muted} style={styles.input} /></View>
-            </View>)}
+          </>) : step === 'confirm' ? <>
+            <Text style={styles.notice}>{`Completa únicamente los recuadros ${positions.map(position => position + 1).join(', ')} usando el respaldo que guardaste.`}</Text>
+            <View style={styles.words}>{expectedWords.current.map((word, position) => positions.includes(position)
+              ? <View key={position} style={[styles.word, styles.wordRequested]}><Text style={styles.number}>{position + 1}</Text><TextInput value={answers[position] ?? ''} onChangeText={value => setAnswers(current => ({ ...current, [position]: value }))} autoCapitalize="none" autoCorrect={false} editable={!busy} placeholder="Escribe aquí" placeholderTextColor={colors.muted} style={styles.wordInput} /></View>
+              : <View key={position} style={styles.word}><Text style={styles.number}>{position + 1}</Text><Text translate={false} style={styles.wordText}>{word}</Text></View>)}</View>
             <PressableScale disabled={busy || positions.some(position => !(answers[position] ?? '').trim())} onPress={confirmWords} style={[styles.button, (busy || positions.some(position => !(answers[position] ?? '').trim())) && styles.disabled]}><Text style={styles.buttonText}>Confirmar respaldo</Text></PressableScale>
-            <PressableScale disabled={busy} onPress={hide} style={styles.secondary}><Text style={styles.secondaryText}>Volver a ver mis palabras</Text></PressableScale>
           </> : <>
             <Text style={styles.notice}>Si es un teléfono prestado, no guardaremos aquí la clave que firma tus operaciones. Podrás consultar el dashboard, pero no enviar ni hacer swaps desde este dispositivo.</Text>
             {wallet.biometric ? <PressableScale disabled={busy} onPress={() => void finish(false)} style={[styles.button, busy && styles.disabled]}><Ionicons name="finger-print-outline" size={20} color="white" /><Text style={styles.buttonText}>Activar Face ID o huella</Text></PressableScale> : null}
@@ -167,10 +150,7 @@ export default function WalletBackupScreen() {
           {step === 'reveal' && material ? <View style={styles.recovery}>
             <Text style={styles.title}>{mode === 'phrase' ? 'Tus 12 palabras' : 'Tu clave privada Stellar'}</Text>
             {mode === 'phrase' && material.mnemonic ? <View style={styles.words}>{material.mnemonic.split(' ').map((word, i) => <View key={i} style={styles.word}><Text style={styles.number}>{i + 1}</Text><Text translate={false} style={styles.wordText}>{word}</Text></View>)}</View> : <Text translate={false} selectable style={styles.secret}>{material.secret}</Text>}
-            <PressableScale disabled={busy} onPress={() => void copy()} style={styles.button}><Ionicons name="copy-outline" size={19} color="white" /><Text style={styles.buttonText}>{mode === 'phrase' ? 'Copiar las 12 palabras' : 'Copiar clave privada'}</Text></PressableScale>
-            <Text style={styles.copy}>Se ocultará en un minuto, al salir o al poner la app en segundo plano.</Text>
-            {auth.needsBackup ? <PressableScale disabled={busy} onPress={beginConfirmation} style={styles.button}><Ionicons name="checkmark-circle-outline" size={20} color="white" /><Text style={styles.buttonText}>Ya las guardé · comprobar respaldo</Text></PressableScale> : null}
-            <PressableScale onPress={hide} style={styles.secondary}><Text style={styles.secondaryText}>Ocultar ahora</Text></PressableScale>
+            {auth.needsBackup ? <PressableScale disabled={busy} onPress={beginConfirmation} style={styles.button}><Text style={styles.buttonText}>Siguiente</Text><Ionicons name="arrow-forward" size={20} color="white" /></PressableScale> : <Text style={styles.copy}>Se ocultará en un minuto o al salir de la app.</Text>}
           </View> : null}
           {!auth.needsBackup && step === 'reveal' ? <PressableScale onPress={() => { hide(); router.replace('/security'); }} style={styles.secondary}><Text style={styles.secondaryText}>Volver a Seguridad</Text></PressableScale> : null}
         </View>
@@ -185,6 +165,6 @@ const styles = StyleSheet.create({
   label: { color: colors.ink, fontSize: 13, fontWeight: '700', marginTop: 22 }, passwordField: { minHeight: 52, borderWidth: 1, borderColor: colors.border, borderRadius: 14, marginTop: 10, flexDirection: 'row', alignItems: 'center', paddingRight: 4 }, input: { flex: 1, minWidth: 0, minHeight: 52, color: colors.ink, padding: 14 },
   button: { minHeight: 52, padding: 12, borderRadius: 16, backgroundColor: colors.brand, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14 }, buttonText: { color: 'white', fontSize: 14, fontWeight: '800' },
   secondary: { minHeight: 48, padding: 12, borderRadius: 16, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginTop: 12 }, secondaryText: { color: colors.brandDark, fontSize: 13, fontWeight: '700' }, disabled: { opacity: 0.45 },
-  recovery: { marginTop: 22, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 20 }, words: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 }, word: { width: '47%', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 9, padding: 10, backgroundColor: '#EFF5FC', borderRadius: 12 }, number: { fontSize: 11, color: colors.muted, width: 18 }, wordText: { fontSize: 14, color: colors.ink, fontWeight: '700' },
+  recovery: { marginTop: 22, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 20 }, words: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 }, word: { width: '47%', minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, backgroundColor: '#EFF5FC', borderWidth: 1.5, borderColor: 'transparent', borderRadius: 12 }, wordRequested: { backgroundColor: '#E6F0FF', borderColor: colors.brand }, number: { fontSize: 11, color: colors.muted, width: 18 }, wordText: { flex: 1, fontSize: 14, color: colors.ink, fontWeight: '700' }, wordInput: { flex: 1, minWidth: 0, minHeight: 36, paddingVertical: 4, color: colors.ink, fontSize: 13, fontWeight: '700' },
   secret: { fontSize: 14, lineHeight: 24, color: colors.ink, padding: 14, backgroundColor: '#EFF5FC', borderRadius: 12, marginTop: 16 },
 });

@@ -35,6 +35,7 @@ export const readWallet = (userId?: string) => store.readFull(userId);
 // No prompt: account, signer public key and flags only.
 export const readWalletMeta = (userId?: string) => store.readMeta(userId);
 export const writeWallet = (wallet: StoredWallet, userId?: string) => store.write(wallet, userId);
+export const replaceWalletAfterPassword = (wallet: StoredWallet, userId?: string) => store.replaceAfterPassword(wallet, userId);
 export const updateWalletMeta = store.updateMeta;
 export const disableLocalSigning = store.disableSigning;
 export const removeWallet = (userId: string) => store.remove(userId);

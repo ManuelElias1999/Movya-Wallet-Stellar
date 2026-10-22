@@ -2,12 +2,10 @@ import type { Session, User } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 import { backendConfigured, bindAccessSignal, requireBackend, supabase } from '@/services/backend/client';
-import { readRecoveryWithPassword, restoreWithWords as restoreWalletWithWords, signInSecure, signUpSecure, unlockUserWallet, verifyPasswordOffline } from '@/services/backend/accounts';
+import { readRecoveryWithPassword, restoreWithWords as restoreWalletWithWords, signInSecure, signUpSecure, unlockUserWallet } from '@/services/backend/accounts';
 import { wipeKeys, type AccountKeys } from '@/services/backend/accountKeys';
 import { rememberContactsKey } from '@/services/backend/contactBackup';
 import { currentDeviceId, forgetDeviceId, listDevices, markDevicesReviewed, newDevicesSinceLastReview, revokeOtherDevices, touchDevice, type DeviceRow } from '@/services/backend/devices';
-import { pinLockFor } from '@/services/security/pinStore';
-import { PinWipedError } from '@/services/security/pinLock';
 import { assertPasswordNotLeaked } from '@/services/backend/passwordPolicy';
 import { assertStrongPassword } from '@/services/security/passwordStrength';
 import { readWallet, readWalletMeta, clearWalletOnLogout, disableLocalSigning, removeWallet, updateWalletMeta } from '@/services/backend/storage';
@@ -22,12 +20,10 @@ type Auth = {
   configured: boolean; initialized: boolean; user: User | null; ready: boolean; error: string; needsBackup: boolean;
   accessStage: string; cancelAccess: () => void; needsOnboarding: boolean; finishOnboarding: () => void;
   // Locked: signed in, but the wallet stays closed until biometrics or the password.
-  locked: boolean; deviceUnlockAvailable: boolean; unlockWithDevice: () => Promise<void>; lockNow: () => void; touch: () => void;
+  locked: boolean; deviceUnlockAvailable: boolean; unlockWithDevice: () => Promise<void>; lockNow: () => void;
   // The sign-in worked but the backup did not open (for example after a
   // password reset): restore with the wallet's 12 words or the recovery kit.
   needsRestore: boolean; restoreWithWords: (password: string, words: string, mfaCode?: string) => Promise<'restored' | 'rotated'>;
-  // Movya PIN: unlocks the app; never opens the key by itself.
-  pinAvailable: boolean; unlockWithPin: (pin: string) => Promise<void>; setPin: (password: string, pin: string) => Promise<void>; removePin: () => Promise<void>;
   disableDeviceBiometrics: () => Promise<void>;
   // Devices registered since this device last looked ("new sign-in" alert).
   newDevices: DeviceRow[]; acknowledgeDevices: () => Promise<void>;
@@ -54,13 +50,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [locked, setLocked] = useState(false);
   const [deviceUnlockAvailable, setDeviceUnlockAvailable] = useState(false);
   const [needsRestore, setNeedsRestore] = useState(false);
-  const [pinAvailable, setPinAvailable] = useState(false);
   const [newDevices, setNewDevices] = useState<DeviceRow[]>([]);
   const accessController = useRef<AbortController | null>(null);
   const operation = useRef(false);
   const revision = useRef(0);
   const sessionOwner = useRef<string | null>(null);
-  const lastActive = useRef(Date.now());
   const backgroundAt = useRef<number | null>(null);
   const readyRef = useRef(false);
   readyRef.current = ready;
@@ -87,7 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (active) {
           setSession(result.data.session); setNeedsBackup(false); setNeedsOnboarding(false); setReady(false);
           setLocked(Boolean(meta)); setDeviceUnlockAvailable(meta?.protection === 'biometric');
-          setPinAvailable(meta?.protection === 'biometric' && await pinLockFor(validated.data.user.id).isSet().catch(() => false));
         }
       }
     })().catch(() => { if (active) { setError('No pudimos recuperar tu sesión. Vuelve a ingresar.'); setSession(null); setReady(false); } })
@@ -100,18 +93,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!readyRef.current || operation.current) return;
     setReady(false); setLocked(true);
   }, []);
-  const touch = useCallback(() => { lastActive.current = Date.now(); }, []);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', state => {
-      const decision = lockDecision({ state, now: Date.now(), backgroundAt: backgroundAt.current, lastActive: lastActive.current });
+      const decision = lockDecision({ state, now: Date.now(), backgroundAt: backgroundAt.current });
       backgroundAt.current = decision.backgroundAt;
       if (decision.lock) lockNow();
-      if (state === 'active') lastActive.current = Date.now();
     });
-    const timer = setInterval(() => {
-      if (lockDecision({ state: 'active', now: Date.now(), backgroundAt: null, lastActive: lastActive.current }).lock) lockNow();
-    }, 15_000);
-    return () => { subscription.remove(); clearInterval(timer); };
+    return () => subscription.remove();
   }, [lockNow]);
 
   const runAccess = async <T,>(work: (signal: AbortSignal) => Promise<T>): Promise<T> => {
@@ -130,7 +118,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const steps = accessSteps(newAccount, backupAcknowledged);
     setNeedsBackup(steps.needsBackup); setNeedsOnboarding(steps.needsOnboarding);
     setLocked(false); setNeedsRestore(false); setDeviceUnlockAvailable(protection);
-    lastActive.current = Date.now();
     setReady(true);
   };
 
@@ -145,7 +132,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (failure) {
       if ((failure as { name?: string })?.name !== 'DeviceRevokedError') throw failure;
       await removeWallet(owner).catch(() => undefined);
-      await pinLockFor(owner).remove().catch(() => undefined);
       await forgetDeviceId(owner).catch(() => undefined);
       revision.current++; setReady(false); setLocked(false); setSession(null); sessionOwner.current = null;
       await requireBackend().auth.signOut({ scope: 'local' }).catch(() => undefined);
@@ -183,7 +169,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (current !== revision.current) throw new Error('La sesión cambió. Vuelve a ingresar.');
       const meta = await readWalletMeta(next.user.id);
       if (credentials.keys) await rememberContactsKey(next.user.id, credentials.keys.contactsKey).catch(() => undefined);
-      setPinAvailable(meta?.protection === 'biometric' && await pinLockFor(next.user.id).isSet().catch(() => false));
       opened(Boolean(local.backupAcknowledged), newAccount, meta?.protection === 'biometric');
     } catch (failure) {
       if (isDecryptFailure(failure)) {
@@ -249,44 +234,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       opened(Boolean(meta.backupAcknowledged), false, true);
     } finally { operation.current = false; }
   };
-  const unlockWithPin = async (pin: string) => {
-    if (!session) throw new Error('Ingresa con tu correo para abrir tu wallet.');
-    if (operation.current) throw new Error('Espera a que termine el acceso a tu wallet.');
-    const owner = session.user.id;
-    operation.current = true;
-    try {
-      const meta = await readWalletMeta(owner);
-      if (!meta) throw new Error('Ingresa tu contraseña para abrir tu wallet.');
-      if (meta.protection !== 'biometric') {
-        await pinLockFor(owner).remove().catch(() => undefined); setPinAvailable(false);
-        throw new Error('Este dispositivo no puede proteger la clave con biometría. Ingresa tu contraseña para abrir la wallet.');
-      }
-      let result: Awaited<ReturnType<ReturnType<typeof pinLockFor>['verify']>>;
-      try { result = await pinLockFor(owner).verify(pin); }
-      catch (failure) { if (failure instanceof PinWipedError) setPinAvailable(false); throw failure; }
-      if (!result.ok) throw new Error(`PIN incorrecto. Te quedan ${result.remaining} intentos.`);
-      await checkDevice(owner);
-      opened(Boolean(meta.backupAcknowledged), false, true);
-    } finally { operation.current = false; }
-  };
-  const setPin = async (password: string, pin: string) => {
-    if (!session || !ready) throw new Error('Abre tu wallet antes de crear un PIN.');
-    const meta = await readWalletMeta(session.user.id);
-    if (meta?.protection !== 'biometric') throw new Error('El PIN solo está disponible cuando Face ID, Touch ID o la huella protegen la clave de la wallet.');
-    await verifyPasswordOffline(session.user.id, password);
-    await pinLockFor(session.user.id).set(pin);
-    setPinAvailable(true);
-  };
-  const removePin = async () => {
-    if (!session) return;
-    await pinLockFor(session.user.id).remove();
-    setPinAvailable(false);
-  };
   const disableDeviceBiometrics = async () => {
     if (!session) throw new Error('Ingresa con tu correo antes de cambiar la protección de este dispositivo.');
     await disableLocalSigning(session.user.id);
-    await pinLockFor(session.user.id).remove().catch(() => undefined);
-    setDeviceUnlockAvailable(false); setPinAvailable(false);
+    setDeviceUnlockAvailable(false);
   };
   const restoreWithWords = async (password: string, words: string, mfaCode?: string) => {
     if (!session?.user.email) throw new Error('Ingresa con tu correo antes de restaurar.');
@@ -360,7 +311,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNeedsBackup(false);
     } finally { operation.current = false; }
   };
-  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, needsOnboarding, finishOnboarding: () => setNeedsOnboarding(false), accessStage, cancelAccess, locked, deviceUnlockAvailable, unlockWithDevice, lockNow, touch, needsRestore, restoreWithWords, pinAvailable, unlockWithPin, setPin, removePin, disableDeviceBiometrics, newDevices, acknowledgeDevices, login, register, verifyEmail, resendEmail, unlock, logout, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, needsOnboarding, finishOnboarding: () => setNeedsOnboarding(false), accessStage, cancelAccess, locked, deviceUnlockAvailable, unlockWithDevice, lockNow, needsRestore, restoreWithWords, disableDeviceBiometrics, newDevices, acknowledgeDevices, login, register, verifyEmail, resendEmail, unlock, logout, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
 }
 export function useAuth() {
   const value = useContext(Context);
