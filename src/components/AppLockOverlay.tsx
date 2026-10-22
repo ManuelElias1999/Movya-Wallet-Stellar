@@ -49,7 +49,6 @@ export function AppLockOverlay() {
       <View style={styles.card}>
         <View style={styles.icon}><Ionicons name="lock-closed" size={25} color={colors.brand} /></View>
         <Text style={styles.title}>Movya está bloqueada</Text>
-        <Text style={styles.help}>Desbloquea únicamente esta cuenta:</Text>
         <Text translate={false} selectable style={styles.email}>{auth.user.email ?? auth.user.id}</Text>
         <View style={styles.field}>
           <Ionicons name="lock-closed-outline" size={18} color={colors.brand} />
@@ -80,8 +79,7 @@ const styles = StyleSheet.create({
   card: { width: '100%', maxWidth: 420, padding: 20, borderRadius: 24, backgroundColor: colors.surface, shadowColor: '#000000', shadowOpacity: 0.25, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 12 },
   icon: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', borderRadius: 18, backgroundColor: colors.brandSoft },
   title: { marginTop: 12, color: colors.ink, fontSize: 20, fontWeight: '900', textAlign: 'center' },
-  help: { marginTop: 7, color: colors.muted, fontSize: 12, textAlign: 'center' },
-  email: { marginTop: 4, color: colors.brandDark, fontSize: 13, fontWeight: '800', textAlign: 'center' },
+  email: { marginTop: 7, color: colors.brandDark, fontSize: 13, fontWeight: '800', textAlign: 'center' },
   field: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, paddingLeft: 14, paddingRight: 4, borderWidth: 1, borderColor: colors.border, borderRadius: 15, backgroundColor: '#FFFFFF' },
   input: { flex: 1, minWidth: 0, minHeight: 52, color: colors.ink, fontSize: 14 },
   message: { marginTop: 10, color: '#A33B4B', fontSize: 11, lineHeight: 16, textAlign: 'center' },

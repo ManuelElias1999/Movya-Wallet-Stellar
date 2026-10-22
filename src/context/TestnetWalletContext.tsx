@@ -121,8 +121,11 @@ export function TestnetWalletProvider({ children }: { children: ReactNode }) {
     // A key rotated out from another device must stop here, before biometrics.
     assertDeviceCanSign(await readTestnetAccount(stored.accountId), stored.signerPublicKey);
     if (scope !== currentScope.current) throw new Error('La sesión cambió. Revisa el envío nuevamente.');
-    const wallet = await readWallet(userId).catch(() => null); // biometric prompt
-    if (!wallet) throw new Error('No se confirmó tu identidad. La operación no se firmó.');
+    // Authentication opens the signing key once and keeps it only in memory.
+    // Locking, changing account or signing out clears it, so normal operations
+    // in the same unlocked session do not ask for Face ID again.
+    const wallet = auth.configured ? auth.readUnlockedWallet() : await readWallet(userId).catch(() => null);
+    if (!wallet) throw new Error('Movya está bloqueada. Vuelve a desbloquearla antes de confirmar.');
     if (scope !== currentScope.current) throw new Error('La sesión cambió. Revisa el envío nuevamente.');
     const keypair = Keypair.fromSecret(wallet.secret);
     if (keypair.publicKey() !== stored.signerPublicKey) throw new Error('La operación no corresponde a esta wallet.');

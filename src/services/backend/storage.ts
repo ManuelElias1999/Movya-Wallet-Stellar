@@ -31,6 +31,8 @@ const keyValue: KeyValue = {
 const store = createWalletStore(keyValue, secret => Keypair.fromSecret(secret).publicKey());
 
 // Reads the key: shows the biometric prompt when the wallet is protected.
+// AuthContext calls this while unlocking and keeps only an ephemeral copy in
+// memory until Movya locks, changes account or signs out.
 export const readWallet = (userId?: string) => store.readFull(userId);
 // No prompt: account, signer public key and flags only.
 export const readWalletMeta = (userId?: string) => store.readMeta(userId);

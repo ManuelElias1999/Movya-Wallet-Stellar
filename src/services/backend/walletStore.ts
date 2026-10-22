@@ -2,9 +2,8 @@
 //  - metadata (account, signer public key, flags): readable without a prompt,
 //    so the app can show balances and decide what to ask for;
 //  - secret (signing key and recovery words): stored with system biometric
-//    authentication whenever the device supports it, so every signature and
-//    every reveal requires Face ID / Touch ID / fingerprint, even if the phone
-//    itself is unlocked.
+//    authentication whenever the device supports it. Opening Movya may load
+//    it into an account-bound in-memory session; locking clears that session.
 // Pure module with an injected key-value store so the rules are testable.
 
 export type Protection = 'biometric' | 'none';

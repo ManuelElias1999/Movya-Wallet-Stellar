@@ -819,5 +819,11 @@
   "Respaldo copiado. Se borrará del portapapeles en un minuto.": "Backup copied. It will be removed from the clipboard in one minute.",
   "No pudimos copiar el respaldo.": "We could not copy the backup.",
   "Face ID solo puede abrir la cuenta indicada abajo. Para entrar con otra, usa correo y contraseña o “Ingresar con otra cuenta”.": "Face ID can only unlock the account shown below. To use another one, enter its email and password or choose “Use another account”.",
-  "Desbloquear esta cuenta con Face ID o huella": "Unlock this account with Face ID or fingerprint"
+  "Desbloquear esta cuenta con Face ID o huella": "Unlock this account with Face ID or fingerprint",
+  "Desbloquea Movya para continuar.": "Unlock Movya to continue.",
+  "No pudimos cerrar sesión": "We could not sign out",
+  "Se bloqueará esta cuenta sin cerrar la sesión": "This account will lock without signing out",
+  "Volverás al inicio para ingresar o crear otra cuenta": "You will return to the start to sign in or create another account",
+  "Volver a mis 12 palabras": "Return to my 12 words",
+  "Movya está bloqueada. Vuelve a desbloquearla antes de confirmar.": "Movya is locked. Unlock it again before confirming."
 }
