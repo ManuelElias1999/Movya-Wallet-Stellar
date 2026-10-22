@@ -15,6 +15,7 @@ import { clearPendingSweep, writePendingSweep } from '@/services/backend/storage
 import { createRecoveryWallet } from '@/services/stellar/recovery';
 import { prepareSweep, submitSweep } from '@/services/stellar/sweep';
 import { SubmissionUnknownError } from '@/services/stellar/payments';
+import { MIN_PASSWORD_LENGTH } from '@/services/security/passwordStrength';
 import { colors } from '@/theme/tokens';
 
 type Step = 'intro' | 'words' | 'confirm' | 'done';
@@ -88,7 +89,7 @@ export default function EmergencyTransferScreen() {
           <Text style={styles.warning}>Tu dirección cambiará. Las personas que te tengan guardado verán un aviso de cambio de dirección. Si tu cuenta tiene kit de recuperación, quedará una pequeña reserva de XLM en la wallet anterior.</Text>
           <Text style={styles.label}>Tu contraseña de Movya</Text>
           <View style={styles.field}><TextInput value={password} onChangeText={setPassword} secureTextEntry autoCapitalize="none" autoCorrect={false} placeholder="Contraseña" placeholderTextColor={colors.muted} editable={!busy} style={styles.input} /></View>
-          <PressableScale disabled={busy || password.length < 12 || !screen.ready || !wallet.account} onPress={() => void begin()} style={[styles.button, styles.danger, (busy || password.length < 12 || !screen.ready || !wallet.account) && styles.disabled]}><Text style={styles.buttonText}>Crear wallet nueva</Text></PressableScale>
+          <PressableScale disabled={busy || password.length < MIN_PASSWORD_LENGTH || !screen.ready || !wallet.account} onPress={() => void begin()} style={[styles.button, styles.danger, (busy || password.length < MIN_PASSWORD_LENGTH || !screen.ready || !wallet.account) && styles.disabled]}><Text style={styles.buttonText}>Crear wallet nueva</Text></PressableScale>
         </> : step === 'words' && words ? <>
           <Text style={styles.title}>Escribe las 12 palabras de tu wallet nueva</Text>
           <View style={styles.words}>{words.map((word, i) => <View key={i} style={styles.word}><Text style={styles.number}>{i + 1}</Text><Text translate={false} style={styles.wordText}>{word}</Text></View>)}</View>

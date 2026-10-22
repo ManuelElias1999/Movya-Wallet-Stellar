@@ -3,6 +3,7 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex, hexToBytes, randomBytes } from '@noble/hashes/utils.js';
 import { Buffer } from 'buffer';
 import { validateRecoveryMaterial, type RecoveryMaterial } from '../stellar/recovery';
+import { MIN_PASSWORD_LENGTH } from '../security/passwordStrength';
 import { deriveAccountKeys, wipeKeys, type AccountKeys } from './accountKeys';
 import { deriveBackupKey } from './passwordKey';
 
@@ -23,7 +24,7 @@ const passwordOf = (credential: BackupCredential) => typeof credential === 'stri
 const payloadOf = (material: RecoveryMaterial) => JSON.stringify({ secret: material.secret, ...(material.mnemonic ? { mnemonic: material.mnemonic } : {}), ...(material.accountId ? { accountId: material.accountId } : {}) });
 
 async function encrypt(material: RecoveryMaterial, version: 1 | 2, password: string, userId: string): Promise<WalletBackup> {
-  if (password.length < 12) throw new Error('Usa una contraseña de al menos 12 caracteres.');
+  if (password.length < MIN_PASSWORD_LENGTH) throw new Error(`Usa una contraseña de al menos ${MIN_PASSWORD_LENGTH} caracteres.`);
   if (material.accountId) throw new Error('Una wallet con clave rotada necesita el respaldo v3.');
   const publicKey = validateRecoveryMaterial(material);
   const salt = randomBytes(16); const nonce = randomBytes(12); const passwordBytes = bytes(password);
