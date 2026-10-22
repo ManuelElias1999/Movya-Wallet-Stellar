@@ -37,13 +37,6 @@ export function AppLockOverlay() {
     catch (failure) { setMessage(failure instanceof Error ? failure.message : 'No se confirmó tu identidad.'); }
     finally { setBusy(false); }
   };
-  const useAnotherAccount = async () => {
-    if (busy) return;
-    setBusy(true); setMessage('');
-    try { await auth.logout(); }
-    catch (failure) { setMessage(failure instanceof Error ? failure.message : 'No pudimos cerrar esta sesión.'); setBusy(false); }
-  };
-
   return <View accessibilityViewIsModal style={styles.overlay}>
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.center}>
       <View style={styles.card}>
@@ -67,7 +60,6 @@ export function AppLockOverlay() {
         {auth.deviceUnlockAvailable ? <PressableScale disabled={busy} onPress={() => void unlockWithDevice()} style={styles.secondary}>
           <Ionicons name="finger-print-outline" size={20} color={colors.brand} /><Text style={styles.secondaryText}>Usar Face ID o huella</Text>
         </PressableScale> : null}
-        <PressableScale disabled={busy} onPress={() => void useAnotherAccount()} style={styles.accountButton}><Text style={styles.accountText}>Usar otra cuenta</Text></PressableScale>
       </View>
     </KeyboardAvoidingView>
   </View>;
@@ -87,7 +79,5 @@ const styles = StyleSheet.create({
   primaryText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
   secondary: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10, borderRadius: 16, backgroundColor: colors.brandSoft },
   secondaryText: { color: colors.brandDark, fontSize: 13, fontWeight: '800' },
-  accountButton: { minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 5 },
-  accountText: { color: colors.muted, fontSize: 12, fontWeight: '700' },
   disabled: { opacity: 0.45 },
 });

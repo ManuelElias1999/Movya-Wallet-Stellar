@@ -825,5 +825,6 @@
   "Se bloqueará esta cuenta sin cerrar la sesión": "This account will lock without signing out",
   "Volverás al inicio para ingresar o crear otra cuenta": "You will return to the start to sign in or create another account",
   "Volver a mis 12 palabras": "Return to my 12 words",
-  "Movya está bloqueada. Vuelve a desbloquearla antes de confirmar.": "Movya is locked. Unlock it again before confirming."
+  "Movya está bloqueada. Vuelve a desbloquearla antes de confirmar.": "Movya is locked. Unlock it again before confirming.",
+  "Volverás al inicio y podrás usar Face ID o tus datos": "You will return to the start and can use Face ID or your credentials"
 }

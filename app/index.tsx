@@ -30,7 +30,7 @@ export default function WelcomeScreen() {
   const [pendingEmail, setPendingEmail] = useState('');
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
-  const [identity, setIdentity] = useState(auth.user?.email ?? '');
+  const [identity, setIdentity] = useState('');
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [mfaCode, setMfaCode] = useState(''); const [needsMfa, setNeedsMfa] = useState(false);
@@ -168,7 +168,7 @@ export default function WelcomeScreen() {
                 </LinearGradient>
               </PressableScale>
               {busy && auth.accessStage ? <PressableScale onPress={auth.cancelAccess} style={styles.demoButton}><Text style={styles.demoText}>Cancelar y volver a intentar</Text></PressableScale> : null}
-              {auth.user && auth.locked && auth.deviceUnlockAvailable && !busy ? <PressableScale onPress={() => { setBusy(true); setMessage(''); void auth.unlockWithDevice().catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}>
+              {auth.user && auth.deviceUnlockAvailable && !busy ? <PressableScale onPress={() => { setBusy(true); setMessage(''); void auth.unlockWithDevice().catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}>
                 <Ionicons color={colors.brand} name="finger-print-outline" size={18} /><Text style={styles.demoText}>Desbloquear con Face ID o huella</Text>
               </PressableScale> : null}
               {auth.user && auth.needsRestore && !busy ? <PressableScale onPress={() => router.push('/restore-words')} style={styles.demoButton}>
@@ -180,7 +180,6 @@ export default function WelcomeScreen() {
                 <PressableScale disabled={busy} onPress={() => { setPendingEmail(''); setCode(''); setMessage(''); }} style={styles.demoButton}><Text style={styles.demoText}>Ya confirmé mi correo · Ingresar</Text></PressableScale>
               </> : null}
               {!auth.configured ? <PressableScale onPress={() => router.replace('/(tabs)')} style={styles.demoButton}><Text style={styles.demoText}>Continuar con mi wallet de pruebas</Text></PressableScale> : null}
-              {auth.user && !auth.ready && !busy ? <PressableScale onPress={() => { setBusy(true); void auth.logout().catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}><Text style={styles.demoText}>Ingresar con otra cuenta</Text></PressableScale> : null}
             </BlurView>
 
             <View style={styles.stellarFooter}>

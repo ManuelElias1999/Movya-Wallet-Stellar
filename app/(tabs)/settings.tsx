@@ -1,4 +1,4 @@
-import { Alert, Text } from '@/i18n/primitives';
+import { Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -28,13 +28,7 @@ export default function SettingsScreen() {
   const auth = useAuth();
   const displayName = getDisplayName(auth.user?.user_metadata);
   const [notifications, setNotifications] = useState(true);
-  const [signingOut, setSigningOut] = useState(false);
-  const signOut = async () => {
-    if (signingOut) return;
-    setSigningOut(true);
-    try { await auth.logout(); router.replace('/'); }
-    catch (failure) { Alert.alert('No pudimos cerrar sesión', failure instanceof Error ? failure.message : 'Inténtalo nuevamente.'); setSigningOut(false); }
-  };
+  const signOut = () => { auth.closeSession(); router.replace('/'); };
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <InternalScreenBackground />
@@ -72,10 +66,7 @@ export default function SettingsScreen() {
             <Text style={styles.rowSubtitle}>{language === 'es' ? 'Español (Bolivia)' : 'Inglés (Estados Unidos)'}</Text>
           </View>
         </View>
-        {auth.user ? <>
-          <PressableScale onPress={auth.lockNow} style={[styles.card, styles.row, { marginTop: 24 }]}><Ionicons name="lock-closed-outline" size={20} color={colors.brand} /><View style={styles.rowCopy}><Text style={styles.rowTitle}>Bloquear Movya</Text><Text style={styles.rowSubtitle}>Se bloqueará esta cuenta sin cerrar la sesión</Text></View></PressableScale>
-          <PressableScale disabled={signingOut} onPress={() => void signOut()} style={[styles.card, styles.row, { marginTop: 12 }]}><Ionicons name="log-out-outline" size={20} color="#B84252" /><View style={styles.rowCopy}><Text style={styles.dangerTitle}>{signingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}</Text><Text style={styles.rowSubtitle}>Volverás al inicio para ingresar o crear otra cuenta</Text></View></PressableScale>
-        </> : <PressableScale onPress={() => router.replace('/')} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>Crear cuenta o ingresar con correo</Text></PressableScale>}
+        {auth.user ? <PressableScale onPress={signOut} style={[styles.card, styles.row, { marginTop: 24 }]}><Ionicons name="log-out-outline" size={20} color="#B84252" /><View style={styles.rowCopy}><Text style={styles.dangerTitle}>Cerrar sesión</Text><Text style={styles.rowSubtitle}>Volverás al inicio y podrás usar Face ID o tus datos</Text></View></PressableScale> : <PressableScale onPress={() => router.replace('/')} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>Crear cuenta o ingresar con correo</Text></PressableScale>}
       </ScrollView>
     </SafeAreaView>
   );

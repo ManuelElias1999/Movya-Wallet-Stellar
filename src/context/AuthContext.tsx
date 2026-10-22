@@ -21,7 +21,7 @@ type Auth = {
   configured: boolean; initialized: boolean; user: User | null; ready: boolean; error: string; needsBackup: boolean;
   accessStage: string; cancelAccess: () => void; needsOnboarding: boolean; finishOnboarding: () => void;
   // Locked: signed in, but the wallet stays closed until biometrics or the password.
-  locked: boolean; deviceUnlockAvailable: boolean; unlockWithDevice: () => Promise<void>; lockNow: () => void; touch: () => void;
+  locked: boolean; deviceUnlockAvailable: boolean; unlockWithDevice: () => Promise<void>; lockNow: () => void; closeSession: () => void; touch: () => void;
   // The sign-in worked but the backup did not open (for example after a
   // password reset): restore with the wallet's 12 words or the recovery kit.
   needsRestore: boolean; restoreWithWords: (password: string, words: string, mfaCode?: string) => Promise<'restored' | 'rotated'>;
@@ -98,7 +98,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!readyRef.current || operation.current) return;
     unlockedWallet.clear();
     setLocked(true);
-  }, []);
+  }, [unlockedWallet]);
+  const closeSession = useCallback(() => {
+    accessController.current?.abort(new Error('La wallet se cerró. Vuelve a desbloquearla.'));
+    unlockedWallet.clear();
+    setReady(false); setLocked(Boolean(sessionOwner.current));
+    lastActive.current = Date.now();
+  }, [unlockedWallet]);
   const touch = useCallback(() => {
     if (readyRef.current) lastActive.current = Date.now();
   }, []);
@@ -120,14 +126,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const decision = lockDecision({ state, now: Date.now(), backgroundAt: backgroundAt.current });
       backgroundAt.current = decision.backgroundAt;
       if (decision.expire && sessionOwner.current) {
-        void endLocalSession().catch(failure => setError(failure instanceof Error ? failure.message : 'No pudimos cerrar la sesión local.'));
+        // Return to the full sign-in screen, but keep this device's protected
+        // session so registered biometrics can offer quick access again.
+        closeSession();
       } else if (state === 'active') {
         // Time spent in another app does not count as foreground inactivity.
         lastActive.current = Date.now();
       }
     });
     return () => subscription.remove();
-  }, [endLocalSession]);
+  }, [closeSession]);
   useEffect(() => {
     const timer = setInterval(() => {
       if (AppState.currentState === 'active' && readyRef.current && !operation.current && idleLockDue(Date.now(), lastActive.current)) lockNow();
@@ -355,7 +363,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNeedsBackup(false);
     } finally { operation.current = false; }
   };
-  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, needsOnboarding, finishOnboarding: () => setNeedsOnboarding(false), accessStage, cancelAccess, locked, deviceUnlockAvailable, unlockWithDevice, lockNow, touch, needsRestore, restoreWithWords, disableDeviceBiometrics, newDevices, acknowledgeDevices, login, register, verifyEmail, resendEmail, unlock, logout, readUnlockedWallet, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, needsOnboarding, finishOnboarding: () => setNeedsOnboarding(false), accessStage, cancelAccess, locked, deviceUnlockAvailable, unlockWithDevice, lockNow, closeSession, touch, needsRestore, restoreWithWords, disableDeviceBiometrics, newDevices, acknowledgeDevices, login, register, verifyEmail, resendEmail, unlock, logout, readUnlockedWallet, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
 }
 export function useAuth() {
   const value = useContext(Context);
