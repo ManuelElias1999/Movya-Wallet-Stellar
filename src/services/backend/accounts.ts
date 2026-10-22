@@ -1,10 +1,9 @@
 import { Keypair } from '@stellar/stellar-sdk/base';
-import { Platform } from 'react-native';
 import { requireBackend } from './client';
 import { assertKdfSalt, deriveAccountKeys, newKdfSalt, wipeKeys, type AccountKeys } from './accountKeys';
 import { rememberContactsKey } from './contactBackup';
 import { completeSecondFactor, MfaRequiredError, needsSecondFactor } from './mfa';
-import { clearPendingSweep, readPendingSweep, readWallet, updateWalletMeta, writeWallet, type StoredWallet } from './storage';
+import { clearPendingSweep, readPendingSweep, readWallet, readWalletMeta, updateWalletMeta, writeWallet, type StoredWallet } from './storage';
 import { decryptRecovery, encryptRecoveryV3, fingerprintBackup, type WalletBackup } from './vault';
 import { recoverWallet, type RecoveryProgress, type WalletRecord } from './walletRecovery';
 import { createRecoveryWallet, validateRecoveryMaterial, walletFromMnemonic, type RecoveryMaterial } from '../stellar/recovery';
@@ -143,8 +142,9 @@ export async function unlockUserWallet(userId: string, password: string, options
     // The local key sits behind biometrics; if the prompt is dismissed or the
     // biometric set changed, fall back to the encrypted backup.
     readLocal: async owner => { try { return await readWallet(owner); } catch { return null; } },
+    readMeta: readWalletMeta,
     writeLocal: async (wallet, owner) => { await writeWallet(wallet, owner); opened = wallet; },
-  }, userId, password, false, { signal: options.signal, onProgress: options.onProgress, keys: options.keys, allowLocalCache: Platform.OS !== 'web' });
+  }, userId, password, false, { signal: options.signal, onProgress: options.onProgress, keys: options.keys, allowLocalCache: false });
   if (!opened) throw new Error('No pudimos abrir tu wallet. Vuelve a intentarlo.');
   let wallet: StoredWallet = opened;
   let row = await readBackupRow(userId);
@@ -245,6 +245,15 @@ export async function verifyPasswordOffline(userId: string, password: string) {
   const row = await readBackupRow(userId);
   if (!row) throw new Error('Tu cuenta todavía no tiene una wallet.');
   await decryptRecovery(row.backup, password, userId, row.public_key);
+}
+
+// Opens the encrypted server backup with the typed password. Recovery words
+// do not also require a second biometric prompt: the person explicitly chose
+// password authentication, and the decrypted material exists only in memory.
+export async function readRecoveryWithPassword(userId: string, password: string) {
+  const row = await readBackupRow(userId);
+  if (!row) throw new Error('Tu cuenta todavía no tiene una wallet.');
+  return decryptRecovery(row.backup, password, userId, row.public_key);
 }
 
 // ---------------------------------------------------------------------------

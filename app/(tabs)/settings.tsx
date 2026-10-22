@@ -29,6 +29,21 @@ export default function SettingsScreen() {
   const displayName = getDisplayName(auth.user?.user_metadata);
   const [busy, setBusy] = useState(false);
   const [notifications, setNotifications] = useState(true);
+  const signOut = () => {
+    setBusy(true);
+    void auth.logout()
+      .then(() => router.replace('/'))
+      .catch(error => Alert.alert('No se pudo cerrar sesión', error instanceof Error ? error.message : 'Inténtalo nuevamente.'))
+      .finally(() => setBusy(false));
+  };
+  const confirmSignOut = () => Alert.alert(
+    '¿Cerrar sesión en este dispositivo?',
+    'Se eliminará el acceso rápido de este teléfono. Para volver a entrar necesitarás tu correo, contraseña y, si la activaste, la verificación en dos pasos.\n\nSi solo quieres proteger Movya por un momento, usa «Bloquear ahora» en Seguridad: así podrás volver con tu PIN o Face ID.',
+    [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Cerrar sesión', style: 'destructive', onPress: signOut },
+    ],
+  );
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <InternalScreenBackground />
@@ -66,7 +81,7 @@ export default function SettingsScreen() {
             <Text style={styles.rowSubtitle}>{language === 'es' ? 'Español (Bolivia)' : 'Inglés (Estados Unidos)'}</Text>
           </View>
         </View>
-        {auth.user ? <PressableScale disabled={busy} onPress={() => { setBusy(true); void auth.logout().then(() => router.replace('/')).catch(e => Alert.alert('No se pudo cerrar sesión', e.message)).finally(() => setBusy(false)); }} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>{busy ? 'Cerrando sesión…' : 'Cerrar sesión'}</Text></PressableScale> : <PressableScale onPress={() => router.replace('/')} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>Crear cuenta o ingresar con correo</Text></PressableScale>}
+        {auth.user ? <PressableScale disabled={busy} onPress={confirmSignOut} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>{busy ? 'Cerrando sesión…' : 'Cerrar sesión'}</Text></PressableScale> : <PressableScale onPress={() => router.replace('/')} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>Crear cuenta o ingresar con correo</Text></PressableScale>}
       </ScrollView>
     </SafeAreaView>
   );

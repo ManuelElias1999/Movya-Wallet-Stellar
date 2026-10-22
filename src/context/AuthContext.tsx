@@ -2,7 +2,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 import { backendConfigured, bindAccessSignal, requireBackend, supabase } from '@/services/backend/client';
-import { restoreWithWords as restoreWalletWithWords, signInSecure, signUpSecure, unlockUserWallet, verifyPasswordOffline } from '@/services/backend/accounts';
+import { readRecoveryWithPassword, restoreWithWords as restoreWalletWithWords, signInSecure, signUpSecure, unlockUserWallet, verifyPasswordOffline } from '@/services/backend/accounts';
 import { wipeKeys, type AccountKeys } from '@/services/backend/accountKeys';
 import { rememberContactsKey } from '@/services/backend/contactBackup';
 import { currentDeviceId, forgetDeviceId, listDevices, markDevicesReviewed, newDevicesSinceLastReview, revokeOtherDevices, touchDevice, type DeviceRow } from '@/services/backend/devices';
@@ -10,7 +10,7 @@ import { pinLockFor } from '@/services/security/pinStore';
 import { PinWipedError } from '@/services/security/pinLock';
 import { assertPasswordNotLeaked } from '@/services/backend/passwordPolicy';
 import { assertStrongPassword } from '@/services/security/passwordStrength';
-import { readWallet, readWalletMeta, clearWalletOnLogout, removeWallet, updateWalletMeta } from '@/services/backend/storage';
+import { readWallet, readWalletMeta, clearWalletOnLogout, disableLocalSigning, removeWallet, updateWalletMeta } from '@/services/backend/storage';
 import { revealRecovery } from '@/services/backend/revealRecovery';
 import type { RecoveryMaterial } from '@/services/stellar/recovery';
 import { assertAccessActive, withAccessDeadline } from '@/services/backend/accessOperation';
@@ -28,6 +28,7 @@ type Auth = {
   needsRestore: boolean; restoreWithWords: (password: string, words: string, mfaCode?: string) => Promise<'restored' | 'rotated'>;
   // Movya PIN: unlocks the app; never opens the key by itself.
   pinAvailable: boolean; unlockWithPin: (pin: string) => Promise<void>; setPin: (password: string, pin: string) => Promise<void>; removePin: () => Promise<void>;
+  disableDeviceBiometrics: () => Promise<void>;
   // Devices registered since this device last looked ("new sign-in" alert).
   newDevices: DeviceRow[]; acknowledgeDevices: () => Promise<void>;
   register: (email: string, password: string, name: string, confirmation: string) => Promise<boolean>;
@@ -281,6 +282,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await pinLockFor(session.user.id).remove();
     setPinAvailable(false);
   };
+  const disableDeviceBiometrics = async () => {
+    if (!session) throw new Error('Ingresa con tu correo antes de cambiar la protección de este dispositivo.');
+    await disableLocalSigning(session.user.id);
+    await pinLockFor(session.user.id).remove().catch(() => undefined);
+    setDeviceUnlockAvailable(false); setPinAvailable(false);
+  };
   const restoreWithWords = async (password: string, words: string, mfaCode?: string) => {
     if (!session?.user.email) throw new Error('Ingresa con tu correo antes de restaurar.');
     const email = session.user.email;
@@ -327,17 +334,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!session || !ready || operation.current) throw new Error('Abre tu wallet antes de ver el respaldo.');
     operation.current = true;
     const owner = session.user.id; const current = revision.current;
+    let recovery: RecoveryMaterial | null = null;
     try {
       return await revealRecovery({
         owner, password, stillCurrent: () => current === revision.current && sessionOwner.current === owner,
         // Checked against the encrypted backup: no new session, so it also
         // works with two-step verification.
         authenticate: async candidate => {
-          try { await verifyPasswordOffline(owner, candidate); return owner; }
+          try { recovery = await readRecoveryWithPassword(owner, candidate); return owner; }
           catch { throw new Error('La contraseña no es correcta o no pudimos verificarla.'); }
         },
-        // Password AND biometrics: reading the key shows the system prompt.
-        read: () => readWallet(owner),
+        // Password mode decrypts the authenticated backup in memory and does
+        // not immediately ask for Face ID a second time.
+        read: async () => recovery,
       });
     } finally { operation.current = false; }
   };
@@ -351,7 +360,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNeedsBackup(false);
     } finally { operation.current = false; }
   };
-  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, needsOnboarding, finishOnboarding: () => setNeedsOnboarding(false), accessStage, cancelAccess, locked, deviceUnlockAvailable, unlockWithDevice, lockNow, touch, needsRestore, restoreWithWords, pinAvailable, unlockWithPin, setPin, removePin, newDevices, acknowledgeDevices, login, register, verifyEmail, resendEmail, unlock, logout, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, needsOnboarding, finishOnboarding: () => setNeedsOnboarding(false), accessStage, cancelAccess, locked, deviceUnlockAvailable, unlockWithDevice, lockNow, touch, needsRestore, restoreWithWords, pinAvailable, unlockWithPin, setPin, removePin, disableDeviceBiometrics, newDevices, acknowledgeDevices, login, register, verifyEmail, resendEmail, unlock, logout, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
 }
 export function useAuth() {
   const value = useContext(Context);

@@ -94,6 +94,17 @@ export function createWalletStore(kv: KeyValue, signerOf: (secret: string) => st
       await kv.set(metaKey(userId), JSON.stringify(next), false);
       return next;
     },
+    // Keep only the public metadata required for balances and history. This is
+    // the safe choice for a borrowed/shared phone: the signing key is removed
+    // and every signing entry point already refuses non-biometric wallets.
+    async disableSigning(userId?: string) {
+      const meta = await readMeta(userId);
+      if (!meta) throw new Error('No hay una wallet guardada en este dispositivo.');
+      await kv.remove(secretKey(userId));
+      const next: WalletMeta = { ...meta, protection: 'none' };
+      await kv.set(metaKey(userId), JSON.stringify(next), false);
+      return next;
+    },
     async remove(userId?: string) {
       await kv.remove(secretKey(userId));
       await kv.remove(metaKey(userId));
