@@ -34,7 +34,7 @@ const Context = createContext<WalletContext | null>(null);
 export function TestnetWalletProvider({ children }: { children: ReactNode }) {
   const auth = useAuth();
   const userId = auth.user?.id;
-  const signingScope = auth.configured ? auth.ready ? userId : null : 'developer';
+  const signingScope = auth.configured ? auth.ready && !auth.locked ? userId : null : 'developer';
   const currentScope = useRef(signingScope);
   currentScope.current = signingScope;
   const [meta, setMeta] = useState<WalletMeta | null>(null);

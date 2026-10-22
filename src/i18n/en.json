@@ -805,5 +805,19 @@
   "Podrás volver a entrar directamente con Face ID": "You can return directly with Face ID",
   "Movya se bloquea automáticamente después de 5 minutos fuera de la app": "Movya locks automatically after 5 minutes outside the app",
   "Completa únicamente los recuadros {0} usando el respaldo que guardaste.": "Complete only boxes {0} using the backup you saved.",
-  "Escribe aquí": "Enter here"
+  "Escribe aquí": "Enter here",
+  "Movya está bloqueada": "Movya is locked",
+  "Desbloquea únicamente esta cuenta:": "Unlock only this account:",
+  "Entrar con contraseña": "Sign in with password",
+  "Usar Face ID o huella": "Use Face ID or fingerprint",
+  "Usar otra cuenta": "Use another account",
+  "No pudimos abrir Movya.": "We could not unlock Movya.",
+  "No se confirmó tu identidad.": "Your identity was not confirmed.",
+  "No pudimos cerrar esta sesión.": "We could not close this session.",
+  "Se bloqueará esta cuenta sin cerrar la app": "This account will lock without closing the app",
+  "Se bloquea tras 5 minutos sin usarla; después de 5 minutos fuera, se cierra la sesión": "It locks after 5 minutes of inactivity; after 5 minutes away, the session ends",
+  "Respaldo copiado. Se borrará del portapapeles en un minuto.": "Backup copied. It will be removed from the clipboard in one minute.",
+  "No pudimos copiar el respaldo.": "We could not copy the backup.",
+  "Face ID solo puede abrir la cuenta indicada abajo. Para entrar con otra, usa correo y contraseña o “Ingresar con otra cuenta”.": "Face ID can only unlock the account shown below. To use another one, enter its email and password or choose “Use another account”.",
+  "Desbloquear esta cuenta con Face ID o huella": "Unlock this account with Face ID or fingerprint"
 }

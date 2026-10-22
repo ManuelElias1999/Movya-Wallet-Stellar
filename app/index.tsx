@@ -95,7 +95,8 @@ export default function WelcomeScreen() {
 
               <View style={styles.cardHeading}>
                 <Text style={styles.title}>{pendingEmail ? 'Confirma tu correo' : auth.locked && auth.user ? 'Tu wallet está bloqueada' : authMode === 'login' ? 'Bienvenido de nuevo' : 'Crea tu cuenta Movya'}</Text>
-                <Text style={styles.description}>{pendingEmail ? `Escribe el código que enviamos a ${pendingEmail}.` : authMode === 'login' ? 'Tu cuenta, tus contactos y tu wallet te esperan.' : 'Ingresa tus datos y tendrás tu propia wallet.'}</Text>
+                <Text style={styles.description}>{pendingEmail ? `Escribe el código que enviamos a ${pendingEmail}.` : auth.locked && auth.user ? 'Face ID solo puede abrir la cuenta indicada abajo. Para entrar con otra, usa correo y contraseña o “Ingresar con otra cuenta”.' : authMode === 'login' ? 'Tu cuenta, tus contactos y tu wallet te esperan.' : 'Ingresa tus datos y tendrás tu propia wallet.'}</Text>
+                {auth.locked && auth.user?.email ? <Text translate={false} style={styles.lockedAccount}>{auth.user.email}</Text> : null}
               </View>
 
               {authMode === 'register' ? (
@@ -169,7 +170,7 @@ export default function WelcomeScreen() {
               </PressableScale>
               {busy && auth.accessStage ? <PressableScale onPress={auth.cancelAccess} style={styles.demoButton}><Text style={styles.demoText}>Cancelar y volver a intentar</Text></PressableScale> : null}
               {auth.user && auth.locked && auth.deviceUnlockAvailable && !busy ? <PressableScale onPress={() => { setBusy(true); setMessage(''); void auth.unlockWithDevice().catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}>
-                <Ionicons color={colors.brand} name="finger-print-outline" size={18} /><Text style={styles.demoText}>Desbloquear con Face ID o huella</Text>
+                <Ionicons color={colors.brand} name="finger-print-outline" size={18} /><Text style={styles.demoText}>Desbloquear esta cuenta con Face ID o huella</Text>
               </PressableScale> : null}
               {auth.user && auth.needsRestore && !busy ? <PressableScale onPress={() => router.push('/restore-words')} style={styles.demoButton}>
                 <Ionicons color={colors.brand} name="reader-outline" size={18} /><Text style={styles.demoText}>Restaurar con mis 12 palabras</Text>
@@ -203,6 +204,7 @@ const styles = StyleSheet.create({
   authCard: { overflow: 'hidden', borderRadius: 30, borderWidth: 1, borderColor: 'rgba(255,255,255,0.8)', backgroundColor: 'rgba(244,250,255,0.48)', padding: 18, shadowColor: colors.navy, shadowOpacity: 0.2, shadowRadius: 26, shadowOffset: { width: 0, height: 14 }, elevation: 8 }, cardShine: { position: 'absolute', left: 1, right: 1, top: 1, height: '30%', borderTopLeftRadius: 29, borderTopRightRadius: 29, backgroundColor: 'rgba(255,255,255,0.18)' },
   modeTabs: { flexDirection: 'row', padding: 4, borderRadius: 18, backgroundColor: 'rgba(18,75,151,0.1)' }, modeTab: { flex: 1, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }, modeTabActive: { backgroundColor: 'rgba(255,255,255,0.88)', shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 2 }, modeText: { color: '#55708E', fontSize: 13, fontWeight: '800' }, modeTextActive: { color: colors.brandDark },
   cardHeading: { marginVertical: 20 }, title: { color: colors.ink, fontSize: 21, fontWeight: '900', letterSpacing: -0.35 }, description: { color: '#52708D', fontSize: 12, lineHeight: 17, marginTop: 5 },
+  lockedAccount: { color: colors.brandDark, fontSize: 12, fontWeight: '900', marginTop: 7 },
   identityTabs: { flexDirection: 'row', gap: 9, marginBottom: 10 }, identityTab: { flex: 1, height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(111,145,183,0.24)', backgroundColor: 'rgba(233,242,251,0.62)' }, identityTabActive: { borderColor: '#8BB9FA', backgroundColor: 'rgba(231,241,255,0.94)' }, identityText: { color: colors.muted, fontSize: 12, fontWeight: '700' }, identityTextActive: { color: colors.brand },
   field: { height: 56, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10, paddingHorizontal: 14, borderRadius: 17, borderWidth: 1, borderColor: 'rgba(151,181,216,0.6)', backgroundColor: 'rgba(255,255,255,0.78)', shadowColor: colors.navy, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } }, input: { flex: 1, color: colors.ink, fontSize: 14 }, forgot: { alignSelf: 'flex-end', color: colors.brand, fontSize: 11, fontWeight: '800', marginTop: 2 }, terms: { color: '#607995', fontSize: 9, lineHeight: 14, marginTop: 2 },
   passwordChecklist: { marginTop: 4, padding: 12, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.55)', gap: 7 }, requirement: { flexDirection: 'row', alignItems: 'center', gap: 7 }, requirementText: { color: '#71809B', fontSize: 10, fontWeight: '700' }, requirementMet: { color: '#14845F' },

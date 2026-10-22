@@ -65,7 +65,7 @@ export default function SettingsScreen() {
             <Text style={styles.rowSubtitle}>{language === 'es' ? 'Español (Bolivia)' : 'Inglés (Estados Unidos)'}</Text>
           </View>
         </View>
-        {auth.user ? <PressableScale onPress={() => { auth.lockNow(); router.replace('/'); }} style={[styles.card, styles.row, { marginTop: 24 }]}><Ionicons name="lock-closed-outline" size={20} color={colors.brand} /><View style={styles.rowCopy}><Text style={styles.rowTitle}>Bloquear Movya</Text><Text style={styles.rowSubtitle}>Podrás volver a entrar directamente con Face ID</Text></View></PressableScale> : <PressableScale onPress={() => router.replace('/')} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>Crear cuenta o ingresar con correo</Text></PressableScale>}
+        {auth.user ? <PressableScale onPress={auth.lockNow} style={[styles.card, styles.row, { marginTop: 24 }]}><Ionicons name="lock-closed-outline" size={20} color={colors.brand} /><View style={styles.rowCopy}><Text style={styles.rowTitle}>Bloquear Movya</Text><Text style={styles.rowSubtitle}>Se bloqueará esta cuenta sin cerrar la app</Text></View></PressableScale> : <PressableScale onPress={() => router.replace('/')} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>Crear cuenta o ingresar con correo</Text></PressableScale>}
       </ScrollView>
     </SafeAreaView>
   );

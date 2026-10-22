@@ -14,13 +14,13 @@ import type { RecoveryMaterial } from '@/services/stellar/recovery';
 import { assertAccessActive, withAccessDeadline } from '@/services/backend/accessOperation';
 import type { RecoveryProgress } from '@/services/backend/walletRecovery';
 import { accessSteps } from '@/services/backend/accessFlow';
-import { lockDecision } from '@/services/security/appLock';
+import { idleLockDue, lockDecision } from '@/services/security/appLock';
 
 type Auth = {
   configured: boolean; initialized: boolean; user: User | null; ready: boolean; error: string; needsBackup: boolean;
   accessStage: string; cancelAccess: () => void; needsOnboarding: boolean; finishOnboarding: () => void;
   // Locked: signed in, but the wallet stays closed until biometrics or the password.
-  locked: boolean; deviceUnlockAvailable: boolean; unlockWithDevice: () => Promise<void>; lockNow: () => void;
+  locked: boolean; deviceUnlockAvailable: boolean; unlockWithDevice: () => Promise<void>; lockNow: () => void; touch: () => void;
   // The sign-in worked but the backup did not open (for example after a
   // password reset): restore with the wallet's 12 words or the recovery kit.
   needsRestore: boolean; restoreWithWords: (password: string, words: string, mfaCode?: string) => Promise<'restored' | 'rotated'>;
@@ -56,6 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const revision = useRef(0);
   const sessionOwner = useRef<string | null>(null);
   const backgroundAt = useRef<number | null>(null);
+  const lastActive = useRef(Date.now());
   const readyRef = useRef(false);
   readyRef.current = ready;
 
@@ -91,15 +92,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ---- automatic lock --------------------------------------------------
   const lockNow = useCallback(() => {
     if (!readyRef.current || operation.current) return;
-    setReady(false); setLocked(true);
+    setLocked(true);
+  }, []);
+  const touch = useCallback(() => {
+    if (readyRef.current) lastActive.current = Date.now();
+  }, []);
+  const endLocalSession = useCallback(async () => {
+    const owner = sessionOwner.current;
+    accessController.current?.abort(new Error('Tu sesión terminó después de 5 minutos fuera de Movya.'));
+    revision.current++;
+    setReady(false); setLocked(false); setNeedsRestore(false); setNeedsBackup(false); setNeedsOnboarding(false);
+    setDeviceUnlockAvailable(false); setNewDevices([]); setSession(null); sessionOwner.current = null;
+    try { if (owner) await clearWalletOnLogout(owner); }
+    finally {
+      const result = await requireBackend().auth.signOut({ scope: 'local' });
+      if (result.error) throw result.error;
+    }
   }, []);
   useEffect(() => {
     const subscription = AppState.addEventListener('change', state => {
       const decision = lockDecision({ state, now: Date.now(), backgroundAt: backgroundAt.current });
       backgroundAt.current = decision.backgroundAt;
-      if (decision.lock) lockNow();
+      if (decision.expire && sessionOwner.current) {
+        void endLocalSession().catch(failure => setError(failure instanceof Error ? failure.message : 'No pudimos cerrar la sesión local.'));
+      } else if (state === 'active') {
+        // Time spent in another app does not count as foreground inactivity.
+        lastActive.current = Date.now();
+      }
     });
     return () => subscription.remove();
+  }, [endLocalSession]);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (AppState.currentState === 'active' && readyRef.current && !operation.current && idleLockDue(Date.now(), lastActive.current)) lockNow();
+    }, 1_000);
+    return () => clearInterval(timer);
   }, [lockNow]);
 
   const runAccess = async <T,>(work: (signal: AbortSignal) => Promise<T>): Promise<T> => {
@@ -121,6 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // straight to the dashboard.
     setNeedsBackup(current => current || !backupAcknowledged || steps.needsBackup);
     setNeedsOnboarding(current => current || steps.needsOnboarding);
+    lastActive.current = Date.now();
     setLocked(false); setNeedsRestore(false); setDeviceUnlockAvailable(protection);
     setReady(true);
   };
@@ -275,15 +303,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
   const logout = async () => {
     if (operation.current) throw new Error('Espera a que termine el acceso a tu wallet.');
-    const id = session?.user.id;
-    revision.current++; setReady(false); setLocked(false); setNeedsRestore(false); setNeedsBackup(false); setNeedsOnboarding(false); setSession(null); sessionOwner.current = null;
-    // Keep the native per-user wallet protected; all routes/signing stay locked.
-    // Web private keys leave memory, and auth tokens are removed on both platforms.
-    try { if (id) await clearWalletOnLogout(id); }
-    finally {
-      const result = await requireBackend().auth.signOut({ scope: 'local' });
-      if (result.error) throw result.error;
-    }
+    await endLocalSession();
   };
   const readRecovery = async (password: string) => {
     if (!session || !ready || operation.current) throw new Error('Abre tu wallet antes de ver el respaldo.');
@@ -315,7 +335,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNeedsBackup(false);
     } finally { operation.current = false; }
   };
-  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, needsOnboarding, finishOnboarding: () => setNeedsOnboarding(false), accessStage, cancelAccess, locked, deviceUnlockAvailable, unlockWithDevice, lockNow, needsRestore, restoreWithWords, disableDeviceBiometrics, newDevices, acknowledgeDevices, login, register, verifyEmail, resendEmail, unlock, logout, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, needsOnboarding, finishOnboarding: () => setNeedsOnboarding(false), accessStage, cancelAccess, locked, deviceUnlockAvailable, unlockWithDevice, lockNow, touch, needsRestore, restoreWithWords, disableDeviceBiometrics, newDevices, acknowledgeDevices, login, register, verifyEmail, resendEmail, unlock, logout, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
 }
 export function useAuth() {
   const value = useContext(Context);
