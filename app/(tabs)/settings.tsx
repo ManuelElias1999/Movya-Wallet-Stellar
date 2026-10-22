@@ -1,7 +1,6 @@
 import { Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -27,7 +26,6 @@ export default function SettingsScreen() {
   const router = useRouter();
   const auth = useAuth();
   const displayName = getDisplayName(auth.user?.user_metadata);
-  const [notifications, setNotifications] = useState(true);
   const signOut = () => { auth.closeSession(); router.replace('/'); };
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -52,8 +50,10 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <View style={styles.row}>
             <View style={[styles.rowIcon, { backgroundColor: '#FCEAF0' }]}><Ionicons name="notifications-outline" size={20} color="#B94F72" /></View>
-            <View style={styles.rowCopy}><Text style={styles.rowTitle}>Notificaciones</Text><Text style={styles.rowSubtitle}>Movimientos y seguridad</Text></View>
-            <Switch onValueChange={setNotifications} trackColor={{ false: '#CED5E0', true: colors.brandIce }} thumbColor={notifications ? colors.brand : '#FFFFFF'} value={notifications} />
+            <View style={styles.rowCopy}><Text style={styles.rowTitle}>Notificaciones</Text><Text style={styles.rowSubtitle}>Próximamente: fondos recibidos y alertas de seguridad</Text></View>
+            <View style={styles.switchWrap}>
+              <Switch disabled trackColor={{ false: '#CED5E0', true: colors.brandIce }} thumbColor="#FFFFFF" value={false} />
+            </View>
           </View>
         </View>
         <Text style={styles.sectionTitle}>Idioma y región</Text>
@@ -78,5 +78,6 @@ const styles = StyleSheet.create({
   avatar: { width: 54, height: 54, borderRadius: 27, overflow: 'hidden', backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginRight: 13 }, name: { color: colors.ink, fontSize: 17, fontWeight: '800' }, email: { color: colors.muted, fontSize: 11, marginTop: 4 },
   sectionTitle: { color: colors.ink, fontSize: 16, fontWeight: '800', marginTop: 26, marginBottom: 10 }, card: { backgroundColor: 'rgba(255,255,255,0.86)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.94)', borderRadius: radius.md, paddingHorizontal: 14, shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   row: { minHeight: 70, flexDirection: 'row', alignItems: 'center' }, divider: { borderTopWidth: 1, borderTopColor: colors.border }, rowIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }, rowCopy: { flex: 1, marginLeft: 11 }, rowTitle: { color: colors.ink, fontSize: 14, fontWeight: '700' }, rowSubtitle: { color: colors.muted, fontSize: 10, marginTop: 3 },
+  switchWrap: { width: 54, marginLeft: 10, alignItems: 'flex-end', justifyContent: 'center' },
   dangerTitle: { color: '#B84252', fontSize: 14, fontWeight: '800' },
 });
