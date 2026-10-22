@@ -3,6 +3,7 @@ import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
 import { useContacts } from '@/context/ContactsContext';
 import { RecipientRiskNotice } from '@/components/RecipientRiskNotice';
 import { assessRecipient } from '@/services/security/recipientRisk';
+import { formatEnteredAmount } from '@/services/presentation';
 import { Pressable, Text } from '@/i18n/primitives';
 import type { ChatPaymentState, createChatPaymentFlow } from '@/services/chatPayment';
 import { colors } from '@/theme/tokens';
@@ -22,7 +23,7 @@ export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentS
   const cancel = () => { if (flow.cancel()) onCancel?.(); };
   return <View style={styles.card} accessibilityLiveRegion="polite">
     <Text style={styles.title}>{state.phase === 'success' ? 'Transacción exitosa' : state.phase === 'choosing' ? 'Elegir contacto' : 'Revisa tu transferencia'}</Text>
-    {request ? <Text style={styles.amount}>{review?.amount ?? request.amount} {request.token}</Text> : null}
+    {request ? <Text style={styles.amount}>{formatEnteredAmount(review?.amount ?? request.amount)} {request.token}</Text> : null}
     {state.phase === 'choosing' ? <>
       <Text style={styles.copy}>Tienes varias personas con ese nombre. Elige a quién quieres enviar.</Text>
       {state.choices?.map(contact => <Pressable accessibilityRole="button" key={contact.id} onPress={() => void flow.start(request!, contact.id)} style={styles.secondary}>
@@ -37,7 +38,7 @@ export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentS
       <Text style={styles.label}>De tu wallet</Text><Text translate={false} selectable style={styles.address}>{review.source}</Text>
       <Text style={styles.label}>Red</Text><Text style={styles.copy}>Stellar · Testnet</Text>
       {review.issuer ? <><Text style={styles.label}>Emisor de USDC</Text><Text translate={false} selectable style={styles.address}>{review.issuer}</Text></> : null}
-      <Text style={styles.label}>Comisión de red</Text><Text style={styles.copy}>{review.fee} XLM</Text>
+      <Text style={styles.label}>Comisión de red</Text><Text style={styles.copy}>{formatEnteredAmount(review.fee)} XLM</Text>
     </> : null}
     {state.phase === 'review' ? <>
       <Text style={styles.copy}>Al confirmar, Movya firma y envía esta operación desde tu dispositivo. La revisión expira en 3 minutos.</Text>

@@ -4,6 +4,7 @@ import { Pressable, Text } from '@/i18n/primitives';
 import { type createSwapFlow, type SwapState } from '@/services/swapFlow';
 import { USDC_ISSUER } from '@/services/stellar/payments';
 import { colors } from '@/theme/tokens';
+import { formatEnteredAmount, formatReceivedAmount } from '@/services/presentation';
 
 export function SwapReviewCard({ state, flow, onCancel }: { state: SwapState; flow: ReturnType<typeof createSwapFlow>; onCancel?: () => void }) {
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
@@ -21,12 +22,12 @@ export function SwapReviewCard({ state, flow, onCancel }: { state: SwapState; fl
     <Text style={styles.title}>{state.phase === 'success' ? 'Cambio confirmado' : 'Revisa tu cambio'}</Text>
     {state.phase === 'quoting' || state.phase === 'submitting' ? <View style={styles.progress}><ActivityIndicator color={colors.brand} /><Text>{state.phase === 'quoting' ? 'Buscando cotización en Stellar…' : 'Enviando o verificando la transacción…'}</Text></View> : null}
     {review ? <>
-      <Text style={styles.label}>Tú entregas</Text><Text style={styles.amount}>{review.amount} {review.from}</Text>
-      <Text style={styles.label}>Monto que se cambia</Text><Text style={styles.value}>{review.swapAmount} {review.from}</Text>
-      <Text style={styles.label}>Comisión de Movya (0,5 %)</Text><Text style={styles.value}>{review.appFee} {review.from}</Text>
+      <Text style={styles.label}>Tú entregas</Text><Text style={styles.amount}>{formatEnteredAmount(review.amount)} {review.from}</Text>
+      <Text style={styles.label}>Monto que se cambia</Text><Text style={styles.value}>{formatEnteredAmount(review.swapAmount)} {review.from}</Text>
+      <Text style={styles.label}>Comisión de Movya (0,5 %)</Text><Text style={styles.value}>{formatEnteredAmount(review.appFee)} {review.from}</Text>
       <Text style={styles.note}>La comisión de Movya ya está incluida en el monto que entregas.</Text>
-      <Text style={styles.label}>Recibes aproximadamente</Text><Text style={styles.amount}>{review.estimated} {review.to}</Text>
-      <Text style={styles.label}>Comisión máxima de red</Text><Text style={styles.value}>{review.fee} XLM</Text>
+      <Text style={styles.label}>Recibes aproximadamente</Text><Text style={styles.amount}>{formatReceivedAmount(review.estimated)} {review.to}</Text>
+      <Text style={styles.label}>Comisión máxima de red</Text><Text style={styles.value}>{formatEnteredAmount(review.fee)} XLM</Text>
       <Text style={styles.label}>Red</Text><Text style={styles.value}>Stellar DEX · Testnet</Text>
       <Text style={styles.label}>Tu wallet recibe el cambio</Text><Text translate={false} selectable style={styles.address}>{review.source}</Text>
       <Text style={styles.label}>Wallet de Movya</Text><Text translate={false} selectable style={styles.address}>{review.treasury}</Text>

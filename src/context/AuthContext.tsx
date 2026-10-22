@@ -8,7 +8,7 @@ import { rememberContactsKey } from '@/services/backend/contactBackup';
 import { currentDeviceId, forgetDeviceId, listDevices, markDevicesReviewed, newDevicesSinceLastReview, revokeOtherDevices, touchDevice, type DeviceRow } from '@/services/backend/devices';
 import { assertPasswordNotLeaked } from '@/services/backend/passwordPolicy';
 import { assertStrongPassword } from '@/services/security/passwordStrength';
-import { readWallet, readWalletMeta, clearWalletOnLogout, disableLocalSigning, removeWallet, updateWalletMeta, type StoredWallet } from '@/services/backend/storage';
+import { readWallet, readWalletMeta, clearWalletOnLogout, disableLocalSigning, removeWallet, updateWalletMeta, type StoredWallet, type WalletMeta } from '@/services/backend/storage';
 import { revealRecovery } from '@/services/backend/revealRecovery';
 import type { RecoveryMaterial } from '@/services/stellar/recovery';
 import { assertAccessActive, withAccessDeadline } from '@/services/backend/accessOperation';
@@ -26,6 +26,7 @@ type Auth = {
   // password reset): restore with the wallet's 12 words or the recovery kit.
   needsRestore: boolean; restoreWithWords: (password: string, words: string, mfaCode?: string) => Promise<'restored' | 'rotated'>;
   disableDeviceBiometrics: () => Promise<void>;
+  setDeviceBiometricsEnabled: (enabled: boolean) => Promise<void>;
   // Devices registered since this device last looked ("new sign-in" alert).
   newDevices: DeviceRow[]; acknowledgeDevices: () => Promise<void>;
   register: (email: string, password: string, name: string, confirmation: string) => Promise<boolean>;
@@ -40,6 +41,7 @@ type Auth = {
 };
 const Context = createContext<Auth | null>(null);
 const isDecryptFailure = (error: unknown) => Boolean((error as { backupDecrypt?: boolean } | null)?.backupDecrypt);
+const quickUnlockAvailable = (meta: WalletMeta | null) => meta?.protection === 'biometric' && meta.quickUnlockEnabled !== false;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -85,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // the password are required on every cold start.
         if (active) {
           setSession(result.data.session); setNeedsBackup(false); setNeedsOnboarding(false); setReady(false);
-          setLocked(Boolean(meta)); setDeviceUnlockAvailable(meta?.protection === 'biometric');
+          setLocked(Boolean(meta)); setDeviceUnlockAvailable(quickUnlockAvailable(meta));
         }
       }
     })().catch(() => { if (active) { setError('No pudimos recuperar tu sesión. Vuelve a ingresar.'); setSession(null); setReady(false); } })
@@ -155,7 +157,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const cancelAccess = () => accessController.current?.abort(new Error('Se canceló el acceso. Tu cuenta se conserva; vuelve a ingresar con la misma contraseña.'));
   useEffect(() => () => { accessController.current?.abort(); }, []);
 
-  const opened = (owner: string, backupAcknowledged: boolean, newAccount: boolean, protection: boolean) => {
+  const opened = (owner: string, backupAcknowledged: boolean, newAccount: boolean, quickUnlock: boolean) => {
     // An unconfirmed backup remains pending across a lock, app restart or
     // password login, but it must never leak from one account into another.
     const previousOwner = backupOwner.current;
@@ -169,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     backupOwner.current = owner;
     lastActive.current = Date.now();
-    setLocked(false); setNeedsRestore(false); setDeviceUnlockAvailable(protection);
+    setLocked(false); setNeedsRestore(false); setDeviceUnlockAvailable(quickUnlock);
     setReady(true);
   };
 
@@ -223,7 +225,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const meta = await readWalletMeta(next.user.id);
       if (credentials.keys) await rememberContactsKey(next.user.id, credentials.keys.contactsKey).catch(() => undefined);
       unlockedWallet.open(next.user.id, local);
-      opened(next.user.id, Boolean(local.backupAcknowledged), newAccount, meta?.protection === 'biometric');
+      opened(next.user.id, Boolean(local.backupAcknowledged), newAccount, quickUnlockAvailable(meta));
     } catch (failure) {
       if (isDecryptFailure(failure)) {
         setNeedsRestore(true);
@@ -279,14 +281,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     operation.current = true;
     try {
       const meta = await readWalletMeta(owner);
-      if (!meta || meta.protection !== 'biometric') throw new Error('Ingresa tu contraseña para abrir tu wallet.');
+      if (!quickUnlockAvailable(meta)) throw new Error('Face ID o huella está desactivado. Ingresa con tu correo y contraseña.');
       // Reading the protected key is what shows Face ID / Touch ID / fingerprint.
       const wallet = await readWallet(owner).catch(() => null);
       if (!wallet) throw new Error('No se confirmó tu identidad. Inténtalo de nuevo o usa tu contraseña.');
       if (current !== revision.current || sessionOwner.current !== owner) throw new Error('La sesión cambió. Vuelve a ingresar.');
       await checkDevice(owner);
       unlockedWallet.open(owner, wallet);
-      opened(owner, Boolean(meta.backupAcknowledged), false, true);
+      opened(owner, Boolean(meta?.backupAcknowledged), false, true);
     } finally { operation.current = false; }
   };
   const disableDeviceBiometrics = async () => {
@@ -294,6 +296,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await disableLocalSigning(session.user.id);
     unlockedWallet.clear();
     setDeviceUnlockAvailable(false);
+  };
+  const setDeviceBiometricsEnabled = async (enabled: boolean) => {
+    if (!session) throw new Error('Ingresa con tu correo antes de cambiar el acceso biométrico.');
+    const meta = await readWalletMeta(session.user.id);
+    if (!meta || meta.protection !== 'biometric') throw new Error('Face ID o huella no está disponible en este dispositivo.');
+    await updateWalletMeta({ quickUnlockEnabled: enabled }, session.user.id);
+    setDeviceUnlockAvailable(enabled);
   };
   const restoreWithWords = async (password: string, words: string, mfaCode?: string) => {
     if (!session?.user.email) throw new Error('Ingresa con tu correo antes de restaurar.');
@@ -315,7 +324,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       assertAccessActive(signal);
       const meta = await readWalletMeta(signed.session.user.id);
       unlockedWallet.open(signed.session.user.id, result.wallet);
-      opened(signed.session.user.id, Boolean(result.wallet.backupAcknowledged), false, meta?.protection === 'biometric');
+      opened(signed.session.user.id, Boolean(result.wallet.backupAcknowledged), false, quickUnlockAvailable(meta));
       // A rotation creates new device words: ask the person to save them,
       // and every other device (the lost one) is signed out and revoked.
       if (result.kind === 'rotated') {
@@ -363,7 +372,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNeedsBackup(false);
     } finally { operation.current = false; }
   };
-  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, needsOnboarding, finishOnboarding: () => setNeedsOnboarding(false), accessStage, cancelAccess, locked, deviceUnlockAvailable, unlockWithDevice, lockNow, closeSession, touch, needsRestore, restoreWithWords, disableDeviceBiometrics, newDevices, acknowledgeDevices, login, register, verifyEmail, resendEmail, unlock, logout, readUnlockedWallet, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, needsOnboarding, finishOnboarding: () => setNeedsOnboarding(false), accessStage, cancelAccess, locked, deviceUnlockAvailable, unlockWithDevice, lockNow, closeSession, touch, needsRestore, restoreWithWords, disableDeviceBiometrics, setDeviceBiometricsEnabled, newDevices, acknowledgeDevices, login, register, verifyEmail, resendEmail, unlock, logout, readUnlockedWallet, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
 }
 export function useAuth() {
   const value = useContext(Context);

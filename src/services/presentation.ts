@@ -8,6 +8,23 @@ export function displayName(metadata?: Record<string, unknown>) {
   const value = metadata?.display_name;
   return typeof value === 'string' && value.trim() ? value.trim() : 'Usuario';
 }
+export function formatEnteredAmount(value: string) {
+  const normalized = value.trim().replace(',', '.');
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return value;
+  const [whole, fraction = ''] = normalized.split('.');
+  const cleanWhole = whole.replace(/^0+(?=\d)/, '');
+  const cleanFraction = fraction.replace(/0+$/, '');
+  return cleanFraction ? `${cleanWhole}.${cleanFraction}` : cleanWhole;
+}
+export function formatReceivedAmount(value: string) {
+  const normalized = value.trim().replace(',', '.');
+  if (!/^\d+(?:\.\d{0,7})?$/.test(normalized)) return value;
+  const [whole, fraction = ''] = normalized.split('.');
+  const padded = fraction.padEnd(7, '0');
+  const units = BigInt(whole || '0') * 10_000_000n + BigInt(padded || '0');
+  const cents = (units + 50_000n) / 100_000n;
+  return `${cents / 100n}.${String(cents % 100n).padStart(2, '0')}`;
+}
 export function formatXlmBalance(balances?: { assetCode: string; balance: string }[], locale = 'es-BO') {
   const balance = balances?.find(item => item.assetCode === 'XLM')?.balance ?? '0';
   if (!/^\d+(\.\d{1,7})?$/.test(balance)) return '0 XLM';

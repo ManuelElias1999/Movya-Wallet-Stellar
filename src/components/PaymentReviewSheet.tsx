@@ -14,6 +14,7 @@ import { assertNotDuplicate, recordPayment } from '@/services/security/duplicate
 import { assetBalance } from '@/services/stellar/payments';
 import { checkSubmission, SubmissionUnknownError, submitPayment, type PaymentReceipt, type PaymentReview } from '@/services/stellar/payments';
 import { colors } from '@/theme/tokens';
+import { formatEnteredAmount } from '@/services/presentation';
 
 export function PaymentReviewSheet({ review, onClose, onSuccess }: { review: PaymentReview | null; onClose: () => void; onSuccess: (receipt: PaymentReceipt) => void }) {
   const wallet = useTestnetWallet();
@@ -67,13 +68,13 @@ export function PaymentReviewSheet({ review, onClose, onSuccess }: { review: Pay
       <View style={styles.backdrop}><View style={[styles.sheet, { paddingBottom: Math.max(24, insets.bottom + 16) }]}>
         <ScrollView keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>Revisa tu transferencia</Text>
-          <Text style={styles.amount}>{review?.amount} {review?.asset}</Text>
+          <Text style={styles.amount}>{review ? formatEnteredAmount(review.amount) : ''} {review?.asset}</Text>
           <Text style={styles.label}>De tu wallet</Text><Text translate={false} selectable style={styles.address}>{review?.source}</Text>
           <Text style={styles.label}>Dirección destinataria completa</Text><Text translate={false} selectable style={styles.address}>{review?.destination}</Text>
           {review && risk ? <RecipientRiskNotice risk={risk} destination={review.destination} /> : null}
           <Text style={styles.label}>Red</Text><Text style={styles.value}>Stellar Testnet · tokens de prueba</Text>
           {review?.issuer ? <><Text style={styles.label}>Emisor de USDC</Text><Text translate={false} selectable style={styles.address}>{review.issuer}</Text></> : null}
-          <Text style={styles.label}>Comisión de red</Text><Text style={styles.value}>{review?.fee} XLM</Text>
+          <Text style={styles.label}>Comisión de red</Text><Text style={styles.value}>{review ? formatEnteredAmount(review.fee) : ''} XLM</Text>
           <Text style={styles.note}>Al confirmar, Movya firma y envía esta operación desde tu dispositivo. La revisión expira en 3 minutos.</Text>
           {error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
           {busy ? <ActivityIndicator color={colors.brand} style={{ marginTop: 18 }} /> : null}

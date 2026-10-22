@@ -17,6 +17,7 @@ import { SwapReviewCard } from '@/components/SwapReviewCard';
 import { type PaymentAsset } from '@/services/stellar/payments';
 import { readSwapSpendable } from '@/services/stellar/swaps';
 import { swapBlocked } from '@/services/swapFlow';
+import { formatEnteredAmount, formatReceivedAmount } from '@/services/presentation';
 
 const tokenInfo: Record<string, { name: string; color: string }> = {
   USDC: { name: 'USD digital', color: '#2775CA' },
@@ -95,8 +96,8 @@ export default function SwapScreen() {
         </View>
 
         <View style={styles.balanceRow}>
-          <View style={{ flex: 1 }}><Text style={styles.balance}>Saldo disponible: {spendable?.[from] ?? '…'} {from}</Text></View>
-          <Pressable accessibilityRole="button" disabled={blocked || !spendable} accessibilityState={{ disabled: blocked || !spendable }} onPress={() => { if (spendable) editAmount(spendable[from]); }} style={styles.maxButton}><Text style={styles.maxText}>Máximo</Text></Pressable>
+          <View style={{ flex: 1 }}><Text style={styles.balance}>Saldo disponible: {spendable ? formatEnteredAmount(spendable[from]) : '…'} {from}</Text></View>
+          <Pressable accessibilityRole="button" disabled={blocked || !spendable} accessibilityState={{ disabled: blocked || !spendable }} onPress={() => { if (spendable) editAmount(formatEnteredAmount(spendable[from])); }} style={styles.maxButton}><Text style={styles.maxText}>Máximo</Text></Pressable>
         </View>
         {balanceError ? <Text style={styles.error}>{balanceError}</Text> : null}
 
@@ -105,7 +106,7 @@ export default function SwapScreen() {
         <Text style={styles.label}>Tú recibes</Text>
         {assetSelector(to, () => setToOpen(true))}
         <View style={styles.outputBox}>
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5} style={styles.output}>{state.review?.estimated ?? (amount ? '—' : '0.00')}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5} style={styles.output}>{state.review ? formatReceivedAmount(state.review.estimated) : amount ? '—' : '0.00'}</Text>
           <View style={[styles.amountToken, styles.outputToken]}><Text style={styles.amountTokenText}>{to}</Text></View>
         </View>
 

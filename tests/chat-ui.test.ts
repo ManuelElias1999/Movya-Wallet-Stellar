@@ -20,6 +20,16 @@ async function send(tree: ReactTestRenderer, value: string) {
   await act(async () => { composerSend.props.onPress(); });
 }
 
+test('a balance answer keeps the next-action suggestions visible', async () => {
+  let tree!: ReactTestRenderer;
+  await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
+  await send(tree, '¿Cuánto dinero tengo?');
+  assert.ok(content(tree).includes('Solicita XLM desde Inicio'));
+  assert.ok(content(tree).includes('Envía 1 USDC a Prueba'));
+  assert.ok(content(tree).includes('Cambia 50 XLM a USDC'));
+  await act(() => tree.unmount());
+});
+
 test('real chat stays open: saved email contact → inline review → Yes button → exact receipt', async () => {
   let tree!: ReactTestRenderer;
   await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => { calls.close++; } })); });
@@ -67,7 +77,7 @@ test('Cambia 50 XLM a USDC quotes in chat and only the explicit swap confirmatio
   assert.deepEqual(calls.swaps.at(-1), { source: 'GSENDER', amount: '50', from: 'XLM', to: 'USDC' });
   assert.equal(calls.swapSubmits.length, before);
   assert.ok(!content(tree).includes('¿Cuánto dinero tengo?'));
-  assert.ok(content(tree).includes('44.0000000'));
+  assert.ok(content(tree).includes('44.00'));
   assert.ok(!content(tree).includes('Mínimo que recibirás'));
   assert.ok(!content(tree).includes('Claro. Dime qué activo'));
   await act(async () => button(tree, 'Sí, cambiar').props.onPress());
@@ -82,11 +92,11 @@ test('Swap form auto-quotes, shows spendable funds, and MAX replaces the draft w
   const { default: SwapScreen } = require('../app/(tabs)/swap');
   let tree!: ReactTestRenderer;
   await act(async () => { tree = create(createElement(SwapScreen)); });
-  assert.ok(content(tree).includes('97.4999900'));
+  assert.ok(content(tree).includes('97.49999'));
   const input = () => tree.root.findByType('NativeTextInput' as any);
   await act(() => input().props.onChangeText('50'));
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 450)); });
-  assert.ok(content(tree).includes('44.0000000'));
+  assert.ok(content(tree).includes('44.00'));
   assert.ok(!content(tree).includes('Comisión de Movya'));
   const before = calls.swapSubmits.length;
   await act(() => button(tree, 'Revisar cambio').props.onPress());
@@ -96,7 +106,7 @@ test('Swap form auto-quotes, shows spendable funds, and MAX replaces the draft w
   const dismiss = buttons(tree).find(item => item.props.accessibilityLabel === 'Cerrar revisión')!;
   await act(() => dismiss.props.onPress());
   await act(() => button(tree, 'Máximo').props.onPress());
-  assert.equal(input().props.value, '97.4999900');
-  assert.ok(!content(tree).includes('44.0000000'));
+  assert.equal(input().props.value, '97.49999');
+  assert.ok(!content(tree).includes('44.00'));
   await act(() => tree.unmount());
 });
