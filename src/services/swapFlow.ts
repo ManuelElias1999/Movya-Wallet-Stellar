@@ -1,10 +1,10 @@
 import { SubmissionUnknownError, type PaymentReceipt } from './stellar/payments';
-import type { SwapInput, SwapReview } from './stellar/swaps';
+import type { SwapInput, SwapReceipt, SwapReview } from './stellar/swaps';
 
-export type SwapState = { phase: 'idle' | 'quoting' | 'review' | 'submitting' | 'unknown' | 'success' | 'error'; input?: SwapInput; review?: SwapReview; receipt?: PaymentReceipt; error?: string };
+export type SwapState = { phase: 'idle' | 'quoting' | 'review' | 'submitting' | 'unknown' | 'success' | 'error'; input?: SwapInput; review?: SwapReview; receipt?: SwapReceipt; error?: string };
 export const swapBlocked = (state: SwapState) => state.phase === 'submitting' || state.phase === 'unknown';
 export function createSwapFlow(deps: {
-  source(): string | null; prepare(input: SwapInput): Promise<SwapReview>; submit(review: SwapReview): Promise<PaymentReceipt>;
+  source(): string | null; prepare(input: SwapInput): Promise<SwapReview>; submit(review: SwapReview): Promise<SwapReceipt>;
   check(hash: string): Promise<PaymentReceipt | null>; refresh(): Promise<void>;
 }) {
   let state: SwapState = { phase: 'idle' };

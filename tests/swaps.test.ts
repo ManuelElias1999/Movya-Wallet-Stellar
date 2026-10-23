@@ -40,6 +40,12 @@ function setup() {
     if (target.pathname === '/fee_stats') return Response.json({ fee_charged: { p95: feeP95 }, last_ledger_base_fee: '100' });
     if (target.pathname === '/ledgers') return Response.json({ _embedded: { records: [{ base_reserve_in_stroops: 5000000 }] } });
     if (target.pathname === '/paths/strict-send') return Response.json({ _embedded: { records: paths } });
+    if (/^\/transactions\/[a-f0-9]{64}\/operations$/.test(target.pathname)) {
+      const path = paths[0]; const hash = target.pathname.split('/')[2];
+      return Response.json({ _embedded: { records: [{ type: 'path_payment_strict_send', transaction_hash: hash, from: key.publicKey(), to: key.publicKey(), amount: path.destination_amount,
+        asset_type: path.destination_asset_type, asset_code: path.destination_asset_code, asset_issuer: path.destination_asset_issuer,
+        source_amount: path.source_amount, source_asset_type: path.source_asset_type, source_asset_code: path.source_asset_code, source_asset_issuer: path.source_asset_issuer }] } });
+    }
     throw new Error('unexpected request');
   };
 }
@@ -127,7 +133,7 @@ test('only the reviewed signed hash succeeds; wrong signatures and worse-than-mi
   setup(); const quote = await prepare();
   const wrong = Keypair.random();
   await assert.rejects(submitSwap(quote, async xdr => { const tx = new Transaction(xdr, Networks.TESTNET); tx.sign(wrong); return tx.toXDR(); }), /firma/);
-  const receipt = await submitSwap(quote, sign); assert.equal(receipt.hash, quote.hash); assert.equal(posts.length, 1);
+  const receipt = await submitSwap(quote, sign); assert.equal(receipt.hash, quote.hash); assert.equal(receipt.receivedAmount, '10.1234567'); assert.equal(posts.length, 1);
   mode = 'price'; await assert.rejects(submitSwap(quote, sign), /op_under_destmin/);
 });
 test('mainnet and unknown assets never quote or sign; timeouts expose the reviewed hash', async () => {

@@ -7,14 +7,37 @@ import { formatEnteredAmount } from '@/services/presentation';
 import { Pressable, Text } from '@/i18n/primitives';
 import type { ChatPaymentState, createChatPaymentFlow } from '@/services/chatPayment';
 import { colors } from '@/theme/tokens';
+import { Ionicons } from '@expo/vector-icons';
 
 export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentState; flow: ReturnType<typeof createChatPaymentFlow>; onCancel?: () => void }) {
   const { contacts } = useContacts();
   const { review, request, receipt } = state;
   const [acknowledged, setAcknowledged] = useState(false);
+  const [detailsVisible, setDetailsVisible] = useState(false);
   useEffect(() => setAcknowledged(false), [review?.hash]);
+  useEffect(() => setDetailsVisible(false), [receipt?.hash]);
   const risk = useMemo(() => review ? assessRecipient({ destination: review.destination, amount: review.amount, asset: review.asset, known: contacts.filter(c => c.address).map(c => ({ address: c.address!, label: c.name })) }) : null, [review, contacts]);
   if (state.phase === 'idle') return null;
+  if (state.phase === 'success' && receipt && review && request) return <View style={[styles.card, styles.successCard]} accessibilityLiveRegion="polite">
+    <View style={styles.successHeader}>
+      <View style={styles.successIcon}><Ionicons name="checkmark" size={20} color="#FFFFFF" /></View>
+      <View style={styles.successCopy}><Text style={styles.successTitle}>Enviado</Text><Text style={styles.successSummary}>{formatEnteredAmount(review.amount)} {review.asset} a {state.recipient ?? request.recipient}</Text></View>
+    </View>
+    <Pressable accessibilityRole="button" accessibilityState={{ expanded: detailsVisible }} onPress={() => setDetailsVisible(value => !value)} style={styles.detailsButton}>
+      <Text style={styles.detailsButtonText}>{detailsVisible ? 'Ocultar detalles' : 'Ver detalles'}</Text><Ionicons name={detailsVisible ? 'chevron-up' : 'chevron-down'} size={17} color={colors.brand} />
+    </Pressable>
+    {detailsVisible ? <View style={styles.expandedDetails}>
+      <Text style={styles.label}>Monto</Text><Text style={styles.amount}>{formatEnteredAmount(review.amount)} {review.asset}</Text>
+      <Text style={styles.label}>Destinatario</Text><Text translate={false} style={styles.recipient}>{state.recipient ?? request.recipient}</Text>
+      <Text style={styles.label}>Dirección destinataria completa</Text><Text translate={false} selectable style={styles.address}>{review.destination}</Text>
+      <Text style={styles.label}>De tu wallet</Text><Text translate={false} selectable style={styles.address}>{review.source}</Text>
+      <Text style={styles.label}>Red</Text><Text style={styles.copy}>Stellar · Testnet</Text>
+      {review.issuer ? <><Text style={styles.label}>Emisor de USDC</Text><Text translate={false} selectable style={styles.address}>{review.issuer}</Text></> : null}
+      <Text style={styles.label}>Comisión de red</Text><Text style={styles.copy}>{formatEnteredAmount(review.fee)} XLM</Text>
+      <Text style={styles.label}>Hash de transacción</Text><Text translate={false} selectable style={styles.address}>{receipt.hash}</Text>
+      <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(receipt.explorerUrl)} style={styles.secondary}><Text>Ver comprobante en Stellar Expert</Text></Pressable>
+    </View> : null}
+  </View>;
   const confirm = () => {
     if (risk?.needsExtraConfirmation && !acknowledged) { setAcknowledged(true); return; }
     void flow.confirm();
@@ -61,11 +84,6 @@ export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentS
       <Text translate={false} selectable style={styles.address}>{review?.hash}</Text>
       <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(`https://stellar.expert/explorer/testnet/tx/${review?.hash}`)} style={styles.secondary}><Text>Abrir transacción</Text></Pressable>
     </> : null}
-    {state.phase === 'success' && receipt ? <>
-      <Text translate={false} selectable style={styles.address}>{receipt.hash}</Text>
-      <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(receipt.explorerUrl)} style={styles.secondary}><Text>Ver comprobante en Stellar Expert</Text></Pressable>
-      <Text style={styles.copy}>¿Deseas hacer algo más?</Text>
-    </> : null}
   </View>;
 }
 
@@ -82,4 +100,5 @@ const styles = StyleSheet.create({
   primary: { minHeight: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 14, backgroundColor: colors.brand, marginTop: 12, padding: 10 }, primaryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
   secondary: { minHeight: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 14, backgroundColor: '#E8F1FF', marginTop: 12, padding: 10 },
   error: { color: '#B52D42', fontSize: 13, lineHeight: 19, marginTop: 12 }, progress: { alignItems: 'center', gap: 8, marginTop: 14 },
+  successCard: { padding: 13 }, successHeader: { flexDirection: 'row', alignItems: 'center' }, successIcon: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.positive, alignItems: 'center', justifyContent: 'center' }, successCopy: { flex: 1, marginLeft: 11 }, successTitle: { color: colors.positive, fontSize: 15, fontWeight: '900' }, successSummary: { color: colors.ink, fontSize: 12, lineHeight: 17, marginTop: 2, fontWeight: '700' }, detailsButton: { minHeight: 38, marginTop: 9, borderRadius: 12, backgroundColor: '#E8F1FF', paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, detailsButtonText: { color: colors.brand, fontSize: 12, fontWeight: '800' }, expandedDetails: { borderTopWidth: 1, borderTopColor: '#D3E2F2', marginTop: 12, paddingTop: 2 },
 });

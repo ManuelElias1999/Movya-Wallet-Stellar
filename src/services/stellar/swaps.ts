@@ -1,5 +1,5 @@
 import { Account, Asset, Keypair, Networks, Operation, Transaction, TransactionBuilder } from '@stellar/stellar-sdk/base';
-import { accountCosts, assertTestnet, assetBalance, availableBalance, broadcastTransaction, formatUnits, horizonRequest, normalizeAmount, readTestnetAccount, transactionHash, units, USDC_ISSUER, validateAddress, type LocalSigner, type PaymentAsset, type TestnetAccount } from './payments';
+import { accountCosts, assertTestnet, assetBalance, availableBalance, broadcastTransaction, formatUnits, horizonRequest, normalizeAmount, readTestnetAccount, transactionHash, units, USDC_ISSUER, validateAddress, type LocalSigner, type PaymentAsset, type PaymentReceipt, type TestnetAccount } from './payments';
 import { MAX_SIGNED_FEE_STROOPS } from './signingPolicy';
 
 export const SWAP_SLIPPAGE_BPS = 50; // 0.5% maximum price movement.
@@ -11,9 +11,15 @@ export type SwapReview = Readonly<SwapInput & {
   estimated: string; minimum: string; fee: string; slippageBps: number; appFeeBps: number;
   expiresAt: number; path: readonly string[]; treasury: string; xdr: string; hash: string;
 }>;
+export type SwapReceipt = PaymentReceipt & { receivedAmount?: string };
 type HorizonAsset = { asset_type: string; asset_code?: string; asset_issuer?: string };
 type PathRecord = { source_asset_type: string; source_asset_code?: string; source_asset_issuer?: string; source_amount: string; destination_asset_type: string; destination_asset_code?: string; destination_asset_issuer?: string; destination_amount: string; path: HorizonAsset[] };
 type Quote = { estimated: string; minimum: string; path: Asset[] };
+type SwapOperationRecord = {
+  type: string; transaction_hash: string; from: string; to: string; amount: string;
+  asset_type: string; asset_code?: string; asset_issuer?: string;
+  source_amount: string; source_asset_type: string; source_asset_code?: string; source_asset_issuer?: string;
+};
 const supported = (code: string): code is PaymentAsset => code === 'XLM' || code === 'USDC';
 const asset = (code: PaymentAsset) => code === 'XLM' ? Asset.native() : new Asset('USDC', USDC_ISSUER);
 const encodedAsset = (value: Asset) => value.isNative() ? 'native' : `${value.code}:${value.issuer}`;
@@ -128,9 +134,22 @@ export function validateSwapReview(review: SwapReview) {
   return transaction;
 }
 
-export async function submitSwap(review: SwapReview, sign: LocalSigner, signerPublicKey = review.source) {
+export async function readConfirmedSwapOutput(review: SwapReview, transactionHashValue: string) {
+  const result = await horizonRequest<{ _embedded: { records: SwapOperationRecord[] } }>(`/transactions/${transactionHashValue}/operations?order=asc&limit=200`);
+  const operation = result._embedded.records.find(record => record.type === 'path_payment_strict_send'
+    && record.transaction_hash === transactionHashValue && record.from === review.source && record.to === review.source
+    && normalizeAmount(record.source_amount) === review.swapAmount
+    && asset(review.from).equals(parseAsset({ asset_type: record.source_asset_type, asset_code: record.source_asset_code, asset_issuer: record.source_asset_issuer }))
+    && asset(review.to).equals(parseAsset({ asset_type: record.asset_type, asset_code: record.asset_code, asset_issuer: record.asset_issuer })));
+  if (!operation) throw new Error('No se pudo verificar el monto exacto recibido del cambio.');
+  return normalizeAmount(operation.amount);
+}
+
+export async function submitSwap(review: SwapReview, sign: LocalSigner, signerPublicKey = review.source): Promise<SwapReceipt> {
   validateSwapReview(review);
   const signed = new Transaction(await sign(review.xdr), Networks.TESTNET);
   if (transactionHash(signed) !== review.hash || signed.signatures.length !== 1 || !Keypair.fromPublicKey(signerPublicKey).verify(signed.hash(), signed.signatures[0].signature)) throw new Error('La firma no corresponde al cambio revisado.');
-  return broadcastTransaction(signed.toXDR(), review.hash);
+  const receipt = await broadcastTransaction(signed.toXDR(), review.hash);
+  const receivedAmount = await readConfirmedSwapOutput(review, receipt.hash).catch(() => undefined);
+  return { ...receipt, ...(receivedAmount ? { receivedAmount } : {}) };
 }

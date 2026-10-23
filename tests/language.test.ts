@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { createLanguageStore, translateText, isLanguage } from '../src/i18n/core';
 import english from '../src/i18n/en.json';
-import { chatTopic, isChainedTransactionRequest, parseContactChatRequest, parseSendRequest } from '../src/services/chatIntent';
+import { chatTopic, isChainedTransactionRequest, parseActivityLimit, parseChainedSwapSendRequest, parseContactChatRequest, parseSendRequest } from '../src/services/chatIntent';
 import { formatXlmBalance } from '../src/services/presentation';
 test('all English copy interpolates correctly and Spanish stays original', () => {
   for (const [source, result] of Object.entries(english)) {
@@ -52,4 +52,9 @@ test('chat recognizes activity, contact queries and chained transactions without
   assert.deepEqual(parseContactChatRequest('Quiero agregar un nuevo contacto, se llama Nico'), { kind: 'add', name: 'Nico' });
   assert.equal(isChainedTransactionRequest('Cambia 1 USDC a XLM y después envía ese monto a Aya'), true);
   assert.equal(isChainedTransactionRequest('Cambia 1 USDC a XLM'), false);
+  assert.deepEqual(parseChainedSwapSendRequest('Cambia 1 USDC a XLM y después envía ese monto a Aya'), { amount: '1', from: 'USDC', to: 'XLM', recipient: 'Aya' });
+  assert.deepEqual(parseChainedSwapSendRequest('Swap 1.5 XLM to USDC and then send that amount to María'), { amount: '1.5', from: 'XLM', to: 'USDC', recipient: 'María' });
+  assert.equal(parseChainedSwapSendRequest('Cambia 1 USDC a USDC y después envía ese monto a Aya'), null);
+  assert.equal(parseActivityLimit('Mis últimas 2 operaciones'), 2);
+  assert.equal(parseActivityLimit('Mis últimas 99 operaciones'), 20);
 });

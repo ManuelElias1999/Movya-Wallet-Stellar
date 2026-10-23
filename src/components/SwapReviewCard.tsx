@@ -5,19 +5,47 @@ import { type createSwapFlow, type SwapState } from '@/services/swapFlow';
 import { USDC_ISSUER } from '@/services/stellar/payments';
 import { colors } from '@/theme/tokens';
 import { formatEnteredAmount, formatReceivedAmount } from '@/services/presentation';
+import { Ionicons } from '@expo/vector-icons';
 
 export function SwapReviewCard({ state, flow, onCancel }: { state: SwapState; flow: ReturnType<typeof createSwapFlow>; onCancel?: () => void }) {
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+  const [detailsVisible, setDetailsVisible] = useState(false);
   useEffect(() => {
     if (state.phase !== 'review') return;
     setNow(Math.floor(Date.now() / 1000));
     const timer = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
     return () => clearInterval(timer);
   }, [state.phase, state.review?.expiresAt]);
+  useEffect(() => setDetailsVisible(false), [state.receipt?.hash]);
   if (state.phase === 'idle') return null;
   const { review, receipt } = state;
   const expired = review ? now >= review.expiresAt : false;
   const cancel = () => { if (flow.clear()) onCancel?.(); };
+  if (state.phase === 'success' && receipt && review) {
+    const received = receipt.receivedAmount ?? review.estimated;
+    return <View style={[styles.card, styles.successCard]} accessibilityLiveRegion="polite">
+      <View style={styles.successHeader}>
+        <View style={styles.successIcon}><Ionicons name="checkmark" size={20} color="#FFFFFF" /></View>
+        <View style={styles.successCopy}><Text style={styles.successTitle}>Cambio realizado</Text><Text style={styles.successSummary}>{formatEnteredAmount(review.amount)} {review.from} → {formatReceivedAmount(received)} {review.to}</Text></View>
+      </View>
+      <Pressable accessibilityRole="button" accessibilityState={{ expanded: detailsVisible }} onPress={() => setDetailsVisible(value => !value)} style={styles.detailsButton}>
+        <Text style={styles.detailsButtonText}>{detailsVisible ? 'Ocultar detalles' : 'Ver detalles'}</Text><Ionicons name={detailsVisible ? 'chevron-up' : 'chevron-down'} size={17} color={colors.brand} />
+      </Pressable>
+      {detailsVisible ? <View style={styles.expandedDetails}>
+        <Text style={styles.label}>Tú entregaste</Text><Text style={styles.amount}>{formatEnteredAmount(review.amount)} {review.from}</Text>
+        <Text style={styles.label}>Monto cambiado</Text><Text style={styles.value}>{formatEnteredAmount(review.swapAmount)} {review.from}</Text>
+        <Text style={styles.label}>Comisión de Movya (0,5 %)</Text><Text style={styles.value}>{formatEnteredAmount(review.appFee)} {review.from}</Text>
+        <Text style={styles.label}>Recibiste</Text><Text style={styles.amount}>{formatReceivedAmount(received)} {review.to}</Text>
+        <Text style={styles.label}>Comisión máxima de red</Text><Text style={styles.value}>{formatEnteredAmount(review.fee)} XLM</Text>
+        <Text style={styles.label}>Red</Text><Text style={styles.value}>Stellar DEX · Testnet</Text>
+        <Text style={styles.label}>Tu wallet recibió el cambio</Text><Text translate={false} selectable style={styles.address}>{review.source}</Text>
+        <Text style={styles.label}>Wallet de Movya</Text><Text translate={false} selectable style={styles.address}>{review.treasury}</Text>
+        <Text style={styles.label}>Emisor de USDC</Text><Text translate={false} selectable style={styles.address}>{USDC_ISSUER}</Text>
+        <Text style={styles.label}>Hash de transacción</Text><Text translate={false} selectable style={styles.address}>{receipt.hash}</Text>
+        <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(receipt.explorerUrl)} style={styles.secondary}><Text>Ver comprobante en Stellar Expert</Text></Pressable>
+      </View> : null}
+    </View>;
+  }
   return <View style={styles.card} accessibilityLiveRegion="polite">
     <Text style={styles.title}>{state.phase === 'success' ? 'Cambio confirmado' : state.phase === 'error' ? 'Cotización no disponible' : 'Revisa tu cambio'}</Text>
     {state.phase === 'quoting' || state.phase === 'submitting' ? <View style={styles.progress}><ActivityIndicator color={colors.brand} /><Text>{state.phase === 'quoting' ? 'Buscando cotización en Stellar…' : 'Enviando o verificando la transacción…'}</Text></View> : null}
@@ -47,11 +75,6 @@ export function SwapReviewCard({ state, flow, onCancel }: { state: SwapState; fl
       <Pressable accessibilityRole="button" onPress={() => void flow.verify()} style={styles.primary}><Text style={styles.primaryText}>Verificar estado</Text></Pressable>
       <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(`https://stellar.expert/explorer/testnet/tx/${review?.hash}`)} style={styles.secondary}><Text>Abrir transacción</Text></Pressable>
     </> : null}
-    {state.phase === 'success' && receipt ? <>
-      <Text translate={false} selectable style={styles.address}>{receipt.hash}</Text>
-      <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(receipt.explorerUrl)} style={styles.secondary}><Text>Ver comprobante en Stellar Expert</Text></Pressable>
-      <Text style={styles.note}>¿Deseas hacer algo más?</Text>
-    </> : null}
   </View>;
 }
 
@@ -62,4 +85,5 @@ const styles = StyleSheet.create({
   progress: { alignItems: 'center', gap: 10, marginTop: 14 }, actions: { flexDirection: 'row', gap: 8 }, flex: { flex: 1 },
   primary: { minHeight: 46, justifyContent: 'center', alignItems: 'center', padding: 10, backgroundColor: colors.brand, borderRadius: 14, marginTop: 12 }, primaryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
   secondary: { minHeight: 44, justifyContent: 'center', alignItems: 'center', padding: 10, borderRadius: 14, backgroundColor: '#E8F1FF', marginTop: 12 }, disabled: { backgroundColor: '#BAC5D5' },
+  successCard: { padding: 13 }, successHeader: { flexDirection: 'row', alignItems: 'center' }, successIcon: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.positive, alignItems: 'center', justifyContent: 'center' }, successCopy: { flex: 1, marginLeft: 11 }, successTitle: { color: colors.positive, fontSize: 15, fontWeight: '900' }, successSummary: { color: colors.ink, fontSize: 12, lineHeight: 17, marginTop: 2, fontWeight: '700' }, detailsButton: { minHeight: 38, marginTop: 9, borderRadius: 12, backgroundColor: '#E8F1FF', paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, detailsButtonText: { color: colors.brand, fontSize: 12, fontWeight: '800' }, expandedDetails: { borderTopWidth: 1, borderTopColor: '#D3E2F2', marginTop: 12, paddingTop: 2 },
 });

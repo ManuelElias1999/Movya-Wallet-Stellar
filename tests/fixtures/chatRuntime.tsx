@@ -2,7 +2,7 @@ import { createElement, useImperativeHandle } from 'react';
 import type { PaymentReview } from '../../src/services/stellar/payments';
 export const calls = { prepare: [] as any[], submit: [] as any[], resolve: [] as string[], close: 0, swaps: [] as any[], swapSubmits: [] as any[], ai: [] as string[], contactAdds: [] as any[] };
 export const wallet = { publicKey: 'GSENDER', account: null, oualiAddress: '', refresh: async () => {}, sign: async () => 'signed-xdr' };
-export const contacts = [{ id: 'prueba', name: 'Prueba', handle: 'prueba@example.com', email: 'prueba@example.com', address: 'GPRUEBA' }];
+export const contacts = [{ id: 'prueba', name: 'Prueba', handle: 'prueba@example.com', email: 'prueba@example.com', address: 'GPRUEBA' }, { id: 'aya', name: 'Aya', handle: 'aya@example.com', email: 'aya@example.com', address: 'GAYA' }];
 export const useTestnetWallet = () => wallet;
 export const useContacts = () => ({ contacts, persistent: true, loading: false, error: '', add: async (input: any) => { calls.contactAdds.push(input); return { id: 'new', name: input.name, identifier: input.identifier }; } });
 export const useAuth = () => ({ user: { user_metadata: { name: 'Manuel' } } });
@@ -60,7 +60,7 @@ export const prepareSwap = async (input: any) => {
   calls.swaps.push(input);
   return { ...input, amount: input.amount, swapAmount: '49.7500000', appFee: '0.2500000', estimated: '44.0000000', minimum: '43.7800000', fee: '0.0000200', slippageBps: 50, appFeeBps: 50, treasury: 'GB4PASUU4VUFIREIQS2Y4QUJW7NZLYGDCRQQVSCUY4BC5OXNXMVXGTWB', path: [], expiresAt: Math.floor(Date.now() / 1000) + 60, hash: 'b'.repeat(64), xdr: 'swap-xdr' };
 };
-export const submitSwap = async (review: any) => { calls.swapSubmits.push(review); return { hash: review.hash, explorerUrl: `https://stellar.expert/explorer/testnet/tx/${review.hash}` }; };
+export const submitSwap = async (review: any) => { calls.swapSubmits.push(review); return { hash: review.hash, explorerUrl: `https://stellar.expert/explorer/testnet/tx/${review.hash}`, receivedAmount: '44.1234567' }; };
 export const readSwapSpendable = async () => ({ XLM: '97.4999900', USDC: '10.0000000' });
 export const getActivityHistory = async () => [{ kind: 'transfer', payment: { id: 'payment', transaction_hash: 'c'.repeat(64), from: 'GSENDER', to: 'GPRUEBA', amount: '1.0000000', asset_type: 'native', created_at: '2026-10-23T12:00:00Z', type: 'payment', transaction_successful: true } }];
 export const SafeAreaView = host('SafeAreaView');

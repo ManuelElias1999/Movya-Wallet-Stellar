@@ -45,9 +45,10 @@ test('real chat stays open: saved email contact → inline review → Yes button
   await act(async () => button(tree, 'Sí, confirmar').props.onPress());
   assert.equal(calls.close, 0);
   assert.equal(calls.submit.length, 1);
-  assert.ok(content(tree).includes('Transacción exitosa'));
+  assert.ok(content(tree).includes('Enviado'));
   assert.ok(content(tree).includes('¿Cuánto dinero tengo?'));
-  assert.ok(content(tree).includes('a'.repeat(64)));
+  assert.ok(content(tree).includes('Ver detalles'));
+  assert.ok(!content(tree).includes('a'.repeat(64)));
   assert.ok(!content(tree).includes('Transacción demostrativa'));
   await act(() => tree.unmount());
 });
@@ -95,7 +96,7 @@ test('contact count, address lookup and conversational contact creation use save
   let tree!: ReactTestRenderer;
   await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
   await send(tree, '¿Cuántos contactos tengo?');
-  assert.ok(content(tree).includes('Tienes 1 contacto guardado'));
+  assert.ok(content(tree).includes('Tienes 2 contactos guardados'));
   await send(tree, '¿Cuál es el Address de Prueba?');
   assert.ok(content(tree).includes('GPRUEBA'));
   await send(tree, 'Quiero agregar un nuevo contacto, se llama Nico');
@@ -112,10 +113,46 @@ test('activity is shown in chat and chained transactions are split into reviewed
   await send(tree, 'Dime mis últimas 5 operaciones');
   assert.ok(content(tree).includes('Tus últimas 1 operaciones'));
   assert.ok(content(tree).includes('Enviaste dinero a Prueba'));
-  const aiBefore = calls.ai.length;
+  await send(tree, 'Las últimas 2');
+  assert.ok(content(tree).includes('Tus últimas 1 operaciones'));
+  await act(() => tree.unmount());
+});
+
+test('a chained swap prepares the exact received amount for a separately confirmed payment', async () => {
+  let tree!: ReactTestRenderer;
+  const paymentsBefore = calls.submit.length;
+  const swapsBefore = calls.swapSubmits.length;
+  await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
+  await send(tree, 'Quiero agregar un contacto que se llama Nico');
   await send(tree, 'Cambia 1 USDC a XLM y después envía ese monto a Aya');
-  assert.ok(content(tree).includes('una sola operación a la vez'));
-  assert.equal(calls.ai.length, aiBefore);
+  assert.ok(content(tree).includes('Revisa tu cambio'));
+  assert.equal(calls.swapSubmits.length, swapsBefore);
+  await act(async () => button(tree, 'Sí, cambiar').props.onPress());
+  await act(async () => { await Promise.resolve(); });
+  assert.equal(calls.swapSubmits.length, swapsBefore + 1);
+  assert.deepEqual(calls.prepare.at(-1), { source: 'GSENDER', destination: 'GAYA', amount: '44.1234567', asset: 'XLM' });
+  assert.equal(calls.submit.length, paymentsBefore);
+  assert.ok(content(tree).includes('Cambio realizado'));
+  assert.ok(content(tree).includes('44.1234567 XLM a Aya'));
+  assert.ok(content(tree).includes('Revisa tu transferencia'));
+  await act(async () => button(tree, 'Sí, confirmar').props.onPress());
+  assert.equal(calls.submit.length, paymentsBefore + 1);
+  await act(() => tree.unmount());
+});
+
+test('successful payment details start collapsed and can be expanded and collapsed again', async () => {
+  let tree!: ReactTestRenderer;
+  await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
+  await send(tree, 'Envia 1 USDC a Prueba');
+  await act(async () => button(tree, 'Sí, confirmar').props.onPress());
+  assert.ok(content(tree).includes('Enviado'));
+  assert.ok(content(tree).includes('Ver detalles'));
+  assert.ok(!content(tree).includes('Hash de transacción'));
+  await act(() => button(tree, 'Ver detalles').props.onPress());
+  assert.ok(content(tree).includes('Hash de transacción'));
+  assert.ok(content(tree).includes('Ocultar detalles'));
+  await act(() => button(tree, 'Ocultar detalles').props.onPress());
+  assert.ok(!content(tree).includes('Hash de transacción'));
   await act(() => tree.unmount());
 });
 
@@ -133,7 +170,13 @@ test('Cambia 50 XLM a USDC quotes in chat and only the explicit swap confirmatio
   assert.ok(!content(tree).includes('Claro. Dime qué activo'));
   await act(async () => button(tree, 'Sí, cambiar').props.onPress());
   assert.equal(calls.swapSubmits.length, before + 1);
-  assert.ok(content(tree).includes('Cambio confirmado'));
+  assert.ok(content(tree).includes('Cambio realizado'));
+  assert.ok(content(tree).includes('Ver detalles'));
+  assert.ok(!content(tree).includes('b'.repeat(64)));
+  await act(() => button(tree, 'Ver detalles').props.onPress());
+  assert.ok(content(tree).includes('b'.repeat(64)));
+  await act(() => button(tree, 'Ocultar detalles').props.onPress());
+  assert.ok(!content(tree).includes('b'.repeat(64)));
   assert.ok(content(tree).includes('¿Cuánto dinero tengo?'));
   assert.equal(calls.close, 0);
   await act(() => tree.unmount());

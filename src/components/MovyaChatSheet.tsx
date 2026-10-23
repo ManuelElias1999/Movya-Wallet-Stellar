@@ -24,7 +24,7 @@ import { useSwapFlow } from '@/context/useSwapFlow';
 import { swapBlocked } from '@/services/swapFlow';
 import type { PaymentAsset } from '@/services/stellar/payments';
 import { useLanguage } from '@/i18n/Language';
-import { chatTopic, isChainedTransactionRequest, parseContactChatRequest, parseSendRequest, parseSwapRequest } from '@/services/chatIntent';
+import { chatTopic, isChainedTransactionRequest, parseActivityLimit, parseChainedSwapSendRequest, parseContactChatRequest, parseSendRequest, parseSwapRequest } from '@/services/chatIntent';
 import { interpretChatWithAi } from '@/services/backend/ai';
 import { getActivityHistory, type StellarActivity } from '@/services/stellar/activity';
 import { verifiedContactAddress } from '@/services/backend/contacts';
@@ -33,6 +33,7 @@ type TextMessage = { id: number; role: 'movya' | 'user'; kind: 'text'; text: str
 type VoiceMessage = { id: number; role: 'user'; kind: 'voice'; duration: number };
 type Message = TextMessage | VoiceMessage;
 type MovyaChatSheetProps = { open: boolean; onClose: () => void; initialPrompt?: string };
+type ChainedTransfer = { phase: 'swapping' | 'preparing-send' | 'send'; recipient: string };
 
 const screenHeight = Dimensions.get('window').height;
 const suggestions = ['¿Cuánto dinero tengo?', 'Envía 1 USDC a Prueba', 'Cambia 50 XLM a USDC'];
@@ -71,6 +72,8 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   const [suggestionsVisible, setSuggestionsVisible] = useState(true);
   const [interpreting, setInterpreting] = useState(false);
   const [contactDraft, setContactDraft] = useState<{ phase: 'name' } | { phase: 'identifier'; name: string } | null>(null);
+  const [chainedTransfer, setChainedTransfer] = useState<ChainedTransfer | null>(null);
+  const lastLocalContext = useRef<'contacts' | 'activity' | null>(null);
   const interpretationRevision = useRef(0);
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, role: 'movya', kind: 'text', text: `Hola, ${name}. Puedo ayudarte a enviar, recibir o cambiar dinero en Stellar. Prueba escribiendo: “Envía 20 USDC a Ouali”.` },
@@ -155,6 +158,34 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     return () => subscription.remove();
   }, [open, onClose, flow, swapFlow]);
 
+  useEffect(() => {
+    if (!open || chainedTransfer?.phase !== 'swapping' || swapState.phase !== 'success' || !swapState.review || !swapState.receipt) return;
+    if (wallet.publicKey !== swapState.review.source) {
+      setChainedTransfer(null);
+      setMessages(current => [...current, { id: Date.now(), role: 'movya', kind: 'text', text: 'La cuenta activa cambió después del swap. Por seguridad no prepararé el envío.' }]);
+      return;
+    }
+    const receivedAmount = swapState.receipt.receivedAmount;
+    if (!receivedAmount) {
+      setChainedTransfer(null);
+      setMessages(current => [...current, { id: Date.now(), role: 'movya', kind: 'text', text: 'El cambio se confirmó, pero todavía no pude verificar el monto exacto recibido. Por seguridad no prepararé el envío automáticamente. Actualiza Actividad y vuelve a intentarlo.' }]);
+      setSuggestionsVisible(true);
+      return;
+    }
+    let active = true;
+    const recipient = chainedTransfer.recipient;
+    setChainedTransfer({ phase: 'preparing-send', recipient });
+    setMessages(current => [...current, { id: Date.now(), role: 'movya', kind: 'text', text: `Cambio realizado. Ahora prepararé el envío de ${formatEnteredAmount(receivedAmount)} ${swapState.review!.to} a ${recipient} para que lo revises y confirmes.` }]);
+    void flow.start({ amount: receivedAmount, token: swapState.review.to, recipient }).then(() => {
+      if (active) setChainedTransfer({ phase: 'send', recipient });
+    });
+    return () => { active = false; };
+  }, [open, chainedTransfer?.phase, chainedTransfer?.recipient, swapState.phase, swapState.review, swapState.receipt, wallet.publicKey, flow]);
+
+  useEffect(() => {
+    if (chainedTransfer?.phase === 'send' && payment.phase === 'success') setChainedTransfer(null);
+  }, [chainedTransfer?.phase, payment.phase]);
+
   const sendDirect = async (message: string) => {
     const clean = message.trim();
     if (!clean) return;
@@ -165,7 +196,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     let pending = flow.get();
     let pendingSwap = swapFlow.get();
     if (pending.phase === 'success' || pending.phase === 'error') { flow.clear(); pending = flow.get(); }
-    if (pendingSwap.phase === 'success') { swapFlow.clear(); pendingSwap = swapFlow.get(); }
+    if (pendingSwap.phase === 'success' && !chainedTransfer) { swapFlow.clear(); pendingSwap = swapFlow.get(); }
     setSuggestionsVisible(false);
     setMessages(current => [...current, { id, role: 'user', kind: 'text', text: clean }]);
     setText('');
@@ -185,6 +216,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       if (confirms) void swapFlow.confirm();
       else if (/^(no|cancelar|cancela|cancel)$/.test(normalized)) {
         swapFlow.clear();
+        setChainedTransfer(null);
         setSuggestionsVisible(true);
         setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Cambio cancelado. No se movió ningún fondo.' }]);
       } else setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Responde Sí para confirmar el cambio o No para cancelarlo.' }]);
@@ -195,6 +227,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
         void flow.confirm();
       } else if (/^(no|cancelar|cancela|cancel)$/.test(normalized)) {
         flow.cancel();
+        setChainedTransfer(null);
         setSuggestionsVisible(true);
         setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Transacción cancelada. No se movió ningún fondo. ¿Deseas hacer algo más?' }]);
       } else {
@@ -206,7 +239,25 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       return;
     }
 
-    if (contactDraft) {
+    const chained = parseChainedSwapSendRequest(clean);
+    const swap = parseSwapRequest(clean);
+    const transaction = parseSendRequest(clean);
+    const contactRequest = parseContactChatRequest(clean);
+    const localTopic = chatTopic(clean);
+    const activityFollowUp = lastLocalContext.current === 'activity' && /ultim(?:a|as|o|os)\s+\d{1,2}/.test(command);
+    const contactListFollowUp = lastLocalContext.current === 'contacts' && /^(quienes|cuales|listalos|listalas|muestramelos|muestramelas)$/.test(command);
+    const startsNewTask = Boolean(chained || swap || transaction || contactRequest || activityFollowUp || contactListFollowUp || ['balance', 'activity', 'receive'].includes(localTopic));
+
+    if (contactListFollowUp) {
+      setContactDraft(null);
+      const names = saved.contacts.map(contact => contact.name);
+      setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: names.length ? `Tus contactos son: ${names.join(', ')}.` : 'Todavía no tienes contactos guardados.' }]);
+      setSuggestionsVisible(true);
+      return;
+    }
+
+    if (contactDraft && startsNewTask) setContactDraft(null);
+    else if (contactDraft) {
       if (/^(cancelar|cancela|cancel)$/.test(command)) {
         setContactDraft(null);
         setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Registro de contacto cancelado.' }]);
@@ -240,7 +291,6 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       return;
     }
 
-    const contactRequest = parseContactChatRequest(clean);
     if (contactRequest?.kind === 'address') {
       const matches = saved.contacts.filter(contact => normalizeName(contact.name) === normalizeName(contactRequest.name));
       if (!matches.length) {
@@ -272,38 +322,46 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       return;
     }
 
+    if (chained) {
+      setChainedTransfer({ phase: 'swapping', recipient: chained.recipient });
+      flow.clear();
+      void swapFlow.start({ source: wallet.publicKey ?? '', amount: chained.amount, from: chained.from, to: chained.to });
+      void Haptics.selectionAsync();
+      return;
+    }
     if (isChainedTransactionRequest(clean)) {
-      setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Por seguridad preparo una sola operación a la vez. Primero pídeme el cambio. Cuando se confirme y veas cuánto XLM recibiste, pídeme enviar ese monto a Aya; cada operación tendrá su propia revisión.' }]);
+      setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Entiendo que quieres hacer un cambio y después un envío, pero falta algún dato. Escríbelo así: “Cambia 1 USDC a XLM y después envía ese monto a Aya”.' }]);
       setSuggestionsVisible(true);
       return;
     }
-    const swap = parseSwapRequest(clean);
     if (swap) {
+      setChainedTransfer(null);
       void swapFlow.start({ source: wallet.publicKey ?? '', amount: swap.amount, from: swap.from as PaymentAsset, to: swap.to as PaymentAsset });
       void Haptics.selectionAsync();
       return;
     }
-    const transaction = parseSendRequest(clean);
     if (transaction) {
+      setChainedTransfer(null);
       swapFlow.clear();
       void flow.start(transaction);
       void Haptics.selectionAsync();
       return;
     }
 
-    const localTopic = chatTopic(clean);
-    if (localTopic === 'activity') {
+    if (localTopic === 'activity' || activityFollowUp) {
       if (!wallet.publicKey) {
         setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Abre tu wallet para consultar sus operaciones.' }]);
         return;
       }
       setInterpreting(true);
       try {
-        const activities = (await getActivityHistory(wallet.publicKey)).slice(0, 5);
+        const limit = parseActivityLimit(clean);
+        const activities = (await getActivityHistory(wallet.publicKey)).slice(0, limit);
         const reply = activities.length
           ? `Tus últimas ${activities.length} operaciones son:\n${activities.map((activity, index) => `${index + 1}. ${activityLine(activity, wallet.publicKey!, saved.contacts, locale)}`).join('\n')}`
           : 'Todavía no tienes operaciones en esta wallet.';
         setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: reply }]);
+        lastLocalContext.current = 'activity';
         setSuggestionsVisible(true);
       } catch {
         setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'No pude consultar tus operaciones ahora. Inténtalo otra vez o abre Actividad.' }]);
@@ -312,6 +370,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     }
     if (localTopic === 'balance' || localTopic === 'receive' || localTopic === 'contact') {
       setMessages(current => [...current, createMovyaReply(clean, id + 1)]);
+      if (localTopic === 'contact' && contactRequest?.kind === 'count') lastLocalContext.current = 'contacts';
       setSuggestionsVisible(true);
       void Haptics.selectionAsync();
       return;
@@ -324,9 +383,11 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       const intent = await interpretChatWithAi(clean, history, locale);
       if (revision !== interpretationRevision.current || !open) return;
       if (intent.kind === 'send') {
+        setChainedTransfer(null);
         swapFlow.clear();
         void flow.start({ amount: intent.amount!, token: intent.token!, recipient: intent.recipient! });
       } else if (intent.kind === 'swap') {
+        setChainedTransfer(null);
         void swapFlow.start({ source: wallet.publicKey ?? '', amount: intent.amount!, from: intent.from!, to: intent.to! });
       } else {
         setMessages(current => [...current, createAiReply(intent.kind as 'balance' | 'receive' | 'contact' | 'help' | 'unknown', intent.reply, id + 1)]);
@@ -365,8 +426,8 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   }, [initialPrompt, open, t, flow, swapFlow]);
 
   useEffect(() => {
-    if (payment.phase === 'success' || swapState.phase === 'success') setSuggestionsVisible(true);
-  }, [payment.phase, swapState.phase]);
+    if (payment.phase === 'success' || (swapState.phase === 'success' && !chainedTransfer)) setSuggestionsVisible(true);
+  }, [payment.phase, swapState.phase, chainedTransfer]);
 
   const send = () => {
     const clean = text.trim();
@@ -426,8 +487,8 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
             </View>
           ))}
           {interpreting ? <View style={styles.movyaGroup}><View style={styles.senderRow}><MovyaLogo size={28} style={{ marginRight: 6 }} /><Text style={styles.sender}>Movya</Text><View style={styles.aiBadge}><Ionicons name="sparkles" size={10} color={colors.brand} /><Text style={styles.aiText}>IA</Text></View></View><BlurView intensity={72} tint="light" style={[styles.bubble, styles.movyaBubble, styles.thinkingBubble]}><ActivityIndicator color={colors.brand} size="small" /><Text style={styles.thinkingText}>Entendiendo tu mensaje…</Text></BlurView></View> : null}
-          <ChatPaymentCard state={payment} flow={flow} onCancel={() => setSuggestionsVisible(true)} />
-          <SwapReviewCard state={swapState} flow={swapFlow} onCancel={() => setSuggestionsVisible(true)} />
+          <SwapReviewCard state={swapState} flow={swapFlow} onCancel={() => { setChainedTransfer(null); setSuggestionsVisible(true); }} />
+          <ChatPaymentCard state={payment} flow={flow} onCancel={() => { setChainedTransfer(null); setSuggestionsVisible(true); }} />
           {suggestionsVisible ? <View style={styles.suggestions}>{suggestions.map((suggestion) => <Pressable key={suggestion} disabled={paymentBusy} accessibilityState={{ disabled: paymentBusy }} onPress={() => void sendDirect(t(suggestion))} style={styles.suggestion}><Ionicons name="sparkles-outline" size={14} color={colors.brand} /><Text style={styles.suggestionText}>{suggestion}</Text><Ionicons name="arrow-up-circle" size={15} color={colors.brand} /></Pressable>)}</View> : null}
         </ScrollView>
 
