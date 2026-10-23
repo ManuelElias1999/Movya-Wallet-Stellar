@@ -96,6 +96,10 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     if (topic === 'contact') {
       const request = parseContactChatRequest(message);
       if (request?.kind === 'count') return { id, role: 'movya', kind: 'text', text: `Tienes ${saved.contacts.length} contacto${saved.contacts.length === 1 ? '' : 's'} guardado${saved.contacts.length === 1 ? '' : 's'}.` };
+      if (request?.kind === 'list') {
+        const names = saved.contacts.map(contact => contact.name);
+        return { id, role: 'movya', kind: 'text', text: names.length ? `Tus contactos son: ${names.join(', ')}.` : 'Todavía no tienes contactos guardados.' };
+      }
       if (request?.kind === 'address') {
         const matches = saved.contacts.filter(contact => normalizeName(contact.name) === normalizeName(request.name));
         if (!matches.length) return { id, role: 'movya', kind: 'text', text: `No encontré un contacto llamado ${request.name}.` };
@@ -195,14 +199,19 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     const confirms = /^(si|confirmar|confirmo|si confirmar|si confirmo|adelante|yes|confirm|go ahead)$/.test(command);
     let pending = flow.get();
     let pendingSwap = swapFlow.get();
+    const completedChain = pending.phase === 'success' && pendingSwap.phase === 'success';
     if (pending.phase === 'success' || pending.phase === 'error') { flow.clear(); pending = flow.get(); }
-    if (pendingSwap.phase === 'success' && !chainedTransfer) { swapFlow.clear(); pendingSwap = swapFlow.get(); }
+    if (pendingSwap.phase === 'success' && (!chainedTransfer || completedChain)) {
+      swapFlow.clear();
+      setChainedTransfer(null);
+      pendingSwap = swapFlow.get();
+    }
     setSuggestionsVisible(false);
     setMessages(current => [...current, { id, role: 'user', kind: 'text', text: clean }]);
     setText('');
     if (pendingSwap.phase === 'error') {
       if (/^(actualiza|actualizar|refresca|refrescar)( la)? cotizacion$/.test(command) && pendingSwap.input) {
-        void swapFlow.start(pendingSwap.input);
+        void swapFlow.requote();
       } else if (confirms) {
         setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Esa cotización fue invalidada y ya no se puede confirmar. Pulsa “Actualizar cotización” para preparar una nueva.' }]);
       } else {
@@ -306,6 +315,13 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
           setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: error instanceof Error ? error.message : 'No pude consultar la dirección verificada.' }]);
         } finally { setInterpreting(false); }
       }
+      setSuggestionsVisible(true);
+      return;
+    }
+    if (contactRequest?.kind === 'list') {
+      const names = saved.contacts.map(contact => contact.name);
+      setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: names.length ? `Tus contactos son: ${names.join(', ')}.` : 'Todavía no tienes contactos guardados.' }]);
+      lastLocalContext.current = 'contacts';
       setSuggestionsVisible(true);
       return;
     }

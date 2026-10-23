@@ -25,6 +25,7 @@ export function parseActivityLimit(message: string, fallback = 5) {
 
 export type ContactChatRequest =
   | { kind: 'count' }
+  | { kind: 'list' }
   | { kind: 'address'; name: string }
   | { kind: 'add'; name?: string };
 
@@ -34,6 +35,7 @@ export function parseContactChatRequest(message: string): ContactChatRequest | n
   const text = normalizedChat(message);
   if (!/contact|address|direccion/.test(text)) return null;
   if (/(?:cuantos|numero de|cantidad de).*contact|contact.*(?:tengo|guardad)/.test(text)) return { kind: 'count' };
+  if (/(?:dime|muestra|muestrame|lista|listar|ver|quienes|cuales|todos|todas|mis|my|show|list).*(?:contact)|(?:contact).*(?:dime|muestra|lista|todos|todas|guardad|saved)/.test(text)) return { kind: 'list' };
   const address = message.trim().match(/(?:cu[aá]l\s+es\s+(?:el\s+)?|dime\s+(?:el\s+)?|what(?:'s|\s+is)\s+(?:the\s+)?)(?:address|direcci[oó]n)\s+(?:de|of)\s+(.+?)[?.!]*$/i);
   if (address?.[1]?.trim()) return { kind: 'address', name: address[1].trim() };
   if (/(?:agregar|anadir|añadir|guardar|nuevo|add|save).*(?:contact)|(?:contact).*(?:agregar|anadir|añadir|guardar|add|save)/.test(text)) {

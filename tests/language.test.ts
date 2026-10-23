@@ -48,6 +48,7 @@ test('both languages prepare equivalent chat requests without changing recipient
 test('chat recognizes activity, contact queries and chained transactions without guessing', () => {
   assert.equal(chatTopic('Dime mis últimas 5 operaciones'), 'activity');
   assert.deepEqual(parseContactChatRequest('¿Cuántos contactos tengo?'), { kind: 'count' });
+  assert.deepEqual(parseContactChatRequest('Dime todos mis contactos'), { kind: 'list' });
   assert.deepEqual(parseContactChatRequest('¿Cuál es el Address de Aya?'), { kind: 'address', name: 'Aya' });
   assert.deepEqual(parseContactChatRequest('Quiero agregar un nuevo contacto, se llama Nico'), { kind: 'add', name: 'Nico' });
   assert.equal(isChainedTransactionRequest('Cambia 1 USDC a XLM y después envía ese monto a Aya'), true);

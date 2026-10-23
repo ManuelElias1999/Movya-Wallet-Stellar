@@ -97,6 +97,8 @@ test('contact count, address lookup and conversational contact creation use save
   await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
   await send(tree, '¿Cuántos contactos tengo?');
   assert.ok(content(tree).includes('Tienes 2 contactos guardados'));
+  await send(tree, 'Dime todos mis contactos');
+  assert.ok(content(tree).includes('Tus contactos son: Prueba, Aya'));
   await send(tree, '¿Cuál es el Address de Prueba?');
   assert.ok(content(tree).includes('GPRUEBA'));
   await send(tree, 'Quiero agregar un nuevo contacto, se llama Nico');
@@ -137,6 +139,10 @@ test('a chained swap prepares the exact received amount for a separately confirm
   assert.ok(content(tree).includes('Revisa tu transferencia'));
   await act(async () => button(tree, 'Sí, confirmar').props.onPress());
   assert.equal(calls.submit.length, paymentsBefore + 1);
+  await send(tree, 'Dime todos mis contactos');
+  assert.ok(content(tree).includes('Tus contactos son: Prueba, Aya'));
+  assert.ok(!content(tree).includes('Ver detalles'));
+  assert.ok(!content(tree).includes('Enviado'));
   await act(() => tree.unmount());
 });
 

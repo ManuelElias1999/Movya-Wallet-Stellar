@@ -179,3 +179,24 @@ test('a rejected swap invalidates its review and can only continue with a fresh 
   await flow.start(flow.get().input!); assert.equal(flow.get().phase, 'review');
   assert.equal(prepares, 2);
 });
+test('refreshing a temporarily expensive quote retries with fresh fee data', async () => {
+  setup();
+  let attempts = 0;
+  const quote = await prepare();
+  const flow = createSwapFlow({
+    source: () => key.publicKey(),
+    prepare: async () => {
+      attempts++;
+      if (attempts < 3) throw new Error('La comisión de red está temporalmente demasiado alta. Actualiza la cotización en unos segundos.');
+      return quote;
+    },
+    submit: async () => ({ hash: quote.hash, explorerUrl: '' }),
+    check: async () => null,
+    refresh: async () => {},
+  });
+  await flow.start(quote);
+  assert.equal(flow.get().phase, 'error');
+  await flow.requote(0, 3);
+  assert.equal(flow.get().phase, 'review');
+  assert.equal(attempts, 3);
+});

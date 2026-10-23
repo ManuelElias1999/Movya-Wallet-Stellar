@@ -51,7 +51,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
   try {
-    const response = await fetch(`${TESTNET_HORIZON}${path}`, { ...init, signal: controller.signal });
+    const response = await fetch(`${TESTNET_HORIZON}${path}`, { cache: 'no-store', ...init, signal: controller.signal });
     if (!response.ok) {
       const error = new Error(response.status === 404 ? 'La cuenta no está activada en Stellar Testnet.' : 'No se pudo completar la operación en Stellar.');
       Object.assign(error, { status: response.status, payload: await response.json().catch(() => null) });

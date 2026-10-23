@@ -69,7 +69,7 @@ export function SwapReviewCard({ state, flow, onCancel }: { state: SwapState; fl
       </> : null}
     </> : null}
     {state.error ? <Text style={styles.error}>{state.error}</Text> : null}
-    {(state.phase === 'review' || state.phase === 'error') && state.input ? <Pressable accessibilityRole="button" onPress={() => void flow.start(state.input!)} style={styles.secondary}><Text>Actualizar cotización</Text></Pressable> : null}
+    {(state.phase === 'review' || state.phase === 'error') && state.input ? <Pressable accessibilityRole="button" onPress={() => void flow.requote()} style={styles.secondary}><Text>Actualizar cotización</Text></Pressable> : null}
     {state.phase === 'unknown' ? <>
       <Text translate={false} selectable style={styles.address}>{review?.hash}</Text>
       <Pressable accessibilityRole="button" onPress={() => void flow.verify()} style={styles.primary}><Text style={styles.primaryText}>Verificar estado</Text></Pressable>
