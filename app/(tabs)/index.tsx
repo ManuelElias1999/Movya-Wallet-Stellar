@@ -20,7 +20,7 @@ import { useAuth } from '@/context/AuthContext';
 import { TestnetFundingButtons } from '@/components/TestnetFundingButtons';
 import { TestnetPaymentHistory } from '@/components/TestnetPaymentHistory';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
-import { displayName as getDisplayName, formatXlmBalance } from '@/services/presentation';
+import { displayName as getDisplayName, formatAssetBalance, formatCompactXlmBalance } from '@/services/presentation';
 import { colors } from '@/theme/tokens';
 import { useLanguage } from '@/i18n/Language';
 
@@ -44,7 +44,8 @@ export default function HomeScreen() {
   const assets = account.data?.balances.map((item) => ({
     code: item.assetCode,
     name: item.assetCode === 'XLM' ? 'Stellar' : item.assetCode === 'USDC' ? 'USD Coin' : item.assetCode,
-    amount: Number(item.balance).toLocaleString(locale, { maximumFractionDigits: 4 }),
+    amount: formatAssetBalance(item.balance, locale),
+    detailAmount: item.balance,
     value: item.assetCode === 'XLM' ? 'Stellar' : item.assetCode === 'USDC' ? 'USD Coin' : item.assetCode,
     color: item.assetCode === 'XLM' ? colors.navy : colors.brand,
   })) ?? (account.isDemo ? demoAssets : []);
@@ -76,7 +77,7 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AnimatedAccountCard ownerName={displayName} currency={account.isDemo ? 'USD' : 'XLM'} amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : formatXlmBalance(account.data?.balances, locale)} balanceLabel={account.isDemo ? 'Saldo total en USD' : 'Saldo en Stellar'} />
+        <AnimatedAccountCard ownerName={displayName} currency={account.isDemo ? 'USD' : 'XLM'} amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : formatCompactXlmBalance(account.data?.balances, locale)} balanceLabel={account.isDemo ? 'Saldo total en USD' : 'Saldo en Stellar'} />
 
         <View style={styles.actionsRow}>
           {quickActions.map((action) => (

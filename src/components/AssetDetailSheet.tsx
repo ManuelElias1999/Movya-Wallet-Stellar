@@ -13,6 +13,7 @@ export type AssetDetail = {
   code: string;
   name: string;
   amount: string;
+  detailAmount?: string;
   value: string;
   color: string;
   unitPrice?: string;
@@ -61,7 +62,7 @@ export function AssetDetailSheet({ asset, onClose }: AssetDetailSheetProps) {
           <View style={styles.periodRow}><Text style={styles.period}>Gráfico demostrativo · 7 días</Text><Text style={styles.demo}>DEMO</Text></View>
         </LinearGradient>
 
-        <View style={styles.balanceCard}><View><Text style={styles.balanceLabel}>Tu balance</Text><Text style={styles.balance}>{asset.amount} {asset.code}</Text></View><Text style={styles.balanceValue}>{asset.value}</Text></View>
+        <View style={styles.balanceCard}><View><Text style={styles.balanceLabel}>Tu balance completo</Text><Text style={styles.balance}>{asset.detailAmount ?? asset.amount} {asset.code}</Text></View><Text style={styles.balanceValue}>{asset.value}</Text></View>
         <Text style={styles.description}>{details.description}</Text>
         <StellarNetworkBadge label="Activo en la red Stellar" />
       </BlurView>

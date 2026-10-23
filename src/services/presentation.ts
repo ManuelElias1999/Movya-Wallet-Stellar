@@ -25,6 +25,23 @@ export function formatReceivedAmount(value: string) {
   const cents = (units + 50_000n) / 100_000n;
   return `${cents / 100n}.${String(cents % 100n).padStart(2, '0')}`;
 }
+export function formatAssetBalance(value: string, locale = 'es-BO', maximumFractionDigits = 2) {
+  if (!/^\d+(?:\.\d{1,7})?$/.test(value) || maximumFractionDigits < 0 || maximumFractionDigits > 7) return '0';
+  const [whole, fraction = ''] = value.split('.');
+  const units = BigInt(whole || '0') * 10_000_000n + BigInt(fraction.padEnd(7, '0'));
+  const divisor = 10n ** BigInt(7 - maximumFractionDigits);
+  const rounded = maximumFractionDigits === 7 ? units : (units + divisor / 2n) / divisor;
+  const scale = 10n ** BigInt(maximumFractionDigits);
+  const integer = maximumFractionDigits ? rounded / scale : rounded;
+  const decimals = maximumFractionDigits ? String(rounded % scale).padStart(maximumFractionDigits, '0').replace(/0+$/, '') : '';
+  const english = /^en(?:-|$)/i.test(locale);
+  const grouped = String(integer).replace(/\B(?=(\d{3})+(?!\d))/g, english ? ',' : '.');
+  return `${grouped}${decimals ? `${english ? '.' : ','}${decimals}` : ''}`;
+}
+export function formatCompactXlmBalance(balances?: { assetCode: string; balance: string }[], locale = 'es-BO') {
+  const balance = balances?.find(item => item.assetCode === 'XLM')?.balance ?? '0';
+  return `${formatAssetBalance(balance, locale, 2)} XLM`;
+}
 export function formatXlmBalance(balances?: { assetCode: string; balance: string }[], locale = 'es-BO') {
   const balance = balances?.find(item => item.assetCode === 'XLM')?.balance ?? '0';
   if (!/^\d+(\.\d{1,7})?$/.test(balance)) return '0 XLM';
