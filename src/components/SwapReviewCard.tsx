@@ -19,7 +19,7 @@ export function SwapReviewCard({ state, flow, onCancel }: { state: SwapState; fl
   const expired = review ? now >= review.expiresAt : false;
   const cancel = () => { if (flow.clear()) onCancel?.(); };
   return <View style={styles.card} accessibilityLiveRegion="polite">
-    <Text style={styles.title}>{state.phase === 'success' ? 'Cambio confirmado' : 'Revisa tu cambio'}</Text>
+    <Text style={styles.title}>{state.phase === 'success' ? 'Cambio confirmado' : state.phase === 'error' ? 'Cotización no disponible' : 'Revisa tu cambio'}</Text>
     {state.phase === 'quoting' || state.phase === 'submitting' ? <View style={styles.progress}><ActivityIndicator color={colors.brand} /><Text>{state.phase === 'quoting' ? 'Buscando cotización en Stellar…' : 'Enviando o verificando la transacción…'}</Text></View> : null}
     {review ? <>
       <Text style={styles.label}>Tú entregas</Text><Text style={styles.amount}>{formatEnteredAmount(review.amount)} {review.from}</Text>

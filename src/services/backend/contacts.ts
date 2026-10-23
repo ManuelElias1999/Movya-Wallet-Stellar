@@ -84,6 +84,17 @@ export async function acceptContactAddress(contact: Contact, address: string) {
 }
 
 const currentOwner = async () => (await requireBackend().auth.getSession()).data.session?.user.id ?? null;
+// Returns only the address this device previously verified (or restored from
+// the encrypted contact backup). A server-side contact-row change is never
+// exposed as if it were trusted.
+export async function verifiedContactAddress(contact: Contact) {
+  const owner = await currentOwner();
+  if (!owner) throw new Error('Ingresa para consultar la dirección verificada.');
+  const pin = await contactPinStore.read(owner, contact.id);
+  if (!pin) throw new Error('Esta dirección aún no está verificada en este dispositivo. Abre el contacto y verifícala primero.');
+  validateAddress(pin.address);
+  return pin.address;
+}
 // Saves the verified addresses (not the server's copy of them) in the
 // encrypted contact backup.
 export async function syncContactBackup() {

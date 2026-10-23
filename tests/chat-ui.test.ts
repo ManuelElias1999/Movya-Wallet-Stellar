@@ -6,7 +6,7 @@ import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { calls } from './fixtures/chatRuntime';
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 registerHooks({ resolve(specifier, context, nextResolve) {
-  const mocked = ['react-native', '@expo/vector-icons', 'expo-blur', 'expo-haptics', 'expo-linear-gradient', 'expo-status-bar', 'react-native-safe-area-context', '@/components/MovyaLogo', '@/i18n/primitives', '@/i18n/Language', '@/context/AuthContext', '@/context/ContactsContext', '@/context/TestnetWalletContext', './TestnetWalletContext', '@/services/stellar/payments', '@/services/backend/contacts', '@/services/backend/ai', '@/services/stellar/swaps', '@/components/PageHeader', '@/components/PressableScale', '@/components/InternalScreenBackground', '@/components/MovyaContextHelp', '@/components/TokenIcon', '@/components/TokenSelector'];
+  const mocked = ['react-native', '@expo/vector-icons', 'expo-blur', 'expo-haptics', 'expo-linear-gradient', 'expo-status-bar', 'react-native-safe-area-context', '@/components/MovyaLogo', '@/i18n/primitives', '@/i18n/Language', '@/context/AuthContext', '@/context/ContactsContext', '@/context/TestnetWalletContext', './TestnetWalletContext', '@/services/stellar/payments', '@/services/stellar/activity', '@/services/backend/contacts', '@/services/backend/ai', '@/services/stellar/swaps', '@/components/PageHeader', '@/components/PressableScale', '@/components/InternalScreenBackground', '@/components/MovyaContextHelp', '@/components/TokenIcon', '@/components/TokenSelector'];
   return nextResolve(mocked.includes(specifier) ? require.resolve('./fixtures/chatRuntime') : specifier, context);
 } });
 const { MovyaChatSheet }: typeof import('../src/components/MovyaChatSheet') = require('../src/components/MovyaChatSheet');
@@ -88,6 +88,34 @@ test('a new message cannot make an earlier pending recipient look like a new ord
   assert.ok(content(tree).includes('Ya tienes una orden pendiente de 1 USDC para Prueba'));
   assert.ok(content(tree).includes('Confírmala o cancélala antes de preparar otra orden'));
   assert.equal(calls.prepare.at(-1)?.destination, 'GPRUEBA');
+  await act(() => tree.unmount());
+});
+
+test('contact count, address lookup and conversational contact creation use saved data', async () => {
+  let tree!: ReactTestRenderer;
+  await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
+  await send(tree, '¿Cuántos contactos tengo?');
+  assert.ok(content(tree).includes('Tienes 1 contacto guardado'));
+  await send(tree, '¿Cuál es el Address de Prueba?');
+  assert.ok(content(tree).includes('GPRUEBA'));
+  await send(tree, 'Quiero agregar un nuevo contacto, se llama Nico');
+  assert.ok(content(tree).includes('correo de Movya o la dirección Stellar pública de Nico'));
+  await send(tree, 'nico@example.com');
+  assert.deepEqual(calls.contactAdds.at(-1), { name: 'Nico', identifier: 'nico@example.com', type: 'email' });
+  assert.ok(content(tree).includes('guardé a Nico'));
+  await act(() => tree.unmount());
+});
+
+test('activity is shown in chat and chained transactions are split into reviewed steps', async () => {
+  let tree!: ReactTestRenderer;
+  await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
+  await send(tree, 'Dime mis últimas 5 operaciones');
+  assert.ok(content(tree).includes('Tus últimas 1 operaciones'));
+  assert.ok(content(tree).includes('Enviaste dinero a Prueba'));
+  const aiBefore = calls.ai.length;
+  await send(tree, 'Cambia 1 USDC a XLM y después envía ese monto a Aya');
+  assert.ok(content(tree).includes('una sola operación a la vez'));
+  assert.equal(calls.ai.length, aiBefore);
   await act(() => tree.unmount());
 });
 

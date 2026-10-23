@@ -15,6 +15,7 @@ let paths: any[];
 let posts: Transaction[];
 let mode: 'success' | 'timeout' | 'price' = 'success';
 let queries: URL[];
+let feeP95: string;
 function setup() {
   account = { account_id: key.publicKey(), sequence: '123', subentry_count: 1, balances: [
     { asset_type: 'native', balance: '100', selling_liabilities: '2' },
@@ -25,7 +26,7 @@ function setup() {
     { asset_type: 'credit_alphanum4', asset_code: 'USDC', asset_issuer: USDC_ISSUER, balance: '0', selling_liabilities: '0', buying_liabilities: '0', limit: '922337203685.4775807', is_authorized: true },
   ] };
   paths = [{ source_asset_type: 'native', source_amount: '49.7500000', destination_asset_type: 'credit_alphanum4', destination_asset_code: 'USDC', destination_asset_issuer: USDC_ISSUER, destination_amount: '10.1234567', path: [] }];
-  posts = []; queries = []; mode = 'success';
+  posts = []; queries = []; mode = 'success'; feeP95 = '200';
   globalThis.fetch = async (url, options) => {
     const target = new URL(String(url)); queries.push(target);
     if (options?.method === 'POST') {
@@ -36,7 +37,7 @@ function setup() {
     }
     if (target.pathname === `/accounts/${MOVYA_TREASURY}`) return Response.json(treasury);
     if (target.pathname.startsWith('/accounts/')) return Response.json(account);
-    if (target.pathname === '/fee_stats') return Response.json({ fee_charged: { p95: '200' }, last_ledger_base_fee: '100' });
+    if (target.pathname === '/fee_stats') return Response.json({ fee_charged: { p95: feeP95 }, last_ledger_base_fee: '100' });
     if (target.pathname === '/ledgers') return Response.json({ _embedded: { records: [{ base_reserve_in_stroops: 5000000 }] } });
     if (target.pathname === '/paths/strict-send') return Response.json({ _embedded: { records: paths } });
     throw new Error('unexpected request');
@@ -82,6 +83,11 @@ test('best valid route wins; impostor USDC and mismatched amounts are ignored', 
 });
 test('no liquidity is reported explicitly and never returns a fabricated quote', async () => {
   setup(); paths = []; await assert.rejects(prepare(), /liquidez/); assert.equal(posts.length, 0);
+});
+test('a network fee above the signing ceiling is rejected before a quote can be reviewed', async () => {
+  setup(); feeP95 = '500001';
+  await assert.rejects(prepare(), /temporalmente demasiado alta/);
+  assert.equal(queries.some(query => query.pathname === '/paths/strict-send'), false);
 });
 test('missing or unauthorized USDC, insufficient balance/reserve and receiving capacity reject quotes', async () => {
   setup(); account.balances.pop(); await assert.rejects(prepare(), /Habilita USDC/);
@@ -150,4 +156,20 @@ test('explicit confirmation is single-use; uncertain swaps only verify and never
   await flow.verify(); assert.equal(flow.get().phase, 'unknown');
   await flow.verify(); assert.equal(flow.get().phase, 'success');
   await flow.confirm(); assert.equal(submissions, 1);
+});
+test('a rejected swap invalidates its review and can only continue with a fresh quote', async () => {
+  setup(); const quote = await prepare(); let prepares = 0;
+  const flow = createSwapFlow({
+    source: () => key.publicKey(),
+    prepare: async () => { prepares++; return quote; },
+    submit: async () => { throw new Error('La cotización expiró. Solicita otra antes de confirmar.'); },
+    check: async () => null,
+    refresh: async () => {},
+  });
+  await flow.start(quote); await flow.confirm();
+  assert.equal(flow.get().phase, 'error');
+  assert.equal(flow.get().review, undefined);
+  await flow.confirm(); assert.equal(flow.get().phase, 'error');
+  await flow.start(flow.get().input!); assert.equal(flow.get().phase, 'review');
+  assert.equal(prepares, 2);
 });

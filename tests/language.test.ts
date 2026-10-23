@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { createLanguageStore, translateText, isLanguage } from '../src/i18n/core';
 import english from '../src/i18n/en.json';
-import { chatTopic, parseSendRequest } from '../src/services/chatIntent';
+import { chatTopic, isChainedTransactionRequest, parseContactChatRequest, parseSendRequest } from '../src/services/chatIntent';
 import { formatXlmBalance } from '../src/services/presentation';
 test('all English copy interpolates correctly and Spanish stays original', () => {
   for (const [source, result] of Object.entries(english)) {
@@ -43,4 +43,13 @@ test('both languages prepare equivalent chat requests without changing recipient
   for (const pair of [['¿Cuánto dinero tengo?', 'How much money do I have?'], ['Cambia 50 XLM a USDC', 'Swap 50 XLM for USDC'], ['Agregar contacto', 'Add contact'], ['Quiero recibir', 'I want to receive']]) assert.equal(chatTopic(pair[0]), chatTopic(pair[1]));
   assert.equal(formatXlmBalance([{ assetCode: 'XLM', balance: '1234.1234567' }], 'en-US'), '1,234.1234567 XLM');
   assert.equal(formatXlmBalance([{ assetCode: 'XLM', balance: '1234.1234567' }], 'es-BO'), '1.234,1234567 XLM');
+});
+
+test('chat recognizes activity, contact queries and chained transactions without guessing', () => {
+  assert.equal(chatTopic('Dime mis últimas 5 operaciones'), 'activity');
+  assert.deepEqual(parseContactChatRequest('¿Cuántos contactos tengo?'), { kind: 'count' });
+  assert.deepEqual(parseContactChatRequest('¿Cuál es el Address de Aya?'), { kind: 'address', name: 'Aya' });
+  assert.deepEqual(parseContactChatRequest('Quiero agregar un nuevo contacto, se llama Nico'), { kind: 'add', name: 'Nico' });
+  assert.equal(isChainedTransactionRequest('Cambia 1 USDC a XLM y después envía ese monto a Aya'), true);
+  assert.equal(isChainedTransactionRequest('Cambia 1 USDC a XLM'), false);
 });

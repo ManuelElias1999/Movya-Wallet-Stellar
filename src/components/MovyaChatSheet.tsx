@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme/tokens';
 import { MovyaLogo } from '@/components/MovyaLogo';
 import { useAuth } from '@/context/AuthContext';
-import { displayName, formatEnteredAmount } from '@/services/presentation';
+import { displayName, formatAssetBalance, formatEnteredAmount, formatReceivedAmount, paymentDescription } from '@/services/presentation';
 import { useContacts } from '@/context/ContactsContext';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance, checkSubmission, preparePayment, SubmissionUnknownError, submitPayment, validateAddress } from '@/services/stellar/payments';
@@ -24,8 +24,10 @@ import { useSwapFlow } from '@/context/useSwapFlow';
 import { swapBlocked } from '@/services/swapFlow';
 import type { PaymentAsset } from '@/services/stellar/payments';
 import { useLanguage } from '@/i18n/Language';
-import { chatTopic, parseSendRequest, parseSwapRequest } from '@/services/chatIntent';
+import { chatTopic, isChainedTransactionRequest, parseContactChatRequest, parseSendRequest, parseSwapRequest } from '@/services/chatIntent';
 import { interpretChatWithAi } from '@/services/backend/ai';
+import { getActivityHistory, type StellarActivity } from '@/services/stellar/activity';
+import { verifiedContactAddress } from '@/services/backend/contacts';
 
 type TextMessage = { id: number; role: 'movya' | 'user'; kind: 'text'; text: string };
 type VoiceMessage = { id: number; role: 'user'; kind: 'voice'; duration: number };
@@ -36,6 +38,20 @@ const screenHeight = Dimensions.get('window').height;
 const suggestions = ['¿Cuánto dinero tengo?', 'Envía 1 USDC a Prueba', 'Cambia 50 XLM a USDC'];
 const waveBars = [11, 18, 25, 15, 29, 21, 13, 24, 18, 28, 16, 23, 12, 19];
 const formatDuration = (seconds: number) => `0:${String(seconds).padStart(2, '0')}`;
+const normalizeName = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+
+function activityLine(activity: StellarActivity, publicKey: string, contacts: { name: string; address?: string }[], locale: string) {
+  if (activity.kind === 'swap') {
+    return `Cambiaste ${formatEnteredAmount(activity.sourceAmount)} ${activity.fromAsset} por ${formatReceivedAmount(activity.destinationAmount)} ${activity.toAsset} · ${new Date(activity.createdAt).toLocaleString(locale)}`;
+  }
+  const payment = activity.payment;
+  const received = payment.to === publicKey;
+  const other = received ? payment.from : payment.to;
+  const description = paymentDescription(received, other, contacts);
+  const amount = received ? formatReceivedAmount(payment.amount) : formatEnteredAmount(payment.amount);
+  const asset = payment.asset_type === 'native' ? 'XLM' : payment.asset_code ?? 'activo';
+  return `${description.title} · ${received ? '+' : '-'}${amount} ${asset} · ${new Date(payment.created_at).toLocaleString(locale)}`;
+}
 
 export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetProps) {
   const { t, locale } = useLanguage();
@@ -54,6 +70,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   const [playingVoiceId, setPlayingVoiceId] = useState<number | null>(null);
   const [suggestionsVisible, setSuggestionsVisible] = useState(true);
   const [interpreting, setInterpreting] = useState(false);
+  const [contactDraft, setContactDraft] = useState<{ phase: 'name' } | { phase: 'identifier'; name: string } | null>(null);
   const interpretationRevision = useRef(0);
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, role: 'movya', kind: 'text', text: `Hola, ${name}. Puedo ayudarte a enviar, recibir o cambiar dinero en Stellar. Prueba escribiendo: “Envía 20 USDC a Ouali”.` },
@@ -71,9 +88,19 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
 
   const createMovyaReply = (message: string, id: number): TextMessage => {
     const topic = chatTopic(message);
-    if (topic === 'balance') return { id, role: 'movya', kind: 'text', text: wallet.publicKey ? wallet.account ? `En Testnet tienes ${formatEnteredAmount(assetBalance(wallet.account, 'USDC')?.balance ?? '0')} USDC y ${formatEnteredAmount(assetBalance(wallet.account, 'XLM')?.balance ?? '0')} XLM. Son tokens de prueba.` : 'Solicita XLM desde Inicio y actualiza tu saldo.' : 'Tu balance total de demostración es $1,629.24. Puedo mostrarte el detalle de cada activo si quieres.' };
+    if (topic === 'balance') return { id, role: 'movya', kind: 'text', text: wallet.publicKey ? wallet.account ? `En Testnet tienes ${formatAssetBalance(assetBalance(wallet.account, 'USDC')?.balance ?? '0', locale, 2)} USDC y ${formatAssetBalance(assetBalance(wallet.account, 'XLM')?.balance ?? '0', locale, 2)} XLM. Son tokens de prueba.` : 'Solicita XLM desde Inicio y actualiza tu saldo.' : 'Tu balance total de demostración es $1,629.24. Puedo mostrarte el detalle de cada activo si quieres.' };
     if (topic === 'swap') return { id, role: 'movya', kind: 'text', text: 'Claro. Dime qué activo quieres entregar, cuál quieres recibir y el monto. Después te mostraré la cotización antes de confirmar.' };
-    if (topic === 'contact') return { id, role: 'movya', kind: 'text', text: 'Puedo ayudarte. Dime el nombre y luego comparte su correo de Movya o su dirección Stellar pública.' };
+    if (topic === 'contact') {
+      const request = parseContactChatRequest(message);
+      if (request?.kind === 'count') return { id, role: 'movya', kind: 'text', text: `Tienes ${saved.contacts.length} contacto${saved.contacts.length === 1 ? '' : 's'} guardado${saved.contacts.length === 1 ? '' : 's'}.` };
+      if (request?.kind === 'address') {
+        const matches = saved.contacts.filter(contact => normalizeName(contact.name) === normalizeName(request.name));
+        if (!matches.length) return { id, role: 'movya', kind: 'text', text: `No encontré un contacto llamado ${request.name}.` };
+        if (matches.length > 1) return { id, role: 'movya', kind: 'text', text: `Tienes más de un contacto llamado ${request.name}. Revísalos en Contactos para elegir el correcto.` };
+        return { id, role: 'movya', kind: 'text', text: `Estoy verificando la dirección guardada de ${matches[0].name}.` };
+      }
+      return { id, role: 'movya', kind: 'text', text: 'Puedo ayudarte. Dime el nombre y luego comparte su correo de Movya o su dirección Stellar pública.' };
+    }
     if (topic === 'receive') return { id, role: 'movya', kind: 'text', text: 'Puedes recibir por Stellar usando tu QR o tu dirección pública. Puedo ayudarte a copiarla o compartirla.' };
     return { id, role: 'movya', kind: 'text', text: 'Perfecto. Dime el token, el monto y el destinatario. Prepararé el envío y te mostraré un resumen antes de confirmar.' };
   };
@@ -133,16 +160,29 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     if (!clean) return;
     const id = Date.now();
     const normalized = clean.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const command = normalized.replace(/[.,!?¡¿]/g, ' ').replace(/\s+/g, ' ').trim();
+    const confirms = /^(si|confirmar|confirmo|si confirmar|si confirmo|adelante|yes|confirm|go ahead)$/.test(command);
     let pending = flow.get();
     let pendingSwap = swapFlow.get();
     if (pending.phase === 'success' || pending.phase === 'error') { flow.clear(); pending = flow.get(); }
-    if (pendingSwap.phase === 'success' || pendingSwap.phase === 'error') { swapFlow.clear(); pendingSwap = swapFlow.get(); }
+    if (pendingSwap.phase === 'success') { swapFlow.clear(); pendingSwap = swapFlow.get(); }
     setSuggestionsVisible(false);
     setMessages(current => [...current, { id, role: 'user', kind: 'text', text: clean }]);
     setText('');
+    if (pendingSwap.phase === 'error') {
+      if (/^(actualiza|actualizar|refresca|refrescar)( la)? cotizacion$/.test(command) && pendingSwap.input) {
+        void swapFlow.start(pendingSwap.input);
+      } else if (confirms) {
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Esa cotización fue invalidada y ya no se puede confirmar. Pulsa “Actualizar cotización” para preparar una nueva.' }]);
+      } else {
+        swapFlow.clear();
+      }
+      if (/^(actualiza|actualizar|refresca|refrescar)( la)? cotizacion$/.test(command) || confirms) return;
+      pendingSwap = swapFlow.get();
+    }
     if (['preparing', 'submitting', 'unknown'].includes(pending.phase) || swapBlocked(pendingSwap) || pendingSwap.phase === 'quoting') return;
     if (pendingSwap.phase === 'review') {
-      if (/^(si|confirmar|confirmo|adelante|yes|confirm|go ahead)$/.test(normalized)) void swapFlow.confirm();
+      if (confirms) void swapFlow.confirm();
       else if (/^(no|cancelar|cancela|cancel)$/.test(normalized)) {
         swapFlow.clear();
         setSuggestionsVisible(true);
@@ -151,7 +191,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       return;
     }
     if (pending.phase === 'review' || pending.phase === 'choosing') {
-      if (/^(si|confirmar|confirmo|adelante|yes|confirm|go ahead)$/.test(normalized) && pending.phase === 'review') {
+      if (confirms && pending.phase === 'review') {
         void flow.confirm();
       } else if (/^(no|cancelar|cancela|cancel)$/.test(normalized)) {
         flow.cancel();
@@ -163,6 +203,78 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
           : 'Elige un contacto de la lista o escribe No para cancelar.';
         setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: pendingDescription }]);
       }
+      return;
+    }
+
+    if (contactDraft) {
+      if (/^(cancelar|cancela|cancel)$/.test(command)) {
+        setContactDraft(null);
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Registro de contacto cancelado.' }]);
+        return;
+      }
+      if (contactDraft.phase === 'name') {
+        if (clean.length > 80 || /@/.test(clean)) {
+          setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Escribe primero un nombre de hasta 80 caracteres.' }]);
+        } else {
+          setContactDraft({ phase: 'identifier', name: clean });
+          setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: `Perfecto. Envíame el correo de Movya o la dirección Stellar pública de ${clean}.` }]);
+        }
+        return;
+      }
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean);
+      let isAddress = false;
+      try { validateAddress(clean); isAddress = true; } catch { /* The reply below asks for a valid identifier. */ }
+      if (!isEmail && !isAddress) {
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: `Ese dato no parece un correo ni una dirección Stellar. Envíame uno válido para ${contactDraft.name}.` }]);
+        return;
+      }
+      setInterpreting(true);
+      try {
+        const added = await saved.add({ name: contactDraft.name, identifier: clean, type: isEmail ? 'email' : 'address' });
+        setContactDraft(null);
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: `Listo, guardé a ${added.name} en tus contactos.` }]);
+        setSuggestionsVisible(true);
+      } catch (error) {
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: error instanceof Error ? error.message : 'No pude guardar el contacto.' }]);
+      } finally { setInterpreting(false); }
+      return;
+    }
+
+    const contactRequest = parseContactChatRequest(clean);
+    if (contactRequest?.kind === 'address') {
+      const matches = saved.contacts.filter(contact => normalizeName(contact.name) === normalizeName(contactRequest.name));
+      if (!matches.length) {
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: `No encontré un contacto llamado ${contactRequest.name}.` }]);
+      } else if (matches.length > 1) {
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: `Tienes más de un contacto llamado ${contactRequest.name}. Revísalos en Contactos para elegir el correcto.` }]);
+      } else {
+        setInterpreting(true);
+        try {
+          const address = await verifiedContactAddress(matches[0]);
+          setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: `La dirección Stellar verificada de ${matches[0].name} es:\n${address}` }]);
+        } catch (error) {
+          setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: error instanceof Error ? error.message : 'No pude consultar la dirección verificada.' }]);
+        } finally { setInterpreting(false); }
+      }
+      setSuggestionsVisible(true);
+      return;
+    }
+    if (contactRequest?.kind === 'add') {
+      if (!saved.persistent) {
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Ingresa con tu correo para guardar contactos.' }]);
+      } else if (contactRequest.name) {
+        setContactDraft({ phase: 'identifier', name: contactRequest.name });
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: `Perfecto. Envíame el correo de Movya o la dirección Stellar pública de ${contactRequest.name}.` }]);
+      } else {
+        setContactDraft({ phase: 'name' });
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: '¿Cómo se llama el nuevo contacto?' }]);
+      }
+      return;
+    }
+
+    if (isChainedTransactionRequest(clean)) {
+      setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Por seguridad preparo una sola operación a la vez. Primero pídeme el cambio. Cuando se confirme y veas cuánto XLM recibiste, pídeme enviar ese monto a Aya; cada operación tendrá su propia revisión.' }]);
+      setSuggestionsVisible(true);
       return;
     }
     const swap = parseSwapRequest(clean);
@@ -180,6 +292,24 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     }
 
     const localTopic = chatTopic(clean);
+    if (localTopic === 'activity') {
+      if (!wallet.publicKey) {
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Abre tu wallet para consultar sus operaciones.' }]);
+        return;
+      }
+      setInterpreting(true);
+      try {
+        const activities = (await getActivityHistory(wallet.publicKey)).slice(0, 5);
+        const reply = activities.length
+          ? `Tus últimas ${activities.length} operaciones son:\n${activities.map((activity, index) => `${index + 1}. ${activityLine(activity, wallet.publicKey!, saved.contacts, locale)}`).join('\n')}`
+          : 'Todavía no tienes operaciones en esta wallet.';
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: reply }]);
+        setSuggestionsVisible(true);
+      } catch {
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'No pude consultar tus operaciones ahora. Inténtalo otra vez o abre Actividad.' }]);
+      } finally { setInterpreting(false); }
+      return;
+    }
     if (localTopic === 'balance' || localTopic === 'receive' || localTopic === 'contact') {
       setMessages(current => [...current, createMovyaReply(clean, id + 1)]);
       setSuggestionsVisible(true);

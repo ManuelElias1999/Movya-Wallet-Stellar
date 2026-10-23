@@ -32,13 +32,16 @@ export function createSwapFlow(deps: {
       if (state.phase !== 'review' || !state.review) return;
       const pending = state;
       const review = state.review;
-      if (review.source !== deps.source()) { publish({ ...pending, phase: 'error', error: 'La sesión cambió. Solicita otra cotización.' }); return; }
+      if (review.source !== deps.source()) { publish({ phase: 'error', input: pending.input, error: 'La sesión cambió. Solicita otra cotización.' }); return; }
       publish({ ...pending, phase: 'submitting', error: undefined });
       try {
         const receipt = await deps.submit(review);
         publish({ ...pending, phase: 'success', receipt });
         void deps.refresh().catch(() => undefined);
-      } catch (error) { publish({ ...pending, phase: error instanceof SubmissionUnknownError ? 'unknown' : 'error', error: errorText(error) }); }
+      } catch (error) {
+        if (error instanceof SubmissionUnknownError) publish({ ...pending, phase: 'unknown', error: errorText(error) });
+        else publish({ phase: 'error', input: pending.input, error: errorText(error) });
+      }
     },
     async verify() {
       if (state.phase !== 'unknown' || !state.review) return;

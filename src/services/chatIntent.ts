@@ -6,11 +6,40 @@ export function parseSwapRequest(message: string) {
   const match = message.trim().match(/^(?:cambia(?:r)?|swap|exchange|change)\s+(\d+(?:[.,]\d+)?)\s+([a-z0-9]+)\s+(?:a|por|to|for)\s+([a-z0-9]+)$/i);
   return match ? { amount: match[1].replace(',', '.'), from: match[2].toUpperCase(), to: match[3].toUpperCase() } : null;
 }
+
+export type ContactChatRequest =
+  | { kind: 'count' }
+  | { kind: 'address'; name: string }
+  | { kind: 'add'; name?: string };
+
+const normalizedChat = (message: string) => message.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+export function parseContactChatRequest(message: string): ContactChatRequest | null {
+  const text = normalizedChat(message);
+  if (!/contact|address|direccion/.test(text)) return null;
+  if (/(?:cuantos|numero de|cantidad de).*contact|contact.*(?:tengo|guardad)/.test(text)) return { kind: 'count' };
+  const address = message.trim().match(/(?:cu[aá]l\s+es\s+(?:el\s+)?|dime\s+(?:el\s+)?|what(?:'s|\s+is)\s+(?:the\s+)?)(?:address|direcci[oó]n)\s+(?:de|of)\s+(.+?)[?.!]*$/i);
+  if (address?.[1]?.trim()) return { kind: 'address', name: address[1].trim() };
+  if (/(?:agregar|anadir|añadir|guardar|nuevo|add|save).*(?:contact)|(?:contact).*(?:agregar|anadir|añadir|guardar|add|save)/.test(text)) {
+    const named = message.trim().match(/(?:se\s+llama|llamad[oa]|named)\s+([\p{L}\p{M}][\p{L}\p{M}' -]{0,79})[?.!]*$/iu);
+    return { kind: 'add', ...(named?.[1]?.trim() ? { name: named[1].trim() } : {}) };
+  }
+  return null;
+}
+
+export function isChainedTransactionRequest(message: string) {
+  const text = normalizedChat(message);
+  const asksSwap = /cambia|cambio|swap|exchange/.test(text);
+  const asksSend = /envia|enviar|manda|mandar|send/.test(text);
+  return asksSwap && asksSend;
+}
+
 export function chatTopic(message: string) {
-  const text = message.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const text = normalizedChat(message);
   if (/balance|cuanto dinero|how much money/.test(text)) return 'balance';
+  if (/ultim.*(?:operacion|movimiento|transaction)|(?:mis|my).*(?:operacion|movimiento|transaction)|historial|activity/.test(text)) return 'activity';
   if (/cambia|cambio|swap|exchange/.test(text)) return 'swap';
-  if (/contact/.test(text)) return 'contact';
+  if (/contact|address|direccion/.test(text)) return 'contact';
   if (/recibir|compartir|receive|share/.test(text)) return 'receive';
   return 'send';
 }
