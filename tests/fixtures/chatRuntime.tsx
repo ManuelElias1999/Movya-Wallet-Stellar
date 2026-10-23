@@ -1,12 +1,17 @@
 import { createElement, useImperativeHandle } from 'react';
 import type { PaymentReview } from '../../src/services/stellar/payments';
-export const calls = { prepare: [] as any[], submit: [] as any[], resolve: [] as string[], close: 0, swaps: [] as any[], swapSubmits: [] as any[] };
+export const calls = { prepare: [] as any[], submit: [] as any[], resolve: [] as string[], close: 0, swaps: [] as any[], swapSubmits: [] as any[], ai: [] as string[] };
 export const wallet = { publicKey: 'GSENDER', account: null, oualiAddress: '', refresh: async () => {}, sign: async () => 'signed-xdr' };
 export const contacts = [{ id: 'prueba', name: 'Prueba', handle: 'prueba@example.com', email: 'prueba@example.com', address: 'GPRUEBA' }];
 export const useTestnetWallet = () => wallet;
 export const useContacts = () => ({ contacts, persistent: true, loading: false, error: '' });
 export const useAuth = () => ({ user: { user_metadata: { name: 'Manuel' } } });
-export const useLanguage = () => ({ t: (value: string) => value });
+export const useLanguage = () => ({ t: (value: string) => value, locale: 'es-BO' });
+export const interpretChatWithAi = async (message: string) => {
+  calls.ai.push(message);
+  if (message === 'Mándale cinco USDC a Prueba') return { kind: 'send', amount: '5', token: 'USDC', from: null, to: null, recipient: 'Prueba', reply: null };
+  return { kind: 'unknown', amount: null, token: null, from: null, to: null, recipient: null, reply: 'Necesito un poco más de información.' };
+};
 const host = (name: string) => function Host(props: any) { return createElement(name, props); };
 export const Text = host('NativeText');
 export const TextInput = host('NativeTextInput');

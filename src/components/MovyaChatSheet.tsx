@@ -5,7 +5,7 @@ import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Animated, BackHandler, Dimensions, Easing, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, BackHandler, Dimensions, Easing, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '@/theme/tokens';
@@ -25,6 +25,7 @@ import { swapBlocked } from '@/services/swapFlow';
 import type { PaymentAsset } from '@/services/stellar/payments';
 import { useLanguage } from '@/i18n/Language';
 import { chatTopic, parseSendRequest, parseSwapRequest } from '@/services/chatIntent';
+import { interpretChatWithAi } from '@/services/backend/ai';
 
 type TextMessage = { id: number; role: 'movya' | 'user'; kind: 'text'; text: string };
 type VoiceMessage = { id: number; role: 'user'; kind: 'voice'; duration: number };
@@ -37,7 +38,7 @@ const waveBars = [11, 18, 25, 15, 29, 21, 13, 24, 18, 28, 16, 23, 12, 19];
 const formatDuration = (seconds: number) => `0:${String(seconds).padStart(2, '0')}`;
 
 export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetProps) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const wallet = useTestnetWallet();
   const auth = useAuth();
   const { flow: swapFlow, state: swapState } = useSwapFlow();
@@ -52,6 +53,8 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [playingVoiceId, setPlayingVoiceId] = useState<number | null>(null);
   const [suggestionsVisible, setSuggestionsVisible] = useState(true);
+  const [interpreting, setInterpreting] = useState(false);
+  const interpretationRevision = useRef(0);
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, role: 'movya', kind: 'text', text: `Hola, ${name}. Puedo ayudarte a enviar, recibir o cambiar dinero en Stellar. Prueba escribiendo: “Envía 20 USDC a Ouali”.` },
   ]);
@@ -73,6 +76,13 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     if (topic === 'contact') return { id, role: 'movya', kind: 'text', text: 'Puedo ayudarte. Dime el nombre y luego comparte su correo de Movya o su dirección Stellar pública.' };
     if (topic === 'receive') return { id, role: 'movya', kind: 'text', text: 'Puedes recibir por Stellar usando tu QR o tu dirección pública. Puedo ayudarte a copiarla o compartirla.' };
     return { id, role: 'movya', kind: 'text', text: 'Perfecto. Dime el token, el monto y el destinatario. Prepararé el envío y te mostraré un resumen antes de confirmar.' };
+  };
+
+  const createAiReply = (kind: 'balance' | 'receive' | 'contact' | 'help' | 'unknown', reply: string | null, id: number) => {
+    if (kind === 'balance') return createMovyaReply('balance', id);
+    if (kind === 'receive') return createMovyaReply('recibir', id);
+    if (kind === 'contact') return createMovyaReply('contacto', id);
+    return { id, role: 'movya', kind: 'text', text: reply ?? 'No entendí completamente. Puedes pedirme consultar tu saldo, enviar XLM o USDC, recibir dinero o hacer un cambio.' } as TextMessage;
   };
 
   const latest = useRef({ wallet, saved });
@@ -107,7 +117,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     refresh: () => latest.current.wallet.refresh(),
   }));
   const payment = useSyncExternalStore(flow.subscribe, flow.get, flow.get);
-  const paymentBusy = ['preparing', 'submitting', 'unknown'].includes(payment.phase) || swapBlocked(swapState) || swapState.phase === 'quoting';
+  const paymentBusy = interpreting || ['preparing', 'submitting', 'unknown'].includes(payment.phase) || swapBlocked(swapState) || swapState.phase === 'quoting';
   const closeChat = () => {
     if (['submitting', 'unknown'].includes(flow.get().phase) || swapBlocked(swapFlow.get())) return;
     Keyboard.dismiss(); onClose();
@@ -118,7 +128,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     return () => subscription.remove();
   }, [open, onClose, flow, swapFlow]);
 
-  const sendDirect = (message: string) => {
+  const sendDirect = async (message: string) => {
     const clean = message.trim();
     if (!clean) return;
     const id = Date.now();
@@ -155,13 +165,47 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     const swap = parseSwapRequest(clean);
     if (swap) {
       void swapFlow.start({ source: wallet.publicKey ?? '', amount: swap.amount, from: swap.from as PaymentAsset, to: swap.to as PaymentAsset });
+      void Haptics.selectionAsync();
       return;
     }
     const transaction = parseSendRequest(clean);
-    if (transaction) { swapFlow.clear(); void flow.start(transaction); }
-    else {
+    if (transaction) {
+      swapFlow.clear();
+      void flow.start(transaction);
+      void Haptics.selectionAsync();
+      return;
+    }
+
+    const localTopic = chatTopic(clean);
+    if (localTopic === 'balance' || localTopic === 'receive' || localTopic === 'contact') {
       setMessages(current => [...current, createMovyaReply(clean, id + 1)]);
       setSuggestionsVisible(true);
+      void Haptics.selectionAsync();
+      return;
+    }
+
+    const revision = ++interpretationRevision.current;
+    const history = messages.slice(-8).map(item => ({ role: item.role === 'user' ? 'user' as const : 'assistant' as const, content: item.kind === 'text' ? item.text : `[Mensaje de voz de ${item.duration} segundos]` }));
+    setInterpreting(true);
+    try {
+      const intent = await interpretChatWithAi(clean, history, locale);
+      if (revision !== interpretationRevision.current || !open) return;
+      if (intent.kind === 'send') {
+        swapFlow.clear();
+        void flow.start({ amount: intent.amount!, token: intent.token!, recipient: intent.recipient! });
+      } else if (intent.kind === 'swap') {
+        void swapFlow.start({ source: wallet.publicKey ?? '', amount: intent.amount!, from: intent.from!, to: intent.to! });
+      } else {
+        setMessages(current => [...current, createAiReply(intent.kind as 'balance' | 'receive' | 'contact' | 'help' | 'unknown', intent.reply, id + 1)]);
+        setSuggestionsVisible(true);
+      }
+    } catch {
+      if (revision === interpretationRevision.current && open) {
+        setMessages(current => [...current, createMovyaReply(clean, id + 1)]);
+        setSuggestionsVisible(true);
+      }
+    } finally {
+      if (revision === interpretationRevision.current) setInterpreting(false);
     }
     void Haptics.selectionAsync();
   };
@@ -194,7 +238,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   const send = () => {
     const clean = text.trim();
     if (!clean) return;
-    sendDirect(clean);
+    void sendDirect(clean);
   };
 
   const startRecording = () => { setRecordingSeconds(0); setRecording(true); void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); };
@@ -248,9 +292,10 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
               <LinearGradient colors={['#176BFF', '#064AAE']} end={{ x: 1, y: 1 }} style={[styles.bubble, styles.userBubble]}><Text translate={false} style={[styles.messageText, styles.userText]}>{message.text}</Text><Text style={styles.userTime}>Ahora</Text></LinearGradient>
             </View>
           ))}
+          {interpreting ? <View style={styles.movyaGroup}><View style={styles.senderRow}><MovyaLogo size={28} style={{ marginRight: 6 }} /><Text style={styles.sender}>Movya</Text><View style={styles.aiBadge}><Ionicons name="sparkles" size={10} color={colors.brand} /><Text style={styles.aiText}>IA</Text></View></View><BlurView intensity={72} tint="light" style={[styles.bubble, styles.movyaBubble, styles.thinkingBubble]}><ActivityIndicator color={colors.brand} size="small" /><Text style={styles.thinkingText}>Entendiendo tu mensaje…</Text></BlurView></View> : null}
           <ChatPaymentCard state={payment} flow={flow} onCancel={() => setSuggestionsVisible(true)} />
           <SwapReviewCard state={swapState} flow={swapFlow} onCancel={() => setSuggestionsVisible(true)} />
-          {suggestionsVisible ? <View style={styles.suggestions}>{suggestions.map((suggestion) => <Pressable key={suggestion} disabled={paymentBusy} accessibilityState={{ disabled: paymentBusy }} onPress={() => sendDirect(t(suggestion))} style={styles.suggestion}><Ionicons name="sparkles-outline" size={14} color={colors.brand} /><Text style={styles.suggestionText}>{suggestion}</Text><Ionicons name="arrow-up-circle" size={15} color={colors.brand} /></Pressable>)}</View> : null}
+          {suggestionsVisible ? <View style={styles.suggestions}>{suggestions.map((suggestion) => <Pressable key={suggestion} disabled={paymentBusy} accessibilityState={{ disabled: paymentBusy }} onPress={() => void sendDirect(t(suggestion))} style={styles.suggestion}><Ionicons name="sparkles-outline" size={14} color={colors.brand} /><Text style={styles.suggestionText}>{suggestion}</Text><Ionicons name="arrow-up-circle" size={15} color={colors.brand} /></Pressable>)}</View> : null}
         </ScrollView>
 
         <BlurView intensity={88} tint="light" style={[styles.composerArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
@@ -280,6 +325,7 @@ const styles = StyleSheet.create({
   header: { minHeight: 76, width: '100%', borderBottomLeftRadius: 27, borderBottomRightRadius: 27, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', overflow: 'hidden', borderBottomWidth: 1, borderColor: '#C2D2E2', backgroundColor: 'rgba(250,252,255,0.86)', shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 7 }, closeButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CCD9E6', alignItems: 'center', justifyContent: 'center' }, infoButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CCD9E6', alignItems: 'center', justifyContent: 'center' },
   identity: { flexDirection: 'row', alignItems: 'center' }, logoWrap: { width: 45, height: 45, marginRight: 9 }, logo: { width: 45, height: 45, resizeMode: 'contain' }, statusDot: { position: 'absolute', right: 0, bottom: 1, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.positive, borderWidth: 2, borderColor: '#FFFFFF' }, title: { color: colors.ink, fontSize: 17, fontWeight: '900' }, status: { color: colors.muted, fontSize: 9, fontWeight: '700', marginTop: 3 },
   messages: { padding: 17, paddingBottom: 28 }, today: { alignSelf: 'center', color: colors.muted, fontSize: 9, fontWeight: '800', letterSpacing: 1.2, marginBottom: 18 }, movyaGroup: { alignItems: 'flex-start', marginBottom: 16 }, senderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, marginLeft: 3 }, messageAvatar: { width: 28, height: 28, resizeMode: 'contain', marginRight: 6 }, sender: { color: colors.ink, fontSize: 11, fontWeight: '800' }, aiBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,255,255,0.56)', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 3, marginLeft: 6 }, aiText: { color: colors.brand, fontSize: 8, fontWeight: '900' }, userGroup: { alignItems: 'flex-end', marginBottom: 15 }, userSender: { color: colors.muted, fontSize: 9, fontWeight: '800', marginRight: 4, marginBottom: 5 },
+  thinkingBubble: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 13 }, thinkingText: { color: colors.muted, fontSize: 12, fontWeight: '700' },
   bubble: { maxWidth: '84%', borderRadius: 22, paddingHorizontal: 15, paddingTop: 11, paddingBottom: 8, overflow: 'hidden' }, movyaBubble: { backgroundColor: 'rgba(248,252,255,0.86)', borderWidth: 1.5, borderColor: '#BBD6FF', borderTopLeftRadius: 7, shadowColor: colors.navy, shadowOpacity: 0.15, shadowRadius: 15, shadowOffset: { width: 0, height: 7 }, elevation: 4 }, userBubble: { borderTopRightRadius: 7, shadowColor: colors.navy, shadowOpacity: 0.2, shadowRadius: 13, shadowOffset: { width: 0, height: 6 }, elevation: 4 }, messageText: { color: colors.text, fontSize: 14, lineHeight: 20 }, userText: { color: '#FFFFFF' }, messageTime: { color: colors.muted, fontSize: 8, alignSelf: 'flex-end', marginTop: 5 }, userTime: { color: 'rgba(255,255,255,0.7)', fontSize: 8, alignSelf: 'flex-end', marginTop: 5 },
   voiceBubble: { minWidth: 235, flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 11 }, playButton: { width: 35, height: 35, borderRadius: 13, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }, voiceWave: { flex: 1, height: 31, flexDirection: 'row', alignItems: 'center', gap: 3, marginHorizontal: 10 }, voiceBar: { width: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.82)' }, voiceDuration: { color: '#FFFFFF', fontSize: 9, fontWeight: '700' },
   suggestions: { gap: 8, marginTop: 6, alignItems: 'flex-start' }, suggestion: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: 'rgba(247,251,255,0.88)', borderWidth: 1.5, borderColor: '#B9D4FF', borderRadius: 999, paddingHorizontal: 13, paddingVertical: 9, shadowColor: colors.navy, shadowOpacity: 0.11, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }, suggestionText: { color: colors.brandDark, fontSize: 11, fontWeight: '700' },

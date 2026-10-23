@@ -6,7 +6,7 @@ import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { calls } from './fixtures/chatRuntime';
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 registerHooks({ resolve(specifier, context, nextResolve) {
-  const mocked = ['react-native', '@expo/vector-icons', 'expo-blur', 'expo-haptics', 'expo-linear-gradient', 'expo-status-bar', 'react-native-safe-area-context', '@/components/MovyaLogo', '@/i18n/primitives', '@/i18n/Language', '@/context/AuthContext', '@/context/ContactsContext', '@/context/TestnetWalletContext', './TestnetWalletContext', '@/services/stellar/payments', '@/services/backend/contacts', '@/services/stellar/swaps', '@/components/PageHeader', '@/components/PressableScale', '@/components/InternalScreenBackground', '@/components/MovyaContextHelp', '@/components/TokenIcon', '@/components/TokenSelector'];
+  const mocked = ['react-native', '@expo/vector-icons', 'expo-blur', 'expo-haptics', 'expo-linear-gradient', 'expo-status-bar', 'react-native-safe-area-context', '@/components/MovyaLogo', '@/i18n/primitives', '@/i18n/Language', '@/context/AuthContext', '@/context/ContactsContext', '@/context/TestnetWalletContext', './TestnetWalletContext', '@/services/stellar/payments', '@/services/backend/contacts', '@/services/backend/ai', '@/services/stellar/swaps', '@/components/PageHeader', '@/components/PressableScale', '@/components/InternalScreenBackground', '@/components/MovyaContextHelp', '@/components/TokenIcon', '@/components/TokenSelector'];
   return nextResolve(mocked.includes(specifier) ? require.resolve('./fixtures/chatRuntime') : specifier, context);
 } });
 const { MovyaChatSheet }: typeof import('../src/components/MovyaChatSheet') = require('../src/components/MovyaChatSheet');
@@ -65,6 +65,18 @@ test('English XLM request and typed cancellation/confirmation use the same inlin
   assert.equal(calls.submit.length, before + 1);
   assert.equal(calls.submit.at(-1)?.asset, 'XLM');
   assert.equal(calls.close, 0);
+  await act(() => tree.unmount());
+});
+
+test('natural language uses AI only to prepare the same review flow', async () => {
+  let tree!: ReactTestRenderer;
+  const before = calls.submit.length;
+  await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
+  await send(tree, 'Mándale cinco USDC a Prueba');
+  assert.equal(calls.ai.at(-1), 'Mándale cinco USDC a Prueba');
+  assert.deepEqual(calls.prepare.at(-1), { source: 'GSENDER', destination: 'GPRUEBA', amount: '5', asset: 'USDC' });
+  assert.equal(calls.submit.length, before);
+  assert.ok(content(tree).includes('Revisa tu transferencia'));
   await act(() => tree.unmount());
 });
 
