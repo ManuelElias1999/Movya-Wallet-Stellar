@@ -20,7 +20,9 @@ import { useAuth } from '@/context/AuthContext';
 import { TestnetFundingButtons } from '@/components/TestnetFundingButtons';
 import { TestnetPaymentHistory } from '@/components/TestnetPaymentHistory';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
-import { displayName as getDisplayName, formatAssetBalance, formatCompactXlmBalance } from '@/services/presentation';
+import { useMarketPrices } from '@/hooks/useMarketPrices';
+import { assetUsdValue, formatMarketChange, formatUnitPrice, formatUsd, portfolioUsdTotal } from '@/services/marketPrices';
+import { displayName as getDisplayName, formatAssetBalance } from '@/services/presentation';
 import { colors } from '@/theme/tokens';
 import { useLanguage } from '@/i18n/Language';
 
@@ -41,14 +43,18 @@ export default function HomeScreen() {
   const [amountsVisible, setAmountsVisible] = useState(true);
   const [selectedAsset, setSelectedAsset] = useState<AssetDetail | null>(null);
   const account = useStellarAccount();
+  const market = useMarketPrices();
   const assets = account.data?.balances.map((item) => ({
     code: item.assetCode,
     name: item.assetCode === 'XLM' ? 'Stellar' : item.assetCode === 'USDC' ? 'USD Coin' : item.assetCode,
     amount: formatAssetBalance(item.balance, locale),
     detailAmount: item.balance,
-    value: item.assetCode === 'XLM' ? 'Stellar' : item.assetCode === 'USDC' ? 'USD Coin' : item.assetCode,
+    value: formatUsd(assetUsdValue(item.assetCode, item.balance, market.data), locale),
+    unitPrice: formatUnitPrice(item.assetCode === 'XLM' ? market.data?.XLM ?? null : item.assetCode === 'USDC' ? market.data?.USDC ?? null : null, locale),
+    change: formatMarketChange(item.assetCode === 'XLM' ? market.data?.xlmChange24h ?? null : item.assetCode === 'USDC' ? market.data?.usdcChange24h ?? null : null),
     color: item.assetCode === 'XLM' ? colors.navy : colors.brand,
   })) ?? (account.isDemo ? demoAssets : []);
+  const totalUsd = portfolioUsdTotal(account.data?.balances, market.data);
   const privateValue = (value: string) => amountsVisible ? value : '••••••';
 
   return (
@@ -66,8 +72,8 @@ export default function HomeScreen() {
           </View>
         </View>
         <View style={styles.headerActions}>
-          <PressableScale accessibilityLabel="Actualizar portafolio" accessibilityRole="button" disabled={account.loading} onPress={() => void account.refresh()} pressedScale={0.9} style={styles.headerButton}>
-            {account.loading ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Ionicons color="#FFFFFF" name="refresh-outline" size={21} />}
+          <PressableScale accessibilityLabel="Actualizar portafolio" accessibilityRole="button" disabled={account.loading || market.loading} onPress={() => void Promise.all([account.refresh(), market.refresh(true)])} pressedScale={0.9} style={styles.headerButton}>
+            {account.loading || market.loading ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Ionicons color="#FFFFFF" name="refresh-outline" size={21} />}
           </PressableScale>
           <PressableScale accessibilityLabel="Abrir ajustes" accessibilityRole="button" onPress={() => router.push('/settings')} pressedScale={0.9} style={styles.headerButton}>
             <Ionicons color="#FFFFFF" name="options-outline" size={21} />
@@ -77,7 +83,7 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <AnimatedAccountCard ownerName={displayName} currency={account.isDemo ? 'USD' : 'XLM'} amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : formatCompactXlmBalance(account.data?.balances, locale)} balanceLabel={account.isDemo ? 'Saldo total en USD' : 'Saldo en Stellar'} />
+        <AnimatedAccountCard ownerName={displayName} amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : market.loading && !market.data ? 'Cotizando…' : formatUsd(totalUsd, locale)} balanceLabel="Valor total estimado en USD" />
 
         <View style={styles.actionsRow}>
           {quickActions.map((action) => (
@@ -115,10 +121,11 @@ export default function HomeScreen() {
           <Pressable onPress={() => router.push('/activity')}><Text style={styles.sectionAction}>Ver todo</Text></Pressable>
         </View>
         <View style={styles.activityCard}>
-          {account.isDemo ? demoActivity.map((item) => <ActivityRow hidden={!amountsVisible} key={item.id} {...item} />) : <TestnetPaymentHistory hidden={!amountsVisible} />}
+          {account.isDemo ? demoActivity.slice(0, 5).map((item) => <ActivityRow hidden={!amountsVisible} key={item.id} {...item} />) : <TestnetPaymentHistory hidden={!amountsVisible} limit={5} />}
         </View>
 
         {account.error ? <Text style={styles.syncError}>No pudimos sincronizar Testnet: {account.error}</Text> : null}
+        {market.error ? <Text style={styles.syncError}>{market.error} El total se mostrará cuando vuelva la conexión.</Text> : null}
         <PoweredByStellarFooter />
       </ScrollView>
       <AssetDetailSheet asset={selectedAsset} onClose={() => setSelectedAsset(null)} />

@@ -1,11 +1,10 @@
 import { Pressable, Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { Animated, Easing, Image, StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
-import { colors } from '@/theme/tokens';
 import { PressableScale } from '@/components/PressableScale';
 import { MovyaLogo } from '@/components/MovyaLogo';
 
@@ -15,10 +14,9 @@ type AnimatedAccountCardProps = {
   totalAmount?: string;
   balanceLabel?: string;
   ownerName?: string;
-  currency?: string;
 };
 
-export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmount = '$1,629.24', balanceLabel = 'Saldo total en USD', ownerName = 'Usuario', currency = 'USD' }: AnimatedAccountCardProps) {
+export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmount = '$1,629.24', balanceLabel = 'Saldo total en USD', ownerName = 'Usuario' }: AnimatedAccountCardProps) {
   const movement = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
 
@@ -96,7 +94,7 @@ export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmou
       </View>
       <View style={styles.footer}>
         <Text translate={false} numberOfLines={1} style={[styles.owner, { flex: 1, marginRight: 12 }]}>{ownerName.toUpperCase()}</Text>
-        <View style={styles.currencyPill}><Text style={styles.currencyText}>{currency}</Text></View>
+        <View accessibilityLabel="Stellar" accessible style={styles.stellarPill}><Image source={require('../../assets/token-xlm.png')} style={styles.stellarLogo} /></View>
       </View>
     </LinearGradient>
     </Animated.View>
@@ -122,6 +120,6 @@ const styles = StyleSheet.create({
   eyeButton: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginLeft: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)' },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   owner: { color: 'rgba(255,255,255,0.76)', fontSize: 10, fontWeight: '700', letterSpacing: 1.2 },
-  currencyPill: { backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 10, paddingHorizontal: 10, paddingVertical: 6 },
-  currencyText: { color: colors.navy, fontSize: 11, fontWeight: '800' },
+  stellarPill: { width: 43, height: 31, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  stellarLogo: { width: 27, height: 22, resizeMode: 'contain' },
 });

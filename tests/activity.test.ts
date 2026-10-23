@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
 import { Keypair } from '@stellar/stellar-sdk/base';
-import { getActivityHistory } from '../src/services/stellar/activity';
+import { filterActivityByPeriod, getActivityHistory, type StellarActivity } from '../src/services/stellar/activity';
 import { MOVYA_TREASURY } from '../src/services/stellar/swaps';
 import { USDC_ISSUER } from '../src/services/stellar/payments';
 
@@ -47,4 +47,22 @@ test('activity ignores unsupported path payments and does not hide unrelated pay
   const activity = await getActivityHistory(wallet);
   assert.equal(activity.length, 1);
   assert.equal(activity[0].kind, 'transfer');
+});
+
+test('activity periods filter today, the last week and the last month', () => {
+  const makePayment = (id: string, created_at: string): StellarActivity => ({
+    kind: 'transfer',
+    payment: { id, transaction_hash: id.repeat(64).slice(0, 64), from: wallet, to: other, amount: '1.0000000', asset_type: 'native', created_at, type: 'payment', transaction_successful: true },
+  });
+  const activities = [
+    makePayment('a', '2026-10-23T09:00:00Z'),
+    makePayment('b', '2026-10-20T09:00:00Z'),
+    makePayment('c', '2026-10-01T09:00:00Z'),
+    makePayment('d', '2026-08-01T09:00:00Z'),
+  ];
+  const now = new Date('2026-10-23T12:00:00Z').getTime();
+  assert.deepEqual(filterActivityByPeriod(activities, 'today', now).map(item => item.kind === 'transfer' && item.payment.id), ['a']);
+  assert.deepEqual(filterActivityByPeriod(activities, '7d', now).map(item => item.kind === 'transfer' && item.payment.id), ['a', 'b']);
+  assert.deepEqual(filterActivityByPeriod(activities, '30d', now).map(item => item.kind === 'transfer' && item.payment.id), ['a', 'b', 'c']);
+  assert.equal(filterActivityByPeriod(activities, 'all', now), activities);
 });

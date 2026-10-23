@@ -15,6 +15,24 @@ export type SwapActivity = {
   fromAsset: PaymentAsset; toAsset: PaymentAsset; sourceAmount: string; destinationAmount: string;
 };
 export type StellarActivity = TransferActivity | SwapActivity;
+export type ActivityPeriod = 'today' | '7d' | '30d' | 'all';
+
+function activityDate(activity: StellarActivity) {
+  return new Date(activity.kind === 'swap' ? activity.createdAt : activity.payment.created_at).getTime();
+}
+
+export function filterActivityByPeriod(activities: StellarActivity[], period: ActivityPeriod, now = Date.now()) {
+  if (period === 'all') return activities;
+  const current = new Date(now);
+  let since: number;
+  if (period === 'today') {
+    current.setHours(0, 0, 0, 0);
+    since = current.getTime();
+  } else {
+    since = now - (period === '7d' ? 7 : 30) * 24 * 60 * 60 * 1_000;
+  }
+  return activities.filter((activity) => activityDate(activity) >= since && activityDate(activity) <= now);
+}
 
 function supportedAsset(type: string, code?: string, issuer?: string): PaymentAsset | null {
   if (type === 'native') return 'XLM';

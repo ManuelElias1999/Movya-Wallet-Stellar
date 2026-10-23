@@ -35,7 +35,7 @@ const metadata: Record<string, Pick<AssetDetail, 'unitPrice' | 'change' | 'descr
 
 export function AssetDetailSheet({ asset, onClose }: AssetDetailSheetProps) {
   if (!asset) return null;
-  const details = metadata[asset.code] ?? {};
+  const details = { ...(metadata[asset.code] ?? {}), unitPrice: asset.unitPrice ?? metadata[asset.code]?.unitPrice, change: asset.change ?? metadata[asset.code]?.change };
   const positive = !details.change?.startsWith('-');
 
   return (

@@ -1,16 +1,16 @@
 import { Text } from '@/i18n/primitives';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { ActivityRow } from '@/components/ActivityRow';
 import { PressableScale } from '@/components/PressableScale';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
-import { type StellarActivity, getActivityHistory } from '@/services/stellar/activity';
+import { type ActivityPeriod, type StellarActivity, filterActivityByPeriod, getActivityHistory } from '@/services/stellar/activity';
 import { useContacts } from '@/context/ContactsContext';
 import { formatEnteredAmount, formatReceivedAmount, paymentDescription } from '@/services/presentation';
 import { colors } from '@/theme/tokens';
 import { useLanguage } from '@/i18n/Language';
 
-export function TestnetPaymentHistory({ hidden = false }: { hidden?: boolean }) {
+export function TestnetPaymentHistory({ hidden = false, limit, period = 'all' }: { hidden?: boolean; limit?: number; period?: ActivityPeriod }) {
   const { locale } = useLanguage();
   const wallet = useTestnetWallet();
   const { contacts } = useContacts();
@@ -28,9 +28,13 @@ export function TestnetPaymentHistory({ hidden = false }: { hidden?: boolean }) 
     }
     return () => { active = false; };
   }, [wallet.publicKey, wallet.account]);
+  const visibleActivities = useMemo(() => {
+    const filtered = filterActivityByPeriod(activities, period);
+    return typeof limit === 'number' ? filtered.slice(0, limit) : filtered;
+  }, [activities, limit, period]);
   return <View>
-    {!activities.length ? <Text style={styles.empty}>{loading ? 'Cargando movimientos…' : error || 'Tus movimientos de Testnet aparecerán aquí.'}</Text> : null}
-    {activities.map((activity) => {
+    {!visibleActivities.length ? <Text style={styles.empty}>{loading ? 'Cargando movimientos…' : error || (activities.length ? 'No hay movimientos en este periodo.' : 'Tus movimientos de Testnet aparecerán aquí.')}</Text> : null}
+    {visibleActivities.map((activity) => {
       if (activity.kind === 'swap') return <PressableScale accessibilityLabel="Ver swap en Stellar Expert" key={activity.id} onPress={() => void Linking.openURL(`https://stellar.expert/explorer/testnet/tx/${activity.transactionHash}`)}>
         <ActivityRow hidden={hidden} type="Swap" detail={`${formatEnteredAmount(activity.sourceAmount)} ${activity.fromAsset} → ${formatReceivedAmount(activity.destinationAmount)} ${activity.toAsset}`} amount={`+ ${formatReceivedAmount(activity.destinationAmount)} ${activity.toAsset}`} time={new Date(activity.createdAt).toLocaleString(locale)} positive />
       </PressableScale>;

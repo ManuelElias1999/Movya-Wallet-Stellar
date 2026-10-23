@@ -11,7 +11,9 @@ import { PressableScale } from '@/components/PressableScale';
 import { TokenIcon } from '@/components/TokenIcon';
 import { demoAssets } from '@/data/demo';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
-import { formatAssetBalance, formatCompactXlmBalance } from '@/services/presentation';
+import { useMarketPrices } from '@/hooks/useMarketPrices';
+import { assetUsdValue, formatMarketChange, formatUnitPrice, formatUsd, portfolioUsdTotal } from '@/services/marketPrices';
+import { formatAssetBalance } from '@/services/presentation';
 import { colors } from '@/theme/tokens';
 import { useLanguage } from '@/i18n/Language';
 
@@ -19,7 +21,18 @@ export default function PortfolioScreen() {
   const { locale } = useLanguage();
   const [selectedAsset, setSelectedAsset] = useState<AssetDetail | null>(null);
   const account = useStellarAccount();
-  const assets = account.isDemo ? demoAssets : account.data?.balances.map((balance) => ({ code: balance.assetCode, name: balance.assetCode, amount: formatAssetBalance(balance.balance, locale), detailAmount: balance.balance, value: balance.assetCode === 'XLM' ? 'Stellar' : balance.assetCode === 'USDC' ? 'USD Coin' : balance.assetCode, color: colors.brand })) ?? [];
+  const market = useMarketPrices();
+  const assets = account.isDemo ? demoAssets : account.data?.balances.map((balance) => ({
+    code: balance.assetCode,
+    name: balance.assetCode === 'XLM' ? 'Stellar' : balance.assetCode === 'USDC' ? 'USD Coin' : balance.assetCode,
+    amount: formatAssetBalance(balance.balance, locale),
+    detailAmount: balance.balance,
+    value: formatUsd(assetUsdValue(balance.assetCode, balance.balance, market.data), locale),
+    unitPrice: formatUnitPrice(balance.assetCode === 'XLM' ? market.data?.XLM ?? null : balance.assetCode === 'USDC' ? market.data?.USDC ?? null : null, locale),
+    change: formatMarketChange(balance.assetCode === 'XLM' ? market.data?.xlmChange24h ?? null : balance.assetCode === 'USDC' ? market.data?.usdcChange24h ?? null : null),
+    color: balance.assetCode === 'XLM' ? colors.navy : colors.brand,
+  })) ?? [];
+  const totalUsd = portfolioUsdTotal(account.data?.balances, market.data);
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -28,8 +41,8 @@ export default function PortfolioScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.summary}>
           <View>
-            <Text style={styles.summaryLabel}>{account.isDemo ? 'Valor total estimado' : 'Saldo en Stellar'}</Text>
-            <Text style={styles.summaryValue}>{account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : formatCompactXlmBalance(account.data?.balances, locale)}</Text>
+            <Text style={styles.summaryLabel}>Valor total estimado en USD</Text>
+            <Text style={styles.summaryValue}>{account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : market.loading && !market.data ? 'Cotizando…' : formatUsd(totalUsd, locale)}</Text>
           </View>
           <View style={styles.assetCount}><Text style={styles.assetCountText}>{assets.length} activos</Text></View>
         </View>
@@ -51,8 +64,8 @@ export default function PortfolioScreen() {
             </PressableScale>
           ))}
         </View>
-        {account.loading || account.error ? <Text style={styles.hint}>{account.loading ? 'Actualizando balances…' : account.error}</Text> : null}
-        <Text style={styles.hint}>Toca cualquier token para ver su precio, balance e información.</Text>
+        {account.loading || account.error || market.error ? <Text style={styles.hint}>{account.loading ? 'Actualizando balances…' : account.error || market.error}</Text> : null}
+        <Text style={styles.hint}>Valores estimados con precio de mercado. Toca un token para ver su balance completo.</Text>
       </ScrollView>
       <AssetDetailSheet asset={selectedAsset} onClose={() => setSelectedAsset(null)} />
     </SafeAreaView>
