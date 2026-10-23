@@ -17,8 +17,10 @@ export async function interpretChatWithAi(message: string, history: AiHistoryMes
   try {
     const { data, error } = await Promise.race([invocation, timeout]);
     if (error) throw new Error(error.message || 'No pudimos consultar a Movya AI.');
-    const sourceText = [...safeHistory.filter(item => item.role === 'user').map(item => item.content), clean].join('\n');
-    return parseAiIntent(data?.intent, sourceText);
+    // A recipient must be present in the newest message. History may help the
+    // model recover an amount or asset in a follow-up, but it must never make
+    // an old contact name pass the client-side safety check.
+    return parseAiIntent(data?.intent, clean);
   } finally {
     if (timer) clearTimeout(timer);
   }

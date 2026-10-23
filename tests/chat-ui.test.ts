@@ -80,6 +80,17 @@ test('natural language uses AI only to prepare the same review flow', async () =
   await act(() => tree.unmount());
 });
 
+test('a new message cannot make an earlier pending recipient look like a new order', async () => {
+  let tree!: ReactTestRenderer;
+  await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
+  await send(tree, 'Envia 1 USDC a Prueba');
+  await send(tree, 'Y a Pruebita también');
+  assert.ok(content(tree).includes('Ya tienes una orden pendiente de 1 USDC para Prueba'));
+  assert.ok(content(tree).includes('Confírmala o cancélala antes de preparar otra orden'));
+  assert.equal(calls.prepare.at(-1)?.destination, 'GPRUEBA');
+  await act(() => tree.unmount());
+});
+
 
 test('Cambia 50 XLM a USDC quotes in chat and only the explicit swap confirmation executes', async () => {
   let tree!: ReactTestRenderer;

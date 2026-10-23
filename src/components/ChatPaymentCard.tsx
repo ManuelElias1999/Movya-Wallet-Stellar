@@ -23,7 +23,15 @@ export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentS
   const cancel = () => { if (flow.cancel()) onCancel?.(); };
   return <View style={styles.card} accessibilityLiveRegion="polite">
     <Text style={styles.title}>{state.phase === 'success' ? 'Transacción exitosa' : state.phase === 'choosing' ? 'Elegir contacto' : 'Revisa tu transferencia'}</Text>
-    {request ? <Text style={styles.amount}>{formatEnteredAmount(review?.amount ?? request.amount)} {request.token}</Text> : null}
+    {request ? <View style={styles.summary}>
+      <Text style={styles.summaryLabel}>Monto</Text>
+      <Text style={styles.amount}>{formatEnteredAmount(review?.amount ?? request.amount)} {request.token}</Text>
+      {state.recipient ? <>
+        <View style={styles.summaryDivider} />
+        <Text style={styles.summaryLabel}>Destinatario</Text>
+        <Text translate={false} style={styles.recipient}>{state.recipient}</Text>
+      </> : null}
+    </View> : null}
     {state.phase === 'choosing' ? <>
       <Text style={styles.copy}>Tienes varias personas con ese nombre. Elige a quién quieres enviar.</Text>
       {state.choices?.map(contact => <Pressable accessibilityRole="button" key={contact.id} onPress={() => void flow.start(request!, contact.id)} style={styles.secondary}>
@@ -32,7 +40,6 @@ export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentS
       <Pressable accessibilityRole="button" onPress={cancel} style={styles.secondary}><Text>Cancelar</Text></Pressable>
     </> : null}
     {review ? <>
-      <Text style={styles.label}>Destinatario</Text><Text translate={false} style={styles.copy}>{state.recipient}</Text>
       <Text style={styles.label}>Dirección destinataria completa</Text><Text translate={false} selectable style={styles.address}>{review.destination}</Text>
       {risk ? <RecipientRiskNotice risk={risk} destination={review.destination} /> : null}
       <Text style={styles.label}>De tu wallet</Text><Text translate={false} selectable style={styles.address}>{review.source}</Text>
@@ -64,7 +71,12 @@ export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentS
 
 const styles = StyleSheet.create({
   card: { padding: 16, borderRadius: 22, backgroundColor: '#F8FCFF', borderWidth: 1.5, borderColor: '#BBD6FF', marginBottom: 16 },
-  title: { color: colors.ink, fontSize: 15, fontWeight: '800' }, amount: { color: colors.brandDark, fontSize: 23, fontWeight: '800', marginTop: 10 },
+  title: { color: colors.ink, fontSize: 15, fontWeight: '800' },
+  summary: { backgroundColor: '#E8F2FF', borderWidth: 1.5, borderColor: '#AFCFFF', borderRadius: 18, padding: 15, marginTop: 12 },
+  summaryLabel: { color: colors.muted, fontSize: 10, fontWeight: '800', letterSpacing: 0.7, textTransform: 'uppercase' },
+  amount: { color: colors.brandDark, fontSize: 31, lineHeight: 38, fontWeight: '900', marginTop: 3 },
+  summaryDivider: { height: 1, backgroundColor: '#C3D9F3', marginVertical: 12 },
+  recipient: { color: colors.ink, fontSize: 21, lineHeight: 27, fontWeight: '900', marginTop: 3 },
   label: { color: colors.muted, fontSize: 11, fontWeight: '700', marginTop: 12 }, copy: { color: colors.text, fontSize: 13, lineHeight: 19, marginTop: 6 },
   address: { color: colors.ink, fontSize: 11, lineHeight: 17, marginTop: 5 }, actions: { flexDirection: 'row', gap: 8 }, flex: { flex: 1 },
   primary: { minHeight: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 14, backgroundColor: colors.brand, marginTop: 12, padding: 10 }, primaryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },

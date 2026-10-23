@@ -158,7 +158,10 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
         setSuggestionsVisible(true);
         setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Transacción cancelada. No se movió ningún fondo. ¿Deseas hacer algo más?' }]);
       } else {
-        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: pending.phase === 'choosing' ? 'Elige un contacto de la lista o escribe No para cancelar.' : 'Antes de continuar, responde Sí para confirmar o No para cancelar la transacción pendiente.' }]);
+        const pendingDescription = pending.phase === 'review'
+          ? `Ya tienes una orden pendiente de ${formatEnteredAmount(pending.review?.amount ?? pending.request?.amount ?? '0')} ${pending.request?.token ?? ''} para ${pending.recipient ?? pending.request?.recipient ?? 'el destinatario indicado'}. Confírmala o cancélala antes de preparar otra orden.`
+          : 'Elige un contacto de la lista o escribe No para cancelar.';
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: pendingDescription }]);
       }
       return;
     }

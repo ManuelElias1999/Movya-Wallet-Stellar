@@ -11,6 +11,12 @@ test('AI send intent accepts only explicit supported transaction fields', () => 
   assert.throws(() => parseAiIntent({ ...intent, amount: '-5' }, 'Mándale menos cinco USDC a María'), /monto no válido/);
 });
 
+test('AI cannot reuse an old recipient when the newest message names another contact', () => {
+  const followUp = { kind: 'send', amount: '1', token: 'USDC', from: null, to: null, recipient: 'Pruebita', reply: null };
+  assert.deepEqual(parseAiIntent(followUp, 'Y a Pruebita también'), followUp);
+  assert.throws(() => parseAiIntent({ ...followUp, recipient: 'Aya' }, 'Y a Pruebita también'), /no escribiste/);
+});
+
 test('AI swap intent must use two different supported assets and a valid amount', () => {
   assert.deepEqual(parseAiIntent({ kind: 'swap', amount: '1.2345678', token: null, from: 'XLM', to: 'USDC', recipient: null, reply: null }, 'Cambia 1.2345678 XLM por USDC'), {
     kind: 'swap', amount: '1.2345678', token: null, from: 'XLM', to: 'USDC', recipient: null, reply: null,
