@@ -13,29 +13,32 @@ export function DashboardHeader({ name, loading, onProfile, onRefresh, topInset 
   const glassColor = mode === 'dark' ? 'rgba(4,8,14,0.10)' : 'rgba(245,247,251,0.10)';
   const buttonGlass = mode === 'dark' ? 'rgba(34,44,59,0.24)' : 'rgba(255,255,255,0.24)';
   const buttonBorder = mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.62)';
-  return <BlurView intensity={90} tint={mode} style={[styles.shell, { paddingTop: topInset, backgroundColor: glassColor }, Platform.OS === 'web' ? webGlass : null]}>
-    <View style={styles.header}>
-      <View style={styles.copy}>
-        <Text numberOfLines={1} style={styles.greeting}>Hola, <Text translate={false}>{name.split(/\s+/)[0]}</Text></Text>
-        <Text numberOfLines={1} style={styles.tagline}>Un mensaje, una transacción</Text>
+  return <View pointerEvents="box-none" style={[styles.shell, { paddingTop: topInset + 6 }]}>
+    <BlurView intensity={90} tint={mode} style={[styles.bubble, { backgroundColor: glassColor }, Platform.OS === 'web' ? webGlass : null]}>
+      <View style={styles.header}>
+        <View style={styles.copy}>
+          <Text numberOfLines={1} style={styles.greeting}>Hola, <Text translate={false}>{name.split(/\s+/)[0]}</Text></Text>
+          <Text numberOfLines={1} style={styles.tagline}>Un mensaje, una transacción</Text>
+        </View>
+        <View style={styles.actions}>
+          <PressableScale accessibilityRole="button" accessibilityLabel="Actualizar portafolio" accessibilityState={{ disabled: loading }} disabled={loading} onPress={onRefresh} style={[styles.button, { backgroundColor: buttonGlass, borderColor: buttonBorder }]}>
+            {loading ? <ActivityIndicator color={colors.ink} size="small" /> : <Ionicons name="refresh-outline" size={21} color={colors.ink} />}
+          </PressableScale>
+          <PressableScale accessibilityRole="button" accessibilityLabel="Abrir ajustes" onPress={onProfile} style={[styles.button, { backgroundColor: buttonGlass, borderColor: buttonBorder }]}>
+            <Ionicons name="settings-outline" size={21} color={colors.ink} />
+          </PressableScale>
+        </View>
       </View>
-      <View style={styles.actions}>
-        <PressableScale accessibilityRole="button" accessibilityLabel="Actualizar portafolio" accessibilityState={{ disabled: loading }} disabled={loading} onPress={onRefresh} style={[styles.button, { backgroundColor: buttonGlass, borderColor: buttonBorder }]}>
-          {loading ? <ActivityIndicator color={colors.ink} size="small" /> : <Ionicons name="refresh-outline" size={21} color={colors.ink} />}
-        </PressableScale>
-        <PressableScale accessibilityRole="button" accessibilityLabel="Abrir ajustes" onPress={onProfile} style={[styles.button, { backgroundColor: buttonGlass, borderColor: buttonBorder }]}>
-          <Ionicons name="settings-outline" size={21} color={colors.ink} />
-        </PressableScale>
-      </View>
-    </View>
-  </BlurView>;
+    </BlurView>
+  </View>;
 }
 
 const webGlass: ViewStyle & { backdropFilter: string; WebkitBackdropFilter: string } = { backdropFilter: 'blur(28px) saturate(170%)', WebkitBackdropFilter: 'blur(28px) saturate(170%)' };
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  shell: { position: 'absolute', zIndex: 30, top: 0, left: 0, right: 0, overflow: 'hidden' },
-  header: { width: '100%', maxWidth: 760, minHeight: 58, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 7, flexDirection: 'row', alignItems: 'center' },
+  shell: { position: 'absolute', zIndex: 30, top: 0, left: 12, right: 12 },
+  bubble: { width: '100%', maxWidth: 736, minHeight: 58, alignSelf: 'center', borderRadius: 31, overflow: 'hidden' },
+  header: { minHeight: 58, paddingHorizontal: 14, paddingVertical: 7, flexDirection: 'row', alignItems: 'center' },
   copy: { flex: 1, minWidth: 0, paddingRight: 12 },
   greeting: { color: colors.ink, fontSize: 19, lineHeight: 24, letterSpacing: -0.3, fontWeight: '800' },
   tagline: { color: colors.ink, fontSize: 11.5, lineHeight: 16, fontWeight: '700', marginTop: 1 },
