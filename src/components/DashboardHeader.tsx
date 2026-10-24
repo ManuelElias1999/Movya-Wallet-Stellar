@@ -15,8 +15,8 @@ export function DashboardHeader({ name, loading, onProfile, onRefresh, topInset 
   return <BlurView intensity={22} tint={mode} style={[styles.shell, { paddingTop: topInset }]}>
     <View style={styles.header}>
       <View style={styles.copy}>
-        <Text numberOfLines={1} style={styles.greeting}>Hola, <Text translate={false}>{name.split(/\s+/)[0]}</Text></Text>
-        <Text numberOfLines={1} style={styles.tagline}>Un mensaje, una transacción</Text>
+        <Text numberOfLines={1} style={[styles.greeting, mode === 'light' ? styles.lightTextOutline : null]}>Hola, <Text translate={false}>{name.split(/\s+/)[0]}</Text></Text>
+        <Text numberOfLines={1} style={[styles.tagline, mode === 'light' ? styles.lightTextOutline : null]}>Un mensaje, una transacción</Text>
       </View>
       <View style={styles.actions}>
         <PressableScale accessibilityRole="button" accessibilityLabel="Actualizar portafolio" accessibilityState={{ disabled: loading }} disabled={loading} onPress={onRefresh} style={[styles.button, { borderColor: buttonBorder }]}>
@@ -33,11 +33,12 @@ export function DashboardHeader({ name, loading, onProfile, onRefresh, topInset 
 }
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-  shell: { position: 'absolute', zIndex: 30, top: 0, left: 0, right: 0, overflow: 'hidden', backgroundColor: 'transparent' },
+  shell: { position: 'absolute', zIndex: 30, top: 0, left: 0, right: 0, backgroundColor: 'transparent' },
   header: { width: '100%', maxWidth: 760, minHeight: 52, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 3, paddingBottom: 5, flexDirection: 'row', alignItems: 'center' },
   copy: { flex: 1, minWidth: 0, paddingRight: 12 },
   greeting: { color: colors.ink, fontSize: 18, lineHeight: 22, letterSpacing: -0.3, fontWeight: '800' },
   tagline: { color: colors.ink, fontSize: 10.5, lineHeight: 14, fontWeight: '700' },
+  lightTextOutline: { textShadowColor: 'rgba(255,255,255,0.96)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 4 },
   actions: { flexDirection: 'row', gap: 8 },
   button: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' },
   buttonGlass: { borderRadius: 19 },

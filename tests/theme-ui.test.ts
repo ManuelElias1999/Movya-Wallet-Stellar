@@ -36,7 +36,7 @@ test('theme selection repaints a mounted screen without losing its typed draft',
 
 test('dashboard header matches the compact transparent iOS layout and keeps working actions', async () => {
   let tree!: ReactTestRenderer; let profile = 0, refresh = 0;
-  await act(() => { tree = create(createElement(DashboardHeader, { name: 'Manuel Elias', loading: false, onProfile: () => { profile++; }, onRefresh: () => { refresh++; } })); });
+  await act(() => { themeStore.set('light'); tree = create(createElement(DashboardHeader, { name: 'Manuel Elias', loading: false, onProfile: () => { profile++; }, onRefresh: () => { refresh++; } })); });
   const button = (label: string) => tree.root.findAllByType('NativePressable' as any).find(node => node.props.accessibilityLabel === label)!;
   await act(() => button('Abrir ajustes').props.onPress());
   await act(() => button('Actualizar portafolio').props.onPress());
@@ -44,10 +44,12 @@ test('dashboard header matches the compact transparent iOS layout and keeps work
   const glass = tree.root.findAllByType('BlurView' as any)[0];
   assert.equal(glass.props.intensity, 22);
   assert.ok(glass.props.style.flat().some((style: { backgroundColor?: string }) => style?.backgroundColor === 'transparent'));
+  assert.ok(!glass.props.style.flat().some((style: { overflow?: string }) => style?.overflow === 'hidden'));
   const settingsStyle = button('Abrir ajustes').props.style.flat();
   assert.ok(settingsStyle.some((style: { width?: number; height?: number; borderRadius?: number }) => style?.width === 38 && style?.height === 38 && style?.borderRadius === 19));
   assert.ok(JSON.stringify(tree.toJSON()).includes('Hola,'));
   assert.ok(JSON.stringify(tree.toJSON()).includes('Un mensaje, una transacción'));
+  assert.ok(JSON.stringify(tree.toJSON()).includes('rgba(255,255,255,0.96)'));
   assert.ok(!JSON.stringify(tree.toJSON()).includes('Activar modo claro'));
   await act(() => tree.unmount());
 });
