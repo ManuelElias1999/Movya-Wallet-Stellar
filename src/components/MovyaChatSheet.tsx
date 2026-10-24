@@ -35,6 +35,7 @@ type TextMessage = Extract<ChatHistoryMessage, { kind: 'text' }>;
 type Message = ChatHistoryMessage;
 type MovyaChatSheetProps = { open: boolean; onClose: () => void; initialPrompt?: string };
 type ChainedTransfer = { phase: 'swapping' | 'preparing-send' | 'send'; recipient: string };
+type SendDraft = { amount?: string; token?: PaymentAsset; recipient?: string };
 
 const screenHeight = Dimensions.get('window').height;
 const suggestions = ['¿Cuánto dinero tengo?', 'Envía 1 USDC a Prueba', 'Cambia 50 XLM a USDC'];
@@ -73,6 +74,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   const [suggestionsVisible, setSuggestionsVisible] = useState(true);
   const [interpreting, setInterpreting] = useState(false);
   const [contactDraft, setContactDraft] = useState<{ phase: 'name' } | { phase: 'identifier'; name: string } | null>(null);
+  const [sendDraft, setSendDraft] = useState<SendDraft | null>(null);
   const [chainedTransfer, setChainedTransfer] = useState<ChainedTransfer | null>(null);
   const lastLocalContext = useRef<'contacts' | 'activity' | null>(null);
   const interpretationRevision = useRef(0);
@@ -88,6 +90,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   useEffect(() => {
     const owner = auth.user?.id;
     let active = true;
+    setSendDraft(null);
     setHistoryReady(false);
     if (!owner) {
       setMessages([welcomeMessage()]); setArchivedReceiptHashes(new Set()); setHistoryReady(true);
@@ -195,7 +198,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       { text: 'Vaciar chat', style: 'destructive', onPress: () => {
         interpretationRevision.current++;
         flow.clear(); swapFlow.clear();
-        setInterpreting(false); setContactDraft(null); setChainedTransfer(null); lastLocalContext.current = null;
+        setInterpreting(false); setContactDraft(null); setSendDraft(null); setChainedTransfer(null); lastLocalContext.current = null;
         setArchivedReceiptHashes(new Set()); setSuggestionsVisible(true); setMessages([welcomeMessage()]);
         const owner = auth.user?.id;
         if (owner) void clearChatHistory(owner).catch(() => undefined);
@@ -344,6 +347,14 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     const contactListFollowUp = lastLocalContext.current === 'contacts' && /^(quienes|cuales|listalos|listalas|muestramelos|muestramelas)$/.test(command);
     const startsNewTask = Boolean(chained || swap || transaction || contactRequest || activityFollowUp || contactListFollowUp || ['balance', 'activity', 'receive', 'greeting'].includes(localTopic));
 
+    if (sendDraft && /^(no|cancelar|cancela|cancel|olvidalo|olvida eso|forget it)$/.test(command)) {
+      setSendDraft(null);
+      setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Entendido, cancelé esa preparación. No se movió ningún fondo.' }]);
+      setSuggestionsVisible(true);
+      return;
+    }
+    if (sendDraft && startsNewTask) setSendDraft(null);
+
     if (contactListFollowUp) {
       setContactDraft(null);
       const names = saved.contacts.map(contact => contact.name);
@@ -426,6 +437,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     }
 
     if (chained) {
+      setSendDraft(null);
       setChainedTransfer({ phase: 'swapping', recipient: chained.recipient });
       flow.clear();
       void swapFlow.start({ source: wallet.publicKey ?? '', amount: chained.amount, from: chained.from, to: chained.to });
@@ -433,12 +445,14 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       return;
     }
     if (swap) {
+      setSendDraft(null);
       setChainedTransfer(null);
       void swapFlow.start({ source: wallet.publicKey ?? '', amount: swap.amount, from: swap.from as PaymentAsset, to: swap.to as PaymentAsset });
       void Haptics.selectionAsync();
       return;
     }
     if (transaction) {
+      setSendDraft(null);
       setChainedTransfer(null);
       swapFlow.clear();
       void flow.start(transaction);
@@ -483,14 +497,35 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     try {
       const intent = await interpretChatWithAi(clean, history, locale);
       if (revision !== interpretationRevision.current || !open) return;
+      if (!['send', 'send_draft', 'unknown'].includes(intent.kind)) setSendDraft(null);
       if (intent.kind === 'send') {
+        setSendDraft(null);
         setChainedTransfer(null);
         swapFlow.clear();
         void flow.start({ amount: intent.amount!, token: intent.token!, recipient: intent.recipient! });
+      } else if (intent.kind === 'send_draft') {
+        const draft: SendDraft = {
+          ...(sendDraft ?? {}),
+          ...(intent.amount ? { amount: intent.amount } : {}),
+          ...(intent.token ? { token: intent.token } : {}),
+          ...(intent.recipient ? { recipient: intent.recipient } : {}),
+        };
+        if (draft.amount && draft.token && draft.recipient) {
+          setSendDraft(null);
+          setChainedTransfer(null);
+          swapFlow.clear();
+          void flow.start({ amount: draft.amount, token: draft.token, recipient: draft.recipient });
+        } else {
+          setSendDraft(draft);
+          const missing = [!draft.amount ? 'el monto' : '', !draft.token ? 'el token (XLM o USDC)' : '', !draft.recipient ? 'el destinatario' : ''].filter(Boolean);
+          setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: `Perfecto. Me falta ${missing.length === 1 ? missing[0] : `${missing.slice(0, -1).join(', ')} y ${missing.at(-1)}`}.` }]);
+        }
       } else if (intent.kind === 'swap') {
+        setSendDraft(null);
         setChainedTransfer(null);
         void swapFlow.start({ source: wallet.publicKey ?? '', amount: intent.amount!, from: intent.from!, to: intent.to! });
       } else if (intent.kind === 'swap_then_send') {
+        setSendDraft(null);
         setChainedTransfer({ phase: 'swapping', recipient: intent.recipient! });
         flow.clear();
         void swapFlow.start({ source: wallet.publicKey ?? '', amount: intent.amount!, from: intent.from!, to: intent.to! });

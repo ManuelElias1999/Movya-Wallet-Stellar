@@ -11,9 +11,13 @@ export const interpretChatWithAi = async (message: string) => {
   calls.ai.push(message);
   const empty = { contactAction: null, contactName: null, limit: null };
   if (message === 'Mándale cinco USDC a Prueba') return { kind: 'send', amount: '5', token: 'USDC', from: null, to: null, recipient: 'Prueba', ...empty, reply: null };
+  if (message === 'Manda dinero a Aya') return { kind: 'send_draft', amount: null, token: null, from: null, to: null, recipient: 'Aya', ...empty, reply: null };
+  if (message === '50 XLM') return { kind: 'send_draft', amount: '50', token: 'XLM', from: null, to: null, recipient: null, ...empty, reply: null };
   if (message === 'Convierte cincuenta XLM en USDC y lo que salga mándaselo a Aya') return { kind: 'swap_then_send', amount: '50', token: null, from: 'XLM', to: 'USDC', recipient: 'Aya', ...empty, reply: null };
   if (message === 'Enséñame lo que hice recién, pero solo tres cosas') return { kind: 'activity', amount: null, token: null, from: null, to: null, recipient: null, ...empty, limit: 3, reply: null };
   if (message === '¿Cuánta gente hay en mi agenda de contactos?') return { kind: 'contact', amount: null, token: null, from: null, to: null, recipient: null, contactAction: 'count', contactName: null, limit: null, reply: null };
+  if (message === 'Cuantas personas tengo en mis contactros?') return { kind: 'contact', amount: null, token: null, from: null, to: null, recipient: null, contactAction: 'count', contactName: null, limit: null, reply: null };
+  if (message === 'Nombres?') return { kind: 'contact', amount: null, token: null, from: null, to: null, recipient: null, contactAction: 'list', contactName: null, limit: null, reply: null };
   return { kind: 'unknown', amount: null, token: null, from: null, to: null, recipient: null, ...empty, reply: 'Necesito un poco más de información.' };
 };
 const host = (name: string) => function Host(props: any) { return createElement(name, props); };

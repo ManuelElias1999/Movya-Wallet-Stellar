@@ -1,4 +1,4 @@
-export type AiIntentKind = 'send' | 'swap' | 'swap_then_send' | 'balance' | 'receive' | 'activity' | 'contact' | 'help' | 'unknown';
+export type AiIntentKind = 'send' | 'send_draft' | 'swap' | 'swap_then_send' | 'balance' | 'receive' | 'activity' | 'contact' | 'help' | 'unknown';
 export type AiContactAction = 'count' | 'list' | 'address' | 'add';
 export type AiHistoryMessage = { role: 'user' | 'assistant'; content: string };
 export type AiIntent = {
@@ -38,6 +38,10 @@ function cleanAmount(value: unknown) {
   return amount;
 }
 
+function cleanOptionalAmount(value: unknown) {
+  return value === null ? null : cleanAmount(value);
+}
+
 function cleanLimit(value: unknown) {
   if (value === null) return null;
   if (!Number.isInteger(value) || Number(value) < 1 || Number(value) > 20) throw new Error('La IA devolvió un límite no válido.');
@@ -56,7 +60,7 @@ export function parseAiIntent(value: unknown, sourceText: string): AiIntent {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('La respuesta de la IA no es válida.');
   const candidate = value as Record<string, unknown>;
   const kind = candidate.kind;
-  if (typeof kind !== 'string' || !['send', 'swap', 'swap_then_send', 'balance', 'receive', 'activity', 'contact', 'help', 'unknown'].includes(kind)) {
+  if (typeof kind !== 'string' || !['send', 'send_draft', 'swap', 'swap_then_send', 'balance', 'receive', 'activity', 'contact', 'help', 'unknown'].includes(kind)) {
     throw new Error('La respuesta de la IA no es válida.');
   }
 
@@ -69,6 +73,16 @@ export function parseAiIntent(value: unknown, sourceText: string): AiIntent {
     }
     if (!token) throw new Error('La IA devolvió un activo no permitido.');
     return { kind, amount: cleanAmount(candidate.amount), token, from: null, to: null, recipient, contactAction: null, contactName: null, limit: null, reply };
+  }
+  if (kind === 'send_draft') {
+    const amount = cleanOptionalAmount(candidate.amount);
+    const token = cleanAsset(candidate.token);
+    const recipient = candidate.recipient === null ? null : cleanString(candidate.recipient, 160);
+    if (recipient && !normalized(sourceText).includes(normalized(recipient))) {
+      throw new Error('La IA intentó completar un destinatario que no escribiste.');
+    }
+    if (!amount && !token && !recipient) throw new Error('La respuesta de la IA no es válida.');
+    return { kind, amount, token, from: null, to: null, recipient, contactAction: null, contactName: null, limit: null, reply };
   }
   if (kind === 'swap') {
     const from = cleanAsset(candidate.from);

@@ -34,7 +34,7 @@ const normalizedChat = (message: string) => message.normalize('NFD').replace(/[\
 export function parseContactChatRequest(message: string): ContactChatRequest | null {
   const text = normalizedChat(message);
   if (!/contact|address|direccion/.test(text)) return null;
-  if (/(?:cuantos|numero de|cantidad de|how many|number of).*contact|contact.*(?:tengo|guardad|do i have|saved)/.test(text)) return { kind: 'count' };
+  if (/(?:cuant(?:os|as)|numero de|cantidad de|how many|number of).*contact|contact.*(?:tengo|guardad|do i have|saved)/.test(text)) return { kind: 'count' };
   if (/(?:dime|muestra|muestrame|lista|listar|ver|quienes|cuales|todos|todas|mis|my|show|list|tell me).*(?:contact)|(?:contact).*(?:dime|muestra|lista|todos|todas|guardad|saved|show|list)/.test(text)) return { kind: 'list' };
   const address = message.trim().match(/(?:cu[aá]l\s+es\s+(?:el\s+)?|dime\s+(?:el\s+)?|what(?:'s|\s+is)\s+(?:the\s+)?)(?:address|direcci[oó]n)\s+(?:de|of)\s+(.+?)[?.!]*$/i);
   if (address?.[1]?.trim()) return { kind: 'address', name: address[1].trim() };

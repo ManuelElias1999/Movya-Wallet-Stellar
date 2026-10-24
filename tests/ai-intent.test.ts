@@ -19,6 +19,25 @@ test('AI cannot reuse an old recipient when the newest message names another con
   assert.throws(() => parseAiIntent({ ...followUp, recipient: 'Aya' }, 'Y a Pruebita también'), /no escribiste/);
 });
 
+test('AI extracts only the fields written in each step of an incomplete send', () => {
+  assert.deepEqual(parseAiIntent({
+    kind: 'send_draft', amount: null, token: null, from: null, to: null, recipient: 'Aya',
+    contactAction: null, contactName: null, limit: null, reply: null,
+  }, 'Manda dinero a Aya'), {
+    kind: 'send_draft', amount: null, token: null, from: null, to: null, recipient: 'Aya', ...emptyContext, reply: null,
+  });
+  assert.deepEqual(parseAiIntent({
+    kind: 'send_draft', amount: '50', token: 'XLM', from: null, to: null, recipient: null,
+    contactAction: null, contactName: null, limit: null, reply: null,
+  }, 'cincuenta XLM'), {
+    kind: 'send_draft', amount: '50', token: 'XLM', from: null, to: null, recipient: null, ...emptyContext, reply: null,
+  });
+  assert.throws(() => parseAiIntent({
+    kind: 'send_draft', amount: '50', token: 'XLM', from: null, to: null, recipient: 'Pruebita',
+    contactAction: null, contactName: null, limit: null, reply: null,
+  }, 'cincuenta XLM'), /no escribiste/);
+});
+
 test('AI swap intent must use two different supported assets and a valid amount', () => {
   assert.deepEqual(parseAiIntent({ kind: 'swap', amount: '1.2345678', token: null, from: 'XLM', to: 'USDC', recipient: null, reply: null }, 'Cambia 1.2345678 XLM por USDC'), {
     kind: 'swap', amount: '1.2345678', token: null, from: 'XLM', to: 'USDC', recipient: null, ...emptyContext, reply: null,

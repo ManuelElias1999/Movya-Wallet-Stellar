@@ -81,6 +81,32 @@ test('natural language uses AI only to prepare the same review flow', async () =
   await act(() => tree.unmount());
 });
 
+test('a multi-turn send keeps the current recipient and completes only with the new fields', async () => {
+  let tree!: ReactTestRenderer;
+  const before = calls.submit.length;
+  const preparedBefore = calls.prepare.length;
+  await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
+  await send(tree, 'Manda dinero a Aya');
+  assert.ok(content(tree).includes('el monto y el token'));
+  assert.equal(calls.prepare.length, preparedBefore);
+  await send(tree, '50 XLM');
+  assert.deepEqual(calls.prepare.at(-1), { source: 'GSENDER', destination: 'GAYA', amount: '50', asset: 'XLM' });
+  assert.equal(calls.submit.length, before);
+  assert.ok(content(tree).includes('Revisa tu transferencia'));
+  await act(() => tree.unmount());
+});
+
+test('AI understands contact typos and short follow-up questions from context', async () => {
+  let tree!: ReactTestRenderer;
+  await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
+  await send(tree, 'Cuantas personas tengo en mis contactros?');
+  assert.ok(content(tree).includes('Tienes 2 contactos guardados'));
+  await send(tree, 'Nombres?');
+  assert.equal(calls.ai.at(-1), 'Nombres?');
+  assert.ok(content(tree).includes('Tus contactos son: Prueba, Aya'));
+  await act(() => tree.unmount());
+});
+
 test('AI understands unfamiliar phrasing and still uses deterministic wallet flows', async () => {
   let tree!: ReactTestRenderer;
   const swapsBefore = calls.swapSubmits.length;
