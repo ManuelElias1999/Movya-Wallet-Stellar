@@ -81,6 +81,26 @@ test('natural language uses AI only to prepare the same review flow', async () =
   await act(() => tree.unmount());
 });
 
+test('AI understands unfamiliar phrasing and still uses deterministic wallet flows', async () => {
+  let tree!: ReactTestRenderer;
+  const swapsBefore = calls.swapSubmits.length;
+  await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
+
+  await send(tree, 'Enséñame lo que hice recién, pero solo tres cosas');
+  assert.equal(calls.ai.at(-1), 'Enséñame lo que hice recién, pero solo tres cosas');
+  assert.ok(content(tree).includes('Tus últimas 1 operaciones'));
+
+  await send(tree, '¿Cuánta gente hay en mi agenda de contactos?');
+  assert.equal(calls.ai.at(-1), '¿Cuánta gente hay en mi agenda de contactos?');
+  assert.ok(content(tree).includes('Tienes 2 contactos guardados'));
+
+  await send(tree, 'Convierte cincuenta XLM en USDC y lo que salga mándaselo a Aya');
+  assert.equal(calls.ai.at(-1), 'Convierte cincuenta XLM en USDC y lo que salga mándaselo a Aya');
+  assert.ok(content(tree).includes('Revisa tu cambio'));
+  assert.equal(calls.swapSubmits.length, swapsBefore);
+  await act(() => tree.unmount());
+});
+
 test('a new message cannot make an earlier pending recipient look like a new order', async () => {
   let tree!: ReactTestRenderer;
   await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });

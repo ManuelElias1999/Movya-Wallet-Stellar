@@ -25,7 +25,7 @@ import { useSwapFlow } from '@/context/useSwapFlow';
 import { swapBlocked } from '@/services/swapFlow';
 import type { PaymentAsset } from '@/services/stellar/payments';
 import { useLanguage } from '@/i18n/Language';
-import { chatTopic, isChainedTransactionRequest, parseActivityLimit, parseChainedSwapSendRequest, parseContactChatRequest, parseSendRequest, parseSwapRequest } from '@/services/chatIntent';
+import { chatTopic, parseActivityLimit, parseChainedSwapSendRequest, parseContactChatRequest, parseSendRequest, parseSwapRequest } from '@/services/chatIntent';
 import { interpretChatWithAi } from '@/services/backend/ai';
 import { getActivityHistory, type StellarActivity } from '@/services/stellar/activity';
 import { verifiedContactAddress } from '@/services/backend/contacts';
@@ -432,11 +432,6 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       void Haptics.selectionAsync();
       return;
     }
-    if (isChainedTransactionRequest(clean)) {
-      setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: '¡Casi listo! Entiendo que quieres hacer un cambio y después un envío, pero me falta un dato. Puedes escribirlo así: “Cambia 1 USDC a XLM y después envía ese monto a Aya”.' }]);
-      setSuggestionsVisible(true);
-      return;
-    }
     if (swap) {
       setChainedTransfer(null);
       void swapFlow.start({ source: wallet.publicKey ?? '', amount: swap.amount, from: swap.from as PaymentAsset, to: swap.to as PaymentAsset });
@@ -471,7 +466,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       } finally { setInterpreting(false); }
       return;
     }
-    if (localTopic === 'balance' || localTopic === 'receive' || localTopic === 'contact' || localTopic === 'greeting') {
+    if (localTopic === 'balance' || localTopic === 'receive' || (localTopic === 'contact' && contactRequest) || localTopic === 'greeting') {
       setMessages(current => [...current, createMovyaReply(clean, id + 1)]);
       if (localTopic === 'contact' && contactRequest?.kind === 'count') lastLocalContext.current = 'contacts';
       setSuggestionsVisible(true);
@@ -495,6 +490,53 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       } else if (intent.kind === 'swap') {
         setChainedTransfer(null);
         void swapFlow.start({ source: wallet.publicKey ?? '', amount: intent.amount!, from: intent.from!, to: intent.to! });
+      } else if (intent.kind === 'swap_then_send') {
+        setChainedTransfer({ phase: 'swapping', recipient: intent.recipient! });
+        flow.clear();
+        void swapFlow.start({ source: wallet.publicKey ?? '', amount: intent.amount!, from: intent.from!, to: intent.to! });
+      } else if (intent.kind === 'activity') {
+        if (!wallet.publicKey) {
+          setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Abre tu wallet para consultar sus operaciones.' }]);
+        } else {
+          const activities = (await getActivityHistory(wallet.publicKey)).slice(0, intent.limit ?? 5);
+          const reply = activities.length
+            ? `¡Claro! Tus últimas ${activities.length} operaciones son:\n${activities.map((activity, index) => `${index + 1}. ${activityLine(activity, wallet.publicKey!, saved.contacts, locale)}`).join('\n')}`
+            : 'Todavía no tienes operaciones en esta wallet.';
+          setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: reply }]);
+          lastLocalContext.current = 'activity';
+          setSuggestionsVisible(true);
+        }
+      } else if (intent.kind === 'contact' && intent.contactAction === 'count') {
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: `¡Claro! Tienes ${saved.contacts.length} contacto${saved.contacts.length === 1 ? '' : 's'} guardado${saved.contacts.length === 1 ? '' : 's'}.` }]);
+        lastLocalContext.current = 'contacts';
+        setSuggestionsVisible(true);
+      } else if (intent.kind === 'contact' && intent.contactAction === 'list') {
+        const names = saved.contacts.map(contact => contact.name);
+        setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: names.length ? `¡Claro! Tus contactos son: ${names.join(', ')}.` : 'Todavía no tienes contactos guardados. Cuando quieras, puedo ayudarte a agregar el primero.' }]);
+        lastLocalContext.current = 'contacts';
+        setSuggestionsVisible(true);
+      } else if (intent.kind === 'contact' && intent.contactAction === 'address') {
+        const matches = saved.contacts.filter(contact => normalizeName(contact.name) === normalizeName(intent.contactName!));
+        if (!matches.length) {
+          setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: `No encontré un contacto llamado ${intent.contactName}.` }]);
+        } else if (matches.length > 1) {
+          setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: `Tienes más de un contacto llamado ${intent.contactName}. Revísalos en Contactos para elegir el correcto.` }]);
+        } else {
+          const address = await verifiedContactAddress(matches[0]);
+          setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: `La dirección Stellar verificada de ${matches[0].name} es:\n${address}` }]);
+        }
+        setSuggestionsVisible(true);
+      } else if (intent.kind === 'contact' && intent.contactAction === 'add') {
+        if (!saved.persistent) {
+          setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Ingresa con tu correo para guardar contactos.' }]);
+          setSuggestionsVisible(true);
+        } else if (intent.contactName) {
+          setContactDraft({ phase: 'identifier', name: intent.contactName });
+          setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: `Perfecto. Envíame el correo de Movya o la dirección Stellar pública de ${intent.contactName}.` }]);
+        } else {
+          setContactDraft({ phase: 'name' });
+          setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: '¿Cómo se llama el nuevo contacto?' }]);
+        }
       } else {
         setMessages(current => [...current, createAiReply(intent.kind as 'balance' | 'receive' | 'contact' | 'help' | 'unknown', intent.reply, id + 1)]);
         setSuggestionsVisible(true);

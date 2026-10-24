@@ -1,4 +1,5 @@
-export type AiIntentKind = 'send' | 'swap' | 'balance' | 'receive' | 'contact' | 'help' | 'unknown';
+export type AiIntentKind = 'send' | 'swap' | 'swap_then_send' | 'balance' | 'receive' | 'activity' | 'contact' | 'help' | 'unknown';
+export type AiContactAction = 'count' | 'list' | 'address' | 'add';
 export type AiHistoryMessage = { role: 'user' | 'assistant'; content: string };
 export type AiIntent = {
   kind: AiIntentKind;
@@ -7,10 +8,13 @@ export type AiIntent = {
   from: 'XLM' | 'USDC' | null;
   to: 'XLM' | 'USDC' | null;
   recipient: string | null;
+  contactAction: AiContactAction | null;
+  contactName: string | null;
+  limit: number | null;
   reply: string | null;
 };
 
-const nonTransactionalKinds = new Set<AiIntentKind>(['balance', 'receive', 'contact', 'help', 'unknown']);
+const simpleKinds = new Set<AiIntentKind>(['balance', 'receive', 'help', 'unknown']);
 
 function cleanString(value: unknown, maximum: number) {
   if (value === null) return null;
@@ -34,6 +38,16 @@ function cleanAmount(value: unknown) {
   return amount;
 }
 
+function cleanLimit(value: unknown) {
+  if (value === null) return null;
+  if (!Number.isInteger(value) || Number(value) < 1 || Number(value) > 20) throw new Error('La IA devolvió un límite no válido.');
+  return Number(value);
+}
+
+function emptyFields() {
+  return { amount: null, token: null, from: null, to: null, recipient: null, contactAction: null, contactName: null, limit: null } as const;
+}
+
 function normalized(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
 }
@@ -42,7 +56,7 @@ export function parseAiIntent(value: unknown, sourceText: string): AiIntent {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('La respuesta de la IA no es válida.');
   const candidate = value as Record<string, unknown>;
   const kind = candidate.kind;
-  if (typeof kind !== 'string' || !['send', 'swap', 'balance', 'receive', 'contact', 'help', 'unknown'].includes(kind)) {
+  if (typeof kind !== 'string' || !['send', 'swap', 'swap_then_send', 'balance', 'receive', 'activity', 'contact', 'help', 'unknown'].includes(kind)) {
     throw new Error('La respuesta de la IA no es válida.');
   }
 
@@ -54,16 +68,40 @@ export function parseAiIntent(value: unknown, sourceText: string): AiIntent {
       throw new Error('La IA intentó completar un destinatario que no escribiste.');
     }
     if (!token) throw new Error('La IA devolvió un activo no permitido.');
-    return { kind, amount: cleanAmount(candidate.amount), token, from: null, to: null, recipient, reply };
+    return { kind, amount: cleanAmount(candidate.amount), token, from: null, to: null, recipient, contactAction: null, contactName: null, limit: null, reply };
   }
   if (kind === 'swap') {
     const from = cleanAsset(candidate.from);
     const to = cleanAsset(candidate.to);
     if (!from || !to || from === to) throw new Error('La IA devolvió un cambio no válido.');
-    return { kind, amount: cleanAmount(candidate.amount), token: null, from, to, recipient: null, reply };
+    return { kind, amount: cleanAmount(candidate.amount), token: null, from, to, recipient: null, contactAction: null, contactName: null, limit: null, reply };
   }
-  if (!nonTransactionalKinds.has(kind as AiIntentKind)) throw new Error('La respuesta de la IA no es válida.');
-  return { kind: kind as AiIntentKind, amount: null, token: null, from: null, to: null, recipient: null, reply };
+  if (kind === 'swap_then_send') {
+    const from = cleanAsset(candidate.from);
+    const to = cleanAsset(candidate.to);
+    const recipient = cleanString(candidate.recipient, 160);
+    if (!from || !to || from === to) throw new Error('La IA devolvió un cambio no válido.');
+    if (!recipient || !normalized(sourceText).includes(normalized(recipient))) {
+      throw new Error('La IA intentó completar un destinatario que no escribiste.');
+    }
+    return { kind, amount: cleanAmount(candidate.amount), token: null, from, to, recipient, contactAction: null, contactName: null, limit: null, reply };
+  }
+  if (kind === 'activity') {
+    return { kind, ...emptyFields(), limit: cleanLimit(candidate.limit), reply };
+  }
+  if (kind === 'contact') {
+    const action = candidate.contactAction;
+    if (action !== null && !['count', 'list', 'address', 'add'].includes(String(action))) throw new Error('La respuesta de la IA no es válida.');
+    const contactAction = action as AiContactAction | null;
+    const contactName = candidate.contactName === null ? null : cleanString(candidate.contactName, 80);
+    if ((contactAction === 'address' || (contactAction === 'add' && contactName)) && (!contactName || !normalized(sourceText).includes(normalized(contactName)))) {
+      throw new Error('La IA intentó completar un contacto que no escribiste.');
+    }
+    if (contactAction === 'address' && !contactName) throw new Error('La respuesta de la IA no es válida.');
+    return { kind, ...emptyFields(), contactAction, contactName, reply };
+  }
+  if (!simpleKinds.has(kind as AiIntentKind)) throw new Error('La respuesta de la IA no es válida.');
+  return { kind: kind as AiIntentKind, ...emptyFields(), reply };
 }
 
 export function sanitizeAiHistory(history: AiHistoryMessage[]) {

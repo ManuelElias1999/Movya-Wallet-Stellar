@@ -9,8 +9,12 @@ export const useAuth = () => ({ user: { id: 'owner', user_metadata: { name: 'Man
 export const useLanguage = () => ({ t: (value: string) => value, locale: 'es-BO' });
 export const interpretChatWithAi = async (message: string) => {
   calls.ai.push(message);
-  if (message === 'Mándale cinco USDC a Prueba') return { kind: 'send', amount: '5', token: 'USDC', from: null, to: null, recipient: 'Prueba', reply: null };
-  return { kind: 'unknown', amount: null, token: null, from: null, to: null, recipient: null, reply: 'Necesito un poco más de información.' };
+  const empty = { contactAction: null, contactName: null, limit: null };
+  if (message === 'Mándale cinco USDC a Prueba') return { kind: 'send', amount: '5', token: 'USDC', from: null, to: null, recipient: 'Prueba', ...empty, reply: null };
+  if (message === 'Convierte cincuenta XLM en USDC y lo que salga mándaselo a Aya') return { kind: 'swap_then_send', amount: '50', token: null, from: 'XLM', to: 'USDC', recipient: 'Aya', ...empty, reply: null };
+  if (message === 'Enséñame lo que hice recién, pero solo tres cosas') return { kind: 'activity', amount: null, token: null, from: null, to: null, recipient: null, ...empty, limit: 3, reply: null };
+  if (message === '¿Cuánta gente hay en mi agenda de contactos?') return { kind: 'contact', amount: null, token: null, from: null, to: null, recipient: null, contactAction: 'count', contactName: null, limit: null, reply: null };
+  return { kind: 'unknown', amount: null, token: null, from: null, to: null, recipient: null, ...empty, reply: 'Necesito un poco más de información.' };
 };
 const host = (name: string) => function Host(props: any) { return createElement(name, props); };
 export const Text = host('NativeText');
