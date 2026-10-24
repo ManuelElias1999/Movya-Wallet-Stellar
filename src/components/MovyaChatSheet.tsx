@@ -641,7 +641,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
           <Pressable accessibilityLabel="Volver" accessibilityState={{ disabled: (['submitting', 'unknown'].includes(payment.phase) || swapBlocked(swapState)) }} disabled={(['submitting', 'unknown'].includes(payment.phase) || swapBlocked(swapState))} onPress={closeChat} style={styles.closeButton}><Ionicons name="chevron-back" size={27} color={colors.ink} /></Pressable>
           <View style={styles.identity}>
             <View style={styles.logoWrap}><MovyaLogo size={38} /><View style={styles.statusDot} /></View>
-            <View style={styles.identityCopy}><Text style={styles.title}>Movya</Text><Text style={styles.status}>Asistente financiero · en línea</Text></View>
+            <View style={styles.identityCopy}><Text style={styles.title}>Movya</Text><Text style={styles.status}>Asistente de Movya · en línea</Text></View>
           </View>
           <Pressable accessibilityLabel="Vaciar conversación" accessibilityState={{ disabled: paymentBusy }} disabled={paymentBusy} onPress={confirmClearConversation} style={[styles.infoButton, paymentBusy && styles.headerDisabled]}><Ionicons name="trash-outline" size={20} color={colors.brandDark} /></Pressable>
         </BlurView>

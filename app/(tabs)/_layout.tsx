@@ -16,6 +16,7 @@ export default function AppLayout() {
     <Stack screenOptions={{ animation: 'none', contentStyle: { backgroundColor: colors.background }, headerShown: false }}>
       <Stack.Screen name="index" /><Stack.Screen name="activity" />
       <Stack.Screen name="portfolio" /><Stack.Screen name="contacts" />
+      <Stack.Screen name="invest" />
       <Stack.Screen name="send" /><Stack.Screen name="receive" />
       <Stack.Screen name="swap" /><Stack.Screen name="settings" />
       <Stack.Screen name="movya" />

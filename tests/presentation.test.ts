@@ -56,12 +56,12 @@ test('the shared footer selects the current main section regardless of navigatio
   assert.equal(tabForPath('/(tabs)'), 'home');
   assert.equal(tabForPath('/activity'), 'activity');
   assert.equal(tabForPath('/contacts/'), 'contacts');
-  assert.equal(tabForPath('/settings?source=security'), 'account');
+  assert.equal(tabForPath('/invest?source=footer'), 'invest');
   assert.equal(tabForPath('/'), 'home');
 });
 
 test('the shared footer is absent from transaction, security and full-screen chat routes', () => {
-  for (const path of ['/send', '/receive', '/swap', '/portfolio', '/security', '/wallet-backup', '/movya']) {
+  for (const path of ['/send', '/receive', '/swap', '/portfolio', '/settings', '/security', '/wallet-backup', '/movya']) {
     assert.equal(tabForPath(path), undefined);
   }
 });

@@ -6,9 +6,9 @@ import { useThemedStyles } from '@/theme/Theme';
 import type { ThemeColors } from '@/theme/tokens';
 
 // One surface for the footer, home header and dashboard actions.
-export function NavigationGlass({ children, style, gradientColors }: PropsWithChildren<{ style?: StyleProp<ViewStyle>; gradientColors?: readonly [string, string] }>) {
+export function NavigationGlass({ children, style, gradientColors, intensity = 78, tint = 'dark' }: PropsWithChildren<{ style?: StyleProp<ViewStyle>; gradientColors?: readonly [string, string]; intensity?: number; tint?: 'light' | 'dark' | 'default' }>) {
   const { colors, styles } = useThemedStyles(createStyles);
-  return <BlurView intensity={78} tint="dark" style={[styles.surface, style, Platform.OS === 'web' ? webGlass : null]}>
+  return <BlurView intensity={intensity} tint={tint} style={[styles.surface, style, Platform.OS === 'web' ? webGlass : null]}>
     <LinearGradient colors={gradientColors ?? [colors.glassStart, colors.glassEnd]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} pointerEvents="none" style={StyleSheet.absoluteFill} />
     {children}
   </BlurView>;

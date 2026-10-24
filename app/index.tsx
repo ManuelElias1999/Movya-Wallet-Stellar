@@ -20,7 +20,6 @@ import { PasswordInput } from '@/components/PasswordInput';
 
 import { checkPasswordStrength, MIN_PASSWORD_LENGTH } from '@/services/security/passwordStrength';
 import { isMfaRequired } from '@/services/backend/mfa';
-import { ThemeSelector } from '@/components/ThemeSelector';
 
 type AuthMode = 'login' | 'register';
 
@@ -86,8 +85,6 @@ export default function WelcomeScreen() {
               <Text style={styles.brand}>Movya Wallet</Text>
               <Text style={styles.tagline}>Un mensaje, una transacción</Text>
             </View>
-            <View style={{ marginBottom: 18 }}><ThemeSelector /></View>
-
             <BlurView intensity={72} tint={mode} style={[styles.authCard, Platform.OS === 'web' ? webGlass : null]}>
               {!pendingEmail ? <View style={styles.modeTabs}>
                 <PressableScale disabled={busy} onPress={() => changeAuthMode('login')} style={[styles.modeTab, authMode === 'login' && styles.modeTabActive]}>
