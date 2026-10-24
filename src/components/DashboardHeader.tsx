@@ -10,10 +10,10 @@ type Props = { name: string; loading: boolean; onProfile: () => void; onRefresh:
 
 export function DashboardHeader({ name, loading, onProfile, onRefresh, topInset = 0 }: Props) {
   const { colors, mode, styles } = useThemedStyles(createStyles);
-  const glassColor = mode === 'dark' ? 'rgba(4,8,14,0.30)' : 'rgba(245,247,251,0.30)';
-  const buttonGlass = mode === 'dark' ? 'rgba(34,44,59,0.36)' : 'rgba(255,255,255,0.36)';
+  const glassColor = mode === 'dark' ? 'rgba(4,8,14,0.10)' : 'rgba(245,247,251,0.10)';
+  const buttonGlass = mode === 'dark' ? 'rgba(34,44,59,0.24)' : 'rgba(255,255,255,0.24)';
   const buttonBorder = mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.62)';
-  return <BlurView intensity={70} tint={mode} style={[styles.shell, { paddingTop: topInset, backgroundColor: glassColor }, Platform.OS === 'web' ? webGlass : null]}>
+  return <BlurView intensity={90} tint={mode} style={[styles.shell, { paddingTop: topInset, backgroundColor: glassColor }, Platform.OS === 'web' ? webGlass : null]}>
     <View style={styles.header}>
       <View style={styles.copy}>
         <Text numberOfLines={1} style={styles.greeting}>Hola, <Text translate={false}>{name.split(/\s+/)[0]}</Text></Text>
@@ -38,7 +38,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   header: { width: '100%', maxWidth: 760, minHeight: 58, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 4, paddingBottom: 7, flexDirection: 'row', alignItems: 'center' },
   copy: { flex: 1, minWidth: 0, paddingRight: 12 },
   greeting: { color: colors.ink, fontSize: 19, lineHeight: 24, letterSpacing: -0.3, fontWeight: '800' },
-  tagline: { color: colors.muted, fontSize: 11, lineHeight: 15, marginTop: 1 },
+  tagline: { color: colors.ink, fontSize: 11.5, lineHeight: 16, fontWeight: '700', marginTop: 1 },
   actions: { flexDirection: 'row', gap: 8 },
   button: { width: 42, height: 42, borderRadius: 21, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
 });
