@@ -10,10 +10,10 @@ type Props = { name: string; loading: boolean; onProfile: () => void; onRefresh:
 
 export function DashboardHeader({ name, loading, onProfile, onRefresh, topInset = 0 }: Props) {
   const { colors, mode, styles } = useThemedStyles(createStyles);
-  const glassColor = mode === 'dark' ? 'rgba(4,8,14,0.28)' : 'rgba(245,247,251,0.24)';
-  const buttonGlass = mode === 'dark' ? 'rgba(34,44,59,0.46)' : 'rgba(255,255,255,0.46)';
+  const glassColor = mode === 'dark' ? 'rgba(4,8,14,0.30)' : 'rgba(245,247,251,0.30)';
+  const buttonGlass = mode === 'dark' ? 'rgba(34,44,59,0.36)' : 'rgba(255,255,255,0.36)';
   const buttonBorder = mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.62)';
-  return <BlurView intensity={48} tint={mode} style={[styles.shell, { paddingTop: topInset, backgroundColor: glassColor }, Platform.OS === 'web' ? webGlass : null]}>
+  return <BlurView intensity={70} tint={mode} style={[styles.shell, { paddingTop: topInset, backgroundColor: glassColor }, Platform.OS === 'web' ? webGlass : null]}>
     <View style={styles.header}>
       <View style={styles.copy}>
         <Text numberOfLines={1} style={styles.greeting}>Hola, <Text translate={false}>{name.split(/\s+/)[0]}</Text></Text>
