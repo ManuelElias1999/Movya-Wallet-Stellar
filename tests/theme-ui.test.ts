@@ -34,16 +34,18 @@ test('theme selection repaints a mounted screen without losing its typed draft',
   await act(() => tree.unmount());
 });
 
-test('dashboard header is compact and keeps working settings and refresh actions', async () => {
+test('dashboard header matches the compact transparent iOS layout and keeps working actions', async () => {
   let tree!: ReactTestRenderer; let profile = 0, refresh = 0;
   await act(() => { tree = create(createElement(DashboardHeader, { name: 'Manuel Elias', loading: false, onProfile: () => { profile++; }, onRefresh: () => { refresh++; } })); });
   const button = (label: string) => tree.root.findAllByType('NativePressable' as any).find(node => node.props.accessibilityLabel === label)!;
   await act(() => button('Abrir ajustes').props.onPress());
   await act(() => button('Actualizar portafolio').props.onPress());
   assert.equal(profile, 1); assert.equal(refresh, 1);
-  const glass = tree.root.findByType('BlurView' as any);
-  assert.equal(glass.props.intensity, 90);
-  assert.ok(glass.props.style.flat().some((style: { backgroundColor?: string }) => style?.backgroundColor === 'rgba(4,8,14,0.10)'));
+  const glass = tree.root.findAllByType('BlurView' as any)[0];
+  assert.equal(glass.props.intensity, 22);
+  assert.ok(glass.props.style.flat().some((style: { backgroundColor?: string }) => style?.backgroundColor === 'transparent'));
+  const settingsStyle = button('Abrir ajustes').props.style.flat();
+  assert.ok(settingsStyle.some((style: { width?: number; height?: number; borderRadius?: number }) => style?.width === 38 && style?.height === 38 && style?.borderRadius === 19));
   assert.ok(JSON.stringify(tree.toJSON()).includes('Hola,'));
   assert.ok(JSON.stringify(tree.toJSON()).includes('Un mensaje, una transacción'));
   assert.ok(!JSON.stringify(tree.toJSON()).includes('Activar modo claro'));
