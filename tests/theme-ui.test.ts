@@ -42,8 +42,8 @@ test('dashboard header is compact and keeps working settings and refresh actions
   await act(() => button('Actualizar portafolio').props.onPress());
   assert.equal(profile, 1); assert.equal(refresh, 1);
   const glass = tree.root.findByType('BlurView' as any);
-  assert.equal(glass.props.intensity, 82);
-  assert.ok(glass.props.style.flat().some((style: { backgroundColor?: string }) => style?.backgroundColor === 'rgba(7,14,24,0.62)'));
+  assert.equal(glass.props.intensity, 48);
+  assert.ok(glass.props.style.flat().some((style: { backgroundColor?: string }) => style?.backgroundColor === 'rgba(4,8,14,0.28)'));
   assert.ok(JSON.stringify(tree.toJSON()).includes('Hola,'));
   assert.ok(JSON.stringify(tree.toJSON()).includes('Un mensaje, una transacción'));
   assert.ok(!JSON.stringify(tree.toJSON()).includes('Activar modo claro'));
