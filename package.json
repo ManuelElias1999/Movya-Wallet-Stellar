@@ -19,7 +19,7 @@
     "@noble/ciphers": "^2.4.0",
     "@noble/hashes": "^2.4.0",
     "@scure/bip39": "^2.4.0",
-    "@stellar/stellar-sdk": "^17.1.0",
+    "@stellar/stellar-sdk": "^17.3.0",
     "@supabase/supabase-js": "^2.117.2",
     "buffer": "^6.0.3",
     "expo": "~57.0.30",
