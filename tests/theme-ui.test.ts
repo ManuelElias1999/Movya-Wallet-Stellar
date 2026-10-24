@@ -6,7 +6,7 @@ import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { readFileSync } from 'node:fs';
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 registerHooks({ resolve(specifier, context, nextResolve) {
-  const mocked = ['react-native', '@expo/vector-icons', '@/i18n/primitives', '@/components/PressableScale'];
+  const mocked = ['react-native', 'expo-blur', '@expo/vector-icons', '@/i18n/primitives', '@/components/PressableScale'];
   return nextResolve(mocked.includes(specifier) ? require.resolve('./fixtures/chatRuntime') : specifier, context);
 } });
 const { ThemeSelector }: typeof import('../src/components/ThemeSelector') = require('../src/components/ThemeSelector');
@@ -41,7 +41,9 @@ test('dashboard header is compact and keeps working settings and refresh actions
   await act(() => button('Abrir ajustes').props.onPress());
   await act(() => button('Actualizar portafolio').props.onPress());
   assert.equal(profile, 1); assert.equal(refresh, 1);
-  assert.equal(tree.root.findAllByType('NativeView' as any)[0].props.style.backgroundColor, darkColors.background);
+  const glass = tree.root.findByType('BlurView' as any);
+  assert.equal(glass.props.intensity, 82);
+  assert.ok(glass.props.style.flat().some((style: { backgroundColor?: string }) => style?.backgroundColor === 'rgba(7,14,24,0.62)'));
   assert.ok(JSON.stringify(tree.toJSON()).includes('Hola,'));
   assert.ok(JSON.stringify(tree.toJSON()).includes('Un mensaje, una transacción'));
   assert.ok(!JSON.stringify(tree.toJSON()).includes('Activar modo claro'));

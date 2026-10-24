@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
 import { ActivityRow } from '@/components/ActivityRow';
@@ -41,6 +41,7 @@ const quickActions = [
 export default function HomeScreen() {
   const { styles, colors, mode } = useThemedStyles(createStyles);
   const { locale } = useLanguage();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const auth = useAuth();
   const displayName = getDisplayName(auth.user?.user_metadata);
@@ -62,13 +63,13 @@ export default function HomeScreen() {
   const privateValue = (value: string) => amountsVisible ? value : '••••••';
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <SafeAreaView edges={[]} style={styles.safeArea}>
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       <AnimatedDashboardBackground />
 
-      <DashboardHeader name={displayName} loading={account.loading || market.loading} onProfile={() => router.push('/settings')} onRefresh={() => void Promise.all([account.refresh(), market.refresh(true)])} />
+      <DashboardHeader name={displayName} loading={account.loading || market.loading} onProfile={() => router.push('/settings')} onRefresh={() => void Promise.all([account.refresh(), market.refresh(true)])} topInset={insets.top} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 66 }]} showsVerticalScrollIndicator={false}>
         <AnimatedAccountCard ownerName={displayName} amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : market.loading && !market.data ? 'Cotizando…' : formatUsd(totalUsd, locale)} balanceLabel="Valor total estimado en USD" />
 
         <View style={styles.actionsRow}>
@@ -122,9 +123,9 @@ export default function HomeScreen() {
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
 
-  content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 136 },
+  content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingBottom: 136 },
   actionsRow: { flexDirection: 'row', gap: 10, marginTop: 16 }, actionItem: { flex: 1, minWidth: 0, borderRadius: 22, backgroundColor: 'transparent', shadowColor: '#00123F', shadowOpacity: 0.24, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 6 }, actionSurface: { minHeight: 72, width: '100%', borderRadius: 22, alignItems: 'center', justifyContent: 'center', paddingVertical: 9, gap: 5 }, actionIcon: { width: 30, height: 30, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.24)' }, actionLabel: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
   sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 31, marginBottom: 12 }, sectionTitle: { color: colors.ink, fontSize: 19, fontWeight: '900', letterSpacing: -0.35 }, sectionSubtitle: { color: colors.muted, fontSize: 10, marginTop: 3 }, sectionAction: { color: colors.brand, fontSize: 11, fontWeight: '800' },
-  portfolioRow: { gap: 12, paddingRight: 4, paddingBottom: 12 }, assetCard: { width: 184, minHeight: 142, padding: 14, borderRadius: 23, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, shadowColor: '#000000', shadowOpacity: 0.25, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 4 }, assetTop: { flexDirection: 'row', alignItems: 'center' }, assetIcon: { width: 42, height: 42, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }, assetInitial: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' }, assetIdentity: { flex: 1, marginLeft: 9 }, assetName: { color: colors.ink, fontSize: 12, fontWeight: '800' }, assetCode: { color: colors.muted, fontSize: 9, marginTop: 3 }, assetAmount: { color: colors.ink, fontSize: 19, fontWeight: '900', letterSpacing: -0.4, marginTop: 16 }, assetValue: { color: colors.muted, fontSize: 10, marginTop: 4 },
+  portfolioRow: { gap: 12, paddingRight: 4, paddingBottom: 12 }, assetCard: { width: 184, minHeight: 142, padding: 14, borderRadius: 23, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }, assetTop: { flexDirection: 'row', alignItems: 'center' }, assetIcon: { width: 42, height: 42, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }, assetInitial: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' }, assetIdentity: { flex: 1, marginLeft: 9 }, assetName: { color: colors.ink, fontSize: 12, fontWeight: '800' }, assetCode: { color: colors.muted, fontSize: 9, marginTop: 3 }, assetAmount: { color: colors.ink, fontSize: 19, fontWeight: '900', letterSpacing: -0.4, marginTop: 16 }, assetValue: { color: colors.muted, fontSize: 10, marginTop: 4 },
   activityCard: { paddingHorizontal: 15, borderRadius: 23, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 4 }, syncError: { color: colors.warning, fontSize: 10, lineHeight: 15, marginTop: 14 },
 });

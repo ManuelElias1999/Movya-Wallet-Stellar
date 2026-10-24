@@ -54,7 +54,7 @@ function NavItem({ active, icon, label, onPress }: NavItemProps) {
   return (
     <PressableScale haptic={false} onPress={onPress} pressedScale={0.9} accessibilityRole="tab" accessibilityState={{ selected: active }} style={[styles.item, active && styles.itemActive]}>
       <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
-        <Ionicons color={active ? colors.brandDark : 'rgba(255,255,255,0.7)'} name={active ? icon.replace('-outline', '') as keyof typeof Ionicons.glyphMap : icon} size={21} />
+        <Ionicons color={active ? colors.brandDark : colors.text} name={active ? icon.replace('-outline', '') as keyof typeof Ionicons.glyphMap : icon} size={21} />
       </View>
       <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
     </PressableScale>
@@ -64,6 +64,6 @@ function NavItem({ active, icon, label, onPress }: NavItemProps) {
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
   shell: { position: 'absolute', left: 12, right: 12, bottom: 8, zIndex: 40, backgroundColor: 'transparent', shadowColor: '#00123F', shadowOpacity: 0.2, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, elevation: 16 },
   bar: { height: 76, width: '100%', maxWidth: 720, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 5, borderRadius: 999, backgroundColor: 'transparent', borderColor: colors.border },
-  item: { width: 61, height: 62, alignItems: 'center', justifyContent: 'center' }, iconWrap: { width: 36, height: 30, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, itemActive: { backgroundColor: colors.surfaceElevated, borderRadius: 20, borderWidth: 1, borderColor: colors.brandIce }, iconWrapActive: { backgroundColor: colors.brandSoft }, label: { color: colors.muted, fontSize: 9, fontWeight: '700', marginTop: 2 }, labelActive: { color: colors.brandDark, fontWeight: '900' },
+  item: { width: 61, height: 62, alignItems: 'center', justifyContent: 'center' }, iconWrap: { width: 36, height: 30, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, itemActive: { backgroundColor: colors.surfaceElevated, borderRadius: 20, borderWidth: 1, borderColor: colors.brandIce }, iconWrapActive: { backgroundColor: colors.brandSoft }, label: { color: colors.text, fontSize: 9, fontWeight: '700', marginTop: 2 }, labelActive: { color: colors.brandDark, fontWeight: '900' },
   centerSlot: { width: 62, height: 64, alignItems: 'center', justifyContent: 'flex-end' }, movyaButton: { position: 'absolute', top: 1, width: 45, height: 45, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceSoft, borderWidth: 1, borderColor: colors.border }, movyaLabel: { color: colors.ink, fontSize: 9, fontWeight: '900', marginBottom: 1 },
 });
