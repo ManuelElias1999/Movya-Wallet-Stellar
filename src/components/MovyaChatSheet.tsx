@@ -1,4 +1,4 @@
-import { Pressable, Text, TextInput } from '@/i18n/primitives';
+import { Alert, Pressable, Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -19,6 +19,7 @@ import { resolveContactWithConfirmation } from '@/components/confirmContactAddre
 import { createChatPaymentFlow, matchChatContacts } from '@/services/chatPayment';
 import { assertNotDuplicate, recordPayment } from '@/services/security/duplicateGuard';
 import { ChatPaymentCard } from '@/components/ChatPaymentCard';
+import { ChatHistoryReceiptCard } from '@/components/ChatHistoryReceiptCard';
 import { SwapReviewCard } from '@/components/SwapReviewCard';
 import { useSwapFlow } from '@/context/useSwapFlow';
 import { swapBlocked } from '@/services/swapFlow';
@@ -28,10 +29,10 @@ import { chatTopic, isChainedTransactionRequest, parseActivityLimit, parseChaine
 import { interpretChatWithAi } from '@/services/backend/ai';
 import { getActivityHistory, type StellarActivity } from '@/services/stellar/activity';
 import { verifiedContactAddress } from '@/services/backend/contacts';
+import { clearChatHistory, readChatHistory, writeChatHistory, type ChatHistoryMessage, type ChatReceiptHistoryMessage } from '@/services/chatHistory';
 
-type TextMessage = { id: number; role: 'movya' | 'user'; kind: 'text'; text: string };
-type VoiceMessage = { id: number; role: 'user'; kind: 'voice'; duration: number };
-type Message = TextMessage | VoiceMessage;
+type TextMessage = Extract<ChatHistoryMessage, { kind: 'text' }>;
+type Message = ChatHistoryMessage;
 type MovyaChatSheetProps = { open: boolean; onClose: () => void; initialPrompt?: string };
 type ChainedTransfer = { phase: 'swapping' | 'preparing-send' | 'send'; recipient: string };
 
@@ -75,9 +76,38 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   const [chainedTransfer, setChainedTransfer] = useState<ChainedTransfer | null>(null);
   const lastLocalContext = useRef<'contacts' | 'activity' | null>(null);
   const interpretationRevision = useRef(0);
+  const messageSequence = useRef(0);
+  const nextMessageId = () => Date.now() * 1_000 + messageSequence.current++ % 1_000;
+  const welcomeMessage = (): TextMessage => ({ id: nextMessageId(), role: 'movya', kind: 'text', text: `¡Hola, ${name}! 😊 Puedo ayudarte a consultar tu saldo, enviar o recibir dinero, cambiar XLM/USDC y revisar tu actividad. ¿Qué te gustaría hacer?` });
+  const [historyReady, setHistoryReady] = useState(false);
+  const [archivedReceiptHashes, setArchivedReceiptHashes] = useState<Set<string>>(() => new Set());
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, role: 'movya', kind: 'text', text: `Hola, ${name}. Puedo ayudarte a enviar, recibir o cambiar dinero en Stellar. Prueba escribiendo: “Envía 20 USDC a Ouali”.` },
+    { id: 1, role: 'movya', kind: 'text', text: `¡Hola, ${name}! 😊 Puedo ayudarte a consultar tu saldo, enviar o recibir dinero, cambiar XLM/USDC y revisar tu actividad. ¿Qué te gustaría hacer?` },
   ]);
+
+  useEffect(() => {
+    const owner = auth.user?.id;
+    let active = true;
+    setHistoryReady(false);
+    if (!owner) {
+      setMessages([welcomeMessage()]); setArchivedReceiptHashes(new Set()); setHistoryReady(true);
+      return () => { active = false; };
+    }
+    void readChatHistory(owner).then(stored => {
+      if (!active) return;
+      setMessages(stored.length ? stored : [welcomeMessage()]);
+      setArchivedReceiptHashes(new Set(stored.flatMap(message => message.kind === 'receipt' ? [message.receiptHash] : [])));
+      setHistoryReady(true);
+    });
+    return () => { active = false; };
+  }, [auth.user?.id]);
+
+  useEffect(() => {
+    const owner = auth.user?.id;
+    if (!owner || !historyReady) return;
+    const timer = setTimeout(() => { void writeChatHistory(owner, messages).catch(() => undefined); }, 120);
+    return () => clearTimeout(timer);
+  }, [auth.user?.id, historyReady, messages]);
 
   useEffect(() => {
     Animated.timing(translateY, { toValue: open ? 0 : screenHeight, duration: open ? 440 : 350, easing: open ? Easing.out(Easing.cubic) : Easing.inOut(Easing.cubic), useNativeDriver: true }).start();
@@ -91,14 +121,15 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
 
   const createMovyaReply = (message: string, id: number): TextMessage => {
     const topic = chatTopic(message);
-    if (topic === 'balance') return { id, role: 'movya', kind: 'text', text: wallet.publicKey ? wallet.account ? `En Testnet tienes ${formatAssetBalance(assetBalance(wallet.account, 'USDC')?.balance ?? '0', locale, 2)} USDC y ${formatAssetBalance(assetBalance(wallet.account, 'XLM')?.balance ?? '0', locale, 2)} XLM. Son tokens de prueba.` : 'Solicita XLM desde Inicio y actualiza tu saldo.' : 'Tu balance total de demostración es $1,629.24. Puedo mostrarte el detalle de cada activo si quieres.' };
-    if (topic === 'swap') return { id, role: 'movya', kind: 'text', text: 'Claro. Dime qué activo quieres entregar, cuál quieres recibir y el monto. Después te mostraré la cotización antes de confirmar.' };
+    if (topic === 'greeting') return { id, role: 'movya', kind: 'text', text: `¡Hola, ${name}! 😊 Qué gusto verte. ¿En qué puedo ayudarte hoy?` };
+    if (topic === 'balance') return { id, role: 'movya', kind: 'text', text: wallet.publicKey ? wallet.account ? `¡Claro! En Testnet tienes ${formatAssetBalance(assetBalance(wallet.account, 'USDC')?.balance ?? '0', locale, 2)} USDC y ${formatAssetBalance(assetBalance(wallet.account, 'XLM')?.balance ?? '0', locale, 2)} XLM. Son tokens de prueba.` : 'Con gusto te ayudo. Solicita XLM desde Inicio y luego actualiza tu saldo.' : 'Tu balance total de demostración es $1,629.24. Si quieres, también puedo mostrarte cada activo.' };
+    if (topic === 'swap') return { id, role: 'movya', kind: 'text', text: '¡Claro! Dime el monto, el activo que quieres entregar y el que quieres recibir. Te mostraré todo para que lo revises antes de confirmar.' };
     if (topic === 'contact') {
       const request = parseContactChatRequest(message);
-      if (request?.kind === 'count') return { id, role: 'movya', kind: 'text', text: `Tienes ${saved.contacts.length} contacto${saved.contacts.length === 1 ? '' : 's'} guardado${saved.contacts.length === 1 ? '' : 's'}.` };
+      if (request?.kind === 'count') return { id, role: 'movya', kind: 'text', text: `¡Claro! Tienes ${saved.contacts.length} contacto${saved.contacts.length === 1 ? '' : 's'} guardado${saved.contacts.length === 1 ? '' : 's'}.` };
       if (request?.kind === 'list') {
         const names = saved.contacts.map(contact => contact.name);
-        return { id, role: 'movya', kind: 'text', text: names.length ? `Tus contactos son: ${names.join(', ')}.` : 'Todavía no tienes contactos guardados.' };
+        return { id, role: 'movya', kind: 'text', text: names.length ? `¡Claro! Tus contactos son: ${names.join(', ')}.` : 'Todavía no tienes contactos guardados. Cuando quieras, puedo ayudarte a agregar el primero.' };
       }
       if (request?.kind === 'address') {
         const matches = saved.contacts.filter(contact => normalizeName(contact.name) === normalizeName(request.name));
@@ -106,17 +137,17 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
         if (matches.length > 1) return { id, role: 'movya', kind: 'text', text: `Tienes más de un contacto llamado ${request.name}. Revísalos en Contactos para elegir el correcto.` };
         return { id, role: 'movya', kind: 'text', text: `Estoy verificando la dirección guardada de ${matches[0].name}.` };
       }
-      return { id, role: 'movya', kind: 'text', text: 'Puedo ayudarte. Dime el nombre y luego comparte su correo de Movya o su dirección Stellar pública.' };
+      return { id, role: 'movya', kind: 'text', text: '¡Claro! Dime el nombre de la persona y luego comparte su correo de Movya o su dirección Stellar pública.' };
     }
     if (topic === 'receive') return { id, role: 'movya', kind: 'text', text: 'Puedes recibir por Stellar usando tu QR o tu dirección pública. Puedo ayudarte a copiarla o compartirla.' };
-    return { id, role: 'movya', kind: 'text', text: 'Perfecto. Dime el token, el monto y el destinatario. Prepararé el envío y te mostraré un resumen antes de confirmar.' };
+    return { id, role: 'movya', kind: 'text', text: 'Con gusto te ayudo. Dime el token, el monto y el destinatario; prepararé un resumen claro para que lo revises antes de confirmar.' };
   };
 
   const createAiReply = (kind: 'balance' | 'receive' | 'contact' | 'help' | 'unknown', reply: string | null, id: number) => {
     if (kind === 'balance') return createMovyaReply('balance', id);
     if (kind === 'receive') return createMovyaReply('recibir', id);
     if (kind === 'contact') return createMovyaReply('contacto', id);
-    return { id, role: 'movya', kind: 'text', text: reply ?? 'No entendí completamente. Puedes pedirme consultar tu saldo, enviar XLM o USDC, recibir dinero o hacer un cambio.' } as TextMessage;
+    return { id, role: 'movya', kind: 'text', text: reply ? `Con gusto te ayudo. ${reply}` : 'No entendí del todo, pero con gusto te ayudo. Puedes pedirme consultar tu saldo, enviar o recibir XLM/USDC, hacer un cambio o revisar tu actividad.' } as TextMessage;
   };
 
   const latest = useRef({ wallet, saved });
@@ -156,6 +187,21 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     if (['submitting', 'unknown'].includes(flow.get().phase) || swapBlocked(swapFlow.get())) return;
     Keyboard.dismiss(); onClose();
   };
+  const confirmClearConversation = () => Alert.alert(
+    'Vaciar conversación',
+    'Se borrarán los mensajes y comprobantes guardados en este dispositivo. Tus fondos y tu actividad en Stellar no se borrarán.',
+    [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Vaciar chat', style: 'destructive', onPress: () => {
+        interpretationRevision.current++;
+        flow.clear(); swapFlow.clear();
+        setInterpreting(false); setContactDraft(null); setChainedTransfer(null); lastLocalContext.current = null;
+        setArchivedReceiptHashes(new Set()); setSuggestionsVisible(true); setMessages([welcomeMessage()]);
+        const owner = auth.user?.id;
+        if (owner) void clearChatHistory(owner).catch(() => undefined);
+      } },
+    ],
+  );
   useEffect(() => {
     if (!open) return;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => { closeChat(); return true; });
@@ -189,6 +235,47 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   useEffect(() => {
     if (chainedTransfer?.phase === 'send' && payment.phase === 'success') setChainedTransfer(null);
   }, [chainedTransfer?.phase, payment.phase]);
+
+  useEffect(() => {
+    if (swapState.phase !== 'success' || !swapState.review || !swapState.receipt || archivedReceiptHashes.has(swapState.receipt.hash)) return;
+    const review = swapState.review, receipt = swapState.receipt;
+    const received = receipt.receivedAmount ?? review.estimated;
+    const archived: ChatReceiptHistoryMessage = {
+      id: nextMessageId(), role: 'movya', kind: 'receipt', title: 'Cambio realizado', receiptHash: receipt.hash,
+      summary: `${formatEnteredAmount(review.amount)} ${review.from} → ${formatReceivedAmount(received)} ${review.to}`,
+      details: [
+        { label: 'Tú entregaste', value: `${formatEnteredAmount(review.amount)} ${review.from}` },
+        { label: 'Comisión de Movya (0,5 %)', value: `${formatEnteredAmount(review.appFee)} ${review.from}` },
+        { label: 'Recibiste', value: `${formatReceivedAmount(received)} ${review.to}` },
+        { label: 'Comisión máxima de red', value: `${formatEnteredAmount(review.fee)} XLM` },
+        { label: 'Red', value: 'Stellar DEX · Testnet' },
+        { label: 'Hash de transacción', value: receipt.hash },
+      ], explorerUrl: receipt.explorerUrl,
+    };
+    setMessages(current => current.some(message => message.kind === 'receipt' && message.receiptHash === receipt.hash) ? current : [...current, archived]);
+    setArchivedReceiptHashes(current => new Set(current).add(receipt.hash));
+  }, [swapState.phase, swapState.review, swapState.receipt, archivedReceiptHashes]);
+
+  useEffect(() => {
+    if (payment.phase !== 'success' || !payment.review || !payment.receipt || !payment.request || archivedReceiptHashes.has(payment.receipt.hash)) return;
+    const review = payment.review, receipt = payment.receipt;
+    const recipient = payment.recipient ?? payment.request.recipient;
+    const archived: ChatReceiptHistoryMessage = {
+      id: nextMessageId(), role: 'movya', kind: 'receipt', title: 'Enviado', receiptHash: receipt.hash,
+      summary: `${formatEnteredAmount(review.amount)} ${review.asset} a ${recipient}`,
+      details: [
+        { label: 'Monto', value: `${formatEnteredAmount(review.amount)} ${review.asset}` },
+        { label: 'Destinatario', value: recipient },
+        { label: 'Dirección destinataria', value: review.destination },
+        { label: 'De tu wallet', value: review.source },
+        { label: 'Comisión de red', value: `${formatEnteredAmount(review.fee)} XLM` },
+        { label: 'Red', value: 'Stellar · Testnet' },
+        { label: 'Hash de transacción', value: receipt.hash },
+      ], explorerUrl: receipt.explorerUrl,
+    };
+    setMessages(current => current.some(message => message.kind === 'receipt' && message.receiptHash === receipt.hash) ? current : [...current, archived]);
+    setArchivedReceiptHashes(current => new Set(current).add(receipt.hash));
+  }, [payment.phase, payment.review, payment.receipt, payment.request, payment.recipient, archivedReceiptHashes]);
 
   const sendDirect = async (message: string) => {
     const clean = message.trim();
@@ -253,14 +340,14 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     const transaction = parseSendRequest(clean);
     const contactRequest = parseContactChatRequest(clean);
     const localTopic = chatTopic(clean);
-    const activityFollowUp = lastLocalContext.current === 'activity' && /ultim(?:a|as|o|os)\s+\d{1,2}/.test(command);
+    const activityFollowUp = lastLocalContext.current === 'activity' && /(?:ultim(?:a|as|o|os)|last|latest|recent)\s+\d{1,2}/.test(command);
     const contactListFollowUp = lastLocalContext.current === 'contacts' && /^(quienes|cuales|listalos|listalas|muestramelos|muestramelas)$/.test(command);
-    const startsNewTask = Boolean(chained || swap || transaction || contactRequest || activityFollowUp || contactListFollowUp || ['balance', 'activity', 'receive'].includes(localTopic));
+    const startsNewTask = Boolean(chained || swap || transaction || contactRequest || activityFollowUp || contactListFollowUp || ['balance', 'activity', 'receive', 'greeting'].includes(localTopic));
 
     if (contactListFollowUp) {
       setContactDraft(null);
       const names = saved.contacts.map(contact => contact.name);
-      setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: names.length ? `Tus contactos son: ${names.join(', ')}.` : 'Todavía no tienes contactos guardados.' }]);
+      setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: names.length ? `¡Claro! Tus contactos son: ${names.join(', ')}.` : 'Todavía no tienes contactos guardados. Cuando quieras, puedo ayudarte a agregar el primero.' }]);
       setSuggestionsVisible(true);
       return;
     }
@@ -320,7 +407,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     }
     if (contactRequest?.kind === 'list') {
       const names = saved.contacts.map(contact => contact.name);
-      setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: names.length ? `Tus contactos son: ${names.join(', ')}.` : 'Todavía no tienes contactos guardados.' }]);
+      setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: names.length ? `¡Claro! Tus contactos son: ${names.join(', ')}.` : 'Todavía no tienes contactos guardados. Cuando quieras, puedo ayudarte a agregar el primero.' }]);
       lastLocalContext.current = 'contacts';
       setSuggestionsVisible(true);
       return;
@@ -346,7 +433,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       return;
     }
     if (isChainedTransactionRequest(clean)) {
-      setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: 'Entiendo que quieres hacer un cambio y después un envío, pero falta algún dato. Escríbelo así: “Cambia 1 USDC a XLM y después envía ese monto a Aya”.' }]);
+      setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: '¡Casi listo! Entiendo que quieres hacer un cambio y después un envío, pero me falta un dato. Puedes escribirlo así: “Cambia 1 USDC a XLM y después envía ese monto a Aya”.' }]);
       setSuggestionsVisible(true);
       return;
     }
@@ -374,7 +461,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
         const limit = parseActivityLimit(clean);
         const activities = (await getActivityHistory(wallet.publicKey)).slice(0, limit);
         const reply = activities.length
-          ? `Tus últimas ${activities.length} operaciones son:\n${activities.map((activity, index) => `${index + 1}. ${activityLine(activity, wallet.publicKey!, saved.contacts, locale)}`).join('\n')}`
+          ? `¡Claro! Tus últimas ${activities.length} operaciones son:\n${activities.map((activity, index) => `${index + 1}. ${activityLine(activity, wallet.publicKey!, saved.contacts, locale)}`).join('\n')}`
           : 'Todavía no tienes operaciones en esta wallet.';
         setMessages(current => [...current, { id: id + 1, role: 'movya', kind: 'text', text: reply }]);
         lastLocalContext.current = 'activity';
@@ -384,7 +471,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
       } finally { setInterpreting(false); }
       return;
     }
-    if (localTopic === 'balance' || localTopic === 'receive' || localTopic === 'contact') {
+    if (localTopic === 'balance' || localTopic === 'receive' || localTopic === 'contact' || localTopic === 'greeting') {
       setMessages(current => [...current, createMovyaReply(clean, id + 1)]);
       if (localTopic === 'contact' && contactRequest?.kind === 'count') lastLocalContext.current = 'contacts';
       setSuggestionsVisible(true);
@@ -393,7 +480,10 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     }
 
     const revision = ++interpretationRevision.current;
-    const history = messages.slice(-8).map(item => ({ role: item.role === 'user' ? 'user' as const : 'assistant' as const, content: item.kind === 'text' ? item.text : `[Mensaje de voz de ${item.duration} segundos]` }));
+    const history = messages.slice(-8).map(item => ({
+      role: item.role === 'user' ? 'user' as const : 'assistant' as const,
+      content: item.kind === 'text' ? item.text : item.kind === 'voice' ? `[Mensaje de voz de ${item.duration} segundos]` : `[${item.title}: ${item.summary}]`,
+    }));
     setInterpreting(true);
     try {
       const intent = await interpretChatWithAi(clean, history, locale);
@@ -474,12 +564,14 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
             <View style={styles.logoWrap}><MovyaLogo size={45} /><View style={styles.statusDot} /></View>
             <View><Text style={styles.title}>Movya</Text><Text style={styles.status}>Asistente financiero · En línea</Text></View>
           </View>
-          <View style={{ width: 42, height: 42 }} />
+          <Pressable accessibilityLabel="Vaciar conversación" accessibilityState={{ disabled: paymentBusy }} disabled={paymentBusy} onPress={confirmClearConversation} style={[styles.infoButton, paymentBusy && styles.headerDisabled]}><Ionicons name="trash-outline" size={20} color={colors.brandDark} /></Pressable>
         </BlurView>
 
         <ScrollView contentContainerStyle={styles.messages} keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled" onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })} ref={scrollRef} showsVerticalScrollIndicator={false}>
           <Text style={styles.today}>HOY</Text>
-          {messages.map((message) => message.role === 'movya' ? (
+          {messages.map((message) => message.kind === 'receipt' ? (
+            <ChatHistoryReceiptCard key={message.id} receipt={message} />
+          ) : message.role === 'movya' ? (
             <View key={message.id} style={styles.movyaGroup}>
               <View style={styles.senderRow}><MovyaLogo size={28} style={{ marginRight: 6 }} /><Text style={styles.sender}>Movya</Text><View style={styles.aiBadge}><Ionicons name="sparkles" size={10} color={colors.brand} /><Text style={styles.aiText}>IA</Text></View></View>
               <BlurView intensity={72} tint="light" style={[styles.bubble, styles.movyaBubble]}>
@@ -503,8 +595,8 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
             </View>
           ))}
           {interpreting ? <View style={styles.movyaGroup}><View style={styles.senderRow}><MovyaLogo size={28} style={{ marginRight: 6 }} /><Text style={styles.sender}>Movya</Text><View style={styles.aiBadge}><Ionicons name="sparkles" size={10} color={colors.brand} /><Text style={styles.aiText}>IA</Text></View></View><BlurView intensity={72} tint="light" style={[styles.bubble, styles.movyaBubble, styles.thinkingBubble]}><ActivityIndicator color={colors.brand} size="small" /><Text style={styles.thinkingText}>Entendiendo tu mensaje…</Text></BlurView></View> : null}
-          <SwapReviewCard state={swapState} flow={swapFlow} onCancel={() => { setChainedTransfer(null); setSuggestionsVisible(true); }} />
-          <ChatPaymentCard state={payment} flow={flow} onCancel={() => { setChainedTransfer(null); setSuggestionsVisible(true); }} />
+          {!(swapState.phase === 'success' && swapState.receipt && archivedReceiptHashes.has(swapState.receipt.hash)) ? <SwapReviewCard state={swapState} flow={swapFlow} onCancel={() => { setChainedTransfer(null); setSuggestionsVisible(true); }} /> : null}
+          {!(payment.phase === 'success' && payment.receipt && archivedReceiptHashes.has(payment.receipt.hash)) ? <ChatPaymentCard state={payment} flow={flow} onCancel={() => { setChainedTransfer(null); setSuggestionsVisible(true); }} /> : null}
           {suggestionsVisible ? <View style={styles.suggestions}>{suggestions.map((suggestion) => <Pressable key={suggestion} disabled={paymentBusy} accessibilityState={{ disabled: paymentBusy }} onPress={() => void sendDirect(t(suggestion))} style={styles.suggestion}><Ionicons name="sparkles-outline" size={14} color={colors.brand} /><Text style={styles.suggestionText}>{suggestion}</Text><Ionicons name="arrow-up-circle" size={15} color={colors.brand} /></Pressable>)}</View> : null}
         </ScrollView>
 
@@ -517,7 +609,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
             </View>
           ) : (
             <View style={styles.composer}>
-              <Pressable style={styles.attachButton}><Ionicons name="add" size={22} color={colors.brand} /></Pressable>
+              <View accessibilityLabel="Movya" style={styles.attachButton}><MovyaLogo size={31} /></View>
               <TextInput editable={!paymentBusy} multiline returnKeyType="done" submitBehavior="blurAndSubmit" onChangeText={setText} onSubmitEditing={Keyboard.dismiss} placeholder="Pregúntale algo a Movya…" placeholderTextColor={colors.muted} style={styles.input} value={text} />
               <Pressable disabled={paymentBusy} accessibilityState={{ disabled: paymentBusy }} onPress={text.trim() ? send : startRecording} style={[styles.sendButton, !text.trim() && styles.micButton]}><Ionicons name={text.trim() ? 'arrow-up' : 'mic'} size={20} color={text.trim() ? '#FFFFFF' : colors.brand} /></Pressable>
             </View>
@@ -532,7 +624,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
 
 const styles = StyleSheet.create({
   flex: { flex: 1 }, sheet: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 50, elevation: 20, overflow: 'hidden', backgroundColor: '#E5EDF5' }, chatBackdrop: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#E5EDF5' },
-  header: { minHeight: 76, width: '100%', borderBottomLeftRadius: 27, borderBottomRightRadius: 27, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', overflow: 'hidden', borderBottomWidth: 1, borderColor: '#C2D2E2', backgroundColor: 'rgba(250,252,255,0.86)', shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 7 }, closeButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CCD9E6', alignItems: 'center', justifyContent: 'center' }, infoButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CCD9E6', alignItems: 'center', justifyContent: 'center' },
+  header: { minHeight: 76, width: '100%', borderBottomLeftRadius: 27, borderBottomRightRadius: 27, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', overflow: 'hidden', borderBottomWidth: 1, borderColor: '#C2D2E2', backgroundColor: 'rgba(250,252,255,0.86)', shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 7 }, closeButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CCD9E6', alignItems: 'center', justifyContent: 'center' }, infoButton: { width: 42, height: 42, borderRadius: 16, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#CCD9E6', alignItems: 'center', justifyContent: 'center' }, headerDisabled: { opacity: 0.45 },
   identity: { flexDirection: 'row', alignItems: 'center' }, logoWrap: { width: 45, height: 45, marginRight: 9 }, logo: { width: 45, height: 45, resizeMode: 'contain' }, statusDot: { position: 'absolute', right: 0, bottom: 1, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.positive, borderWidth: 2, borderColor: '#FFFFFF' }, title: { color: colors.ink, fontSize: 17, fontWeight: '900' }, status: { color: colors.muted, fontSize: 9, fontWeight: '700', marginTop: 3 },
   messages: { padding: 17, paddingBottom: 28 }, today: { alignSelf: 'center', color: colors.muted, fontSize: 9, fontWeight: '800', letterSpacing: 1.2, marginBottom: 18 }, movyaGroup: { alignItems: 'flex-start', marginBottom: 16 }, senderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, marginLeft: 3 }, messageAvatar: { width: 28, height: 28, resizeMode: 'contain', marginRight: 6 }, sender: { color: colors.ink, fontSize: 11, fontWeight: '800' }, aiBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(255,255,255,0.56)', borderRadius: 8, paddingHorizontal: 6, paddingVertical: 3, marginLeft: 6 }, aiText: { color: colors.brand, fontSize: 8, fontWeight: '900' }, userGroup: { alignItems: 'flex-end', marginBottom: 15 }, userSender: { color: colors.muted, fontSize: 9, fontWeight: '800', marginRight: 4, marginBottom: 5 },
   thinkingBubble: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 13 }, thinkingText: { color: colors.muted, fontSize: 12, fontWeight: '700' },

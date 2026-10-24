@@ -1,6 +1,5 @@
 import { Account, Asset, Keypair, Networks, Operation, Transaction, TransactionBuilder } from '@stellar/stellar-sdk/base';
 import { accountCosts, assertTestnet, assetBalance, availableBalance, broadcastTransaction, formatUnits, horizonRequest, normalizeAmount, readTestnetAccount, transactionHash, units, USDC_ISSUER, validateAddress, type LocalSigner, type PaymentAsset, type PaymentReceipt, type TestnetAccount } from './payments';
-import { MAX_SIGNED_FEE_STROOPS } from './signingPolicy';
 
 export const SWAP_SLIPPAGE_BPS = 50; // 0.5% maximum price movement.
 export const MOVYA_SWAP_FEE_BPS = 50; // 0.5% of the entered source amount.
@@ -40,7 +39,7 @@ export function swapSpendable(account: TestnetAccount, maximumNetworkFee: bigint
 export async function readSwapSpendable(source: string) {
   assertTestnet();
   const account = await readTestnetAccount(source);
-  const { fee, reserve } = await accountCosts(account);
+  const { fee, reserve } = await accountCosts(account, 2);
   return swapSpendable(account, fee * 2n, reserve);
 }
 export function swapMinimum(estimated: string) {
@@ -82,9 +81,8 @@ export async function prepareSwap(input: SwapInput): Promise<SwapReview> {
   const { appFee, swapAmount } = splitSwapAmount(amount);
   const [account, treasury] = await Promise.all([readTestnetAccount(input.source), readTestnetAccount(MOVYA_TREASURY)]);
   if (treasury.account_id !== MOVYA_TREASURY) throw new Error('La wallet de Movya no está disponible en Stellar Testnet.');
-  const { fee: baseFee, reserve } = await accountCosts(account);
+  const { fee: baseFee, reserve } = await accountCosts(account, 2);
   const maximumNetworkFee = baseFee * 2n;
-  if (maximumNetworkFee > MAX_SIGNED_FEE_STROOPS) throw new Error('La comisión de red está temporalmente demasiado alta. Actualiza la cotización en unos segundos.');
   if (availableBalance(assetBalance(account, 'XLM')) < reserve + maximumNetworkFee) throw new Error('Necesitas más XLM para mantener la reserva y pagar la comisión de red.');
   const usdc = assetBalance(account, 'USDC');
   if (!usdc) throw new Error('Habilita USDC desde Inicio antes de cambiar entre XLM y USDC.');

@@ -1,11 +1,11 @@
 import { createElement, useImperativeHandle } from 'react';
 import type { PaymentReview } from '../../src/services/stellar/payments';
-export const calls = { prepare: [] as any[], submit: [] as any[], resolve: [] as string[], close: 0, swaps: [] as any[], swapSubmits: [] as any[], ai: [] as string[], contactAdds: [] as any[] };
+export const calls = { prepare: [] as any[], submit: [] as any[], resolve: [] as string[], close: 0, swaps: [] as any[], swapSubmits: [] as any[], ai: [] as string[], contactAdds: [] as any[], alerts: [] as any[], historyWrites: [] as any[], historyClears: [] as string[] };
 export const wallet = { publicKey: 'GSENDER', account: null, oualiAddress: '', refresh: async () => {}, sign: async () => 'signed-xdr' };
 export const contacts = [{ id: 'prueba', name: 'Prueba', handle: 'prueba@example.com', email: 'prueba@example.com', address: 'GPRUEBA' }, { id: 'aya', name: 'Aya', handle: 'aya@example.com', email: 'aya@example.com', address: 'GAYA' }];
 export const useTestnetWallet = () => wallet;
 export const useContacts = () => ({ contacts, persistent: true, loading: false, error: '', add: async (input: any) => { calls.contactAdds.push(input); return { id: 'new', name: input.name, identifier: input.identifier }; } });
-export const useAuth = () => ({ user: { user_metadata: { name: 'Manuel' } } });
+export const useAuth = () => ({ user: { id: 'owner', user_metadata: { name: 'Manuel' } } });
 export const useLanguage = () => ({ t: (value: string) => value, locale: 'es-BO' });
 export const interpretChatWithAi = async (message: string) => {
   calls.ai.push(message);
@@ -16,6 +16,7 @@ const host = (name: string) => function Host(props: any) { return createElement(
 export const Text = host('NativeText');
 export const TextInput = host('NativeTextInput');
 export const Pressable = host('NativePressable');
+export const Alert = { alert: (...args: any[]) => { calls.alerts.push(args); } };
 export const View = host('NativeView');
 export const BlurView = host('BlurView');
 export const LinearGradient = host('LinearGradient');
@@ -63,6 +64,9 @@ export const prepareSwap = async (input: any) => {
 export const submitSwap = async (review: any) => { calls.swapSubmits.push(review); return { hash: review.hash, explorerUrl: `https://stellar.expert/explorer/testnet/tx/${review.hash}`, receivedAmount: '44.1234567' }; };
 export const readSwapSpendable = async () => ({ XLM: '97.4999900', USDC: '10.0000000' });
 export const getActivityHistory = async () => [{ kind: 'transfer', payment: { id: 'payment', transaction_hash: 'c'.repeat(64), from: 'GSENDER', to: 'GPRUEBA', amount: '1.0000000', asset_type: 'native', created_at: '2026-10-23T12:00:00Z', type: 'payment', transaction_successful: true } }];
+export const readChatHistory = async () => [];
+export const writeChatHistory = async (owner: string, messages: any[]) => { calls.historyWrites.push({ owner, messages }); };
+export const clearChatHistory = async (owner: string) => { calls.historyClears.push(owner); };
 export const SafeAreaView = host('SafeAreaView');
 export const Modal = (props: any) => props.visible ? createElement('Modal', props) : null;
 export const PressableScale = Pressable;

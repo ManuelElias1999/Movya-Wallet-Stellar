@@ -833,5 +833,22 @@
   "Volverás al inicio para ingresar o crear otra cuenta": "You will return to the start to sign in or create another account",
   "Volver a mis 12 palabras": "Return to my 12 words",
   "Movya está bloqueada. Vuelve a desbloquearla antes de confirmar.": "Movya is locked. Unlock it again before confirming.",
-  "Volverás al inicio y podrás usar Face ID o tus datos": "You will return to the start and can use Face ID or your credentials"
+  "Volverás al inicio y podrás usar Face ID o tus datos": "You will return to the start and can use Face ID or your credentials",
+  "¡Hola, {0}! 😊 Puedo ayudarte a consultar tu saldo, enviar o recibir dinero, cambiar XLM/USDC y revisar tu actividad. ¿Qué te gustaría hacer?": "Hi, {0}! 😊 I can help you check your balance, send or receive money, swap XLM/USDC, and review your activity. What would you like to do?",
+  "¡Hola, {0}! 😊 Qué gusto verte. ¿En qué puedo ayudarte hoy?": "Hi, {0}! 😊 It's great to see you. How can I help today?",
+  "¡Claro! En Testnet tienes {0} USDC y {1} XLM. Son tokens de prueba.": "Sure! On Testnet you have {0} USDC and {1} XLM. These are test tokens.",
+  "¡Claro! Dime el monto, el activo que quieres entregar y el que quieres recibir. Te mostraré todo para que lo revises antes de confirmar.": "Sure! Tell me the amount, the asset you want to pay, and the one you want to receive. I'll show you everything before you confirm.",
+  "¡Claro! Tienes {0} contactos guardados.": "Sure! You have {0} saved contacts.",
+  "¡Claro! Tienes {0} contacto guardado.": "Sure! You have {0} saved contact.",
+  "¡Claro! Tus contactos son: {0}.": "Sure! Your contacts are: {0}.",
+  "¡Claro! Dime el nombre de la persona y luego comparte su correo de Movya o su dirección Stellar pública.": "Sure! Tell me the person's name, then share their Movya email or public Stellar address.",
+  "Con gusto te ayudo. Dime el token, el monto y el destinatario; prepararé un resumen claro para que lo revises antes de confirmar.": "I'd be happy to help. Tell me the token, amount, and recipient; I'll prepare a clear summary for you to review before confirming.",
+  "Con gusto te ayudo. {0}": "I'd be happy to help. {0}",
+  "Todavía no tienes contactos guardados. Cuando quieras, puedo ayudarte a agregar el primero.": "You don't have any saved contacts yet. Whenever you're ready, I can help you add the first one.",
+  "No entendí del todo, pero con gusto te ayudo. Puedes pedirme consultar tu saldo, enviar o recibir XLM/USDC, hacer un cambio o revisar tu actividad.": "I didn't fully understand, but I'd be happy to help. You can ask me to check your balance, send or receive XLM/USDC, make a swap, or review your activity.",
+  "¡Casi listo! Entiendo que quieres hacer un cambio y después un envío, pero me falta un dato. Puedes escribirlo así: “Cambia 1 USDC a XLM y después envía ese monto a Aya”.": "Almost there! I understand that you want to make a swap and then a transfer, but one detail is missing. You can write: “Swap 1 USDC to XLM and then send that amount to Aya”.",
+  "¡Claro! Tus últimas {0} operaciones son:\n{1}": "Sure! Your latest {0} transactions are:\n{1}",
+  "Vaciar conversación": "Clear conversation",
+  "Se borrarán los mensajes y comprobantes guardados en este dispositivo. Tus fondos y tu actividad en Stellar no se borrarán.": "Messages and receipts saved on this device will be deleted. Your funds and Stellar activity will not be deleted.",
+  "Vaciar chat": "Clear chat"
 }

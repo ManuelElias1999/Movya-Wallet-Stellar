@@ -90,10 +90,12 @@ test('best valid route wins; impostor USDC and mismatched amounts are ignored', 
 test('no liquidity is reported explicitly and never returns a fabricated quote', async () => {
   setup(); paths = []; await assert.rejects(prepare(), /liquidez/); assert.equal(posts.length, 0);
 });
-test('a network fee above the signing ceiling is rejected before a quote can be reviewed', async () => {
+test('an extreme Testnet fee statistic is capped at the signing ceiling', async () => {
   setup(); feeP95 = '500001';
-  await assert.rejects(prepare(), /temporalmente demasiado alta/);
-  assert.equal(queries.some(query => query.pathname === '/paths/strict-send'), false);
+  const quote = await prepare();
+  assert.equal(quote.fee, '0.1000000');
+  assert.equal(queries.some(query => query.pathname === '/paths/strict-send'), true);
+  assert.doesNotThrow(() => validateSwapReview(quote));
 });
 test('missing or unauthorized USDC, insufficient balance/reserve and receiving capacity reject quotes', async () => {
   setup(); account.balances.pop(); await assert.rejects(prepare(), /Habilita USDC/);

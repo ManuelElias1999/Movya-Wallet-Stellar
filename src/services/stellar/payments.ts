@@ -1,4 +1,5 @@
 import { Account, Asset, Keypair, Networks, Operation, StrKey, Transaction, TransactionBuilder } from '@stellar/stellar-sdk/base';
+import { MAX_SIGNED_FEE_STROOPS } from './signingPolicy';
 
 export const TESTNET_HORIZON = 'https://horizon-testnet.stellar.org';
 export const USDC_ISSUER = 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5';
@@ -77,12 +78,18 @@ export function assetBalance(account: TestnetAccount, asset: PaymentAsset) {
   return account.balances.find((b) => asset === 'XLM' ? b.asset_type === 'native' : b.asset_code === 'USDC' && b.asset_issuer === USDC_ISSUER);
 }
 
-async function costs(account: TestnetAccount) {
+async function costs(account: TestnetAccount, operationCount = 1) {
   const [stats, ledgers] = await Promise.all([
     request<{ fee_charged: { p95: string }; last_ledger_base_fee: string }>('/fee_stats'),
     request<{ _embedded: { records: { base_reserve_in_stroops: number }[] } }>('/ledgers?order=desc&limit=1'),
   ]);
-  const fee = BigInt(stats.fee_charged.p95) > BigInt(stats.last_ledger_base_fee) ? BigInt(stats.fee_charged.p95) : BigInt(stats.last_ledger_base_fee);
+  const reportedFee = BigInt(stats.fee_charged.p95) > BigInt(stats.last_ledger_base_fee) ? BigInt(stats.fee_charged.p95) : BigInt(stats.last_ledger_base_fee);
+  // Testnet fee statistics occasionally contain extreme outliers. Keep the
+  // bid useful without ever creating a transaction the independent signing
+  // policy would reject. The cap is per operation; the transaction total
+  // remains at or below MAX_SIGNED_FEE_STROOPS.
+  const maximumBaseFee = MAX_SIGNED_FEE_STROOPS / BigInt(Math.max(1, operationCount));
+  const fee = reportedFee > maximumBaseFee ? maximumBaseFee : reportedFee;
   const baseReserve = BigInt(ledgers._embedded.records[0].base_reserve_in_stroops);
   const reserve = BigInt(2 + account.subentry_count + (account.num_sponsoring ?? 0) - (account.num_sponsored ?? 0)) * baseReserve;
   return { fee, reserve, baseReserve };

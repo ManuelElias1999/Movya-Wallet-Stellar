@@ -6,7 +6,7 @@ import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { calls } from './fixtures/chatRuntime';
 (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 registerHooks({ resolve(specifier, context, nextResolve) {
-  const mocked = ['react-native', '@expo/vector-icons', 'expo-blur', 'expo-haptics', 'expo-linear-gradient', 'expo-status-bar', 'react-native-safe-area-context', '@/components/MovyaLogo', '@/i18n/primitives', '@/i18n/Language', '@/context/AuthContext', '@/context/ContactsContext', '@/context/TestnetWalletContext', './TestnetWalletContext', '@/services/stellar/payments', '@/services/stellar/activity', '@/services/backend/contacts', '@/services/backend/ai', '@/services/stellar/swaps', '@/components/PageHeader', '@/components/PressableScale', '@/components/InternalScreenBackground', '@/components/MovyaContextHelp', '@/components/TokenIcon', '@/components/TokenSelector'];
+  const mocked = ['react-native', '@expo/vector-icons', 'expo-blur', 'expo-haptics', 'expo-linear-gradient', 'expo-status-bar', 'react-native-safe-area-context', '@/components/MovyaLogo', '@/i18n/primitives', '@/i18n/Language', '@/context/AuthContext', '@/context/ContactsContext', '@/context/TestnetWalletContext', './TestnetWalletContext', '@/services/stellar/payments', '@/services/stellar/activity', '@/services/backend/contacts', '@/services/backend/ai', '@/services/stellar/swaps', '@/services/chatHistory', '@/components/PageHeader', '@/components/PressableScale', '@/components/InternalScreenBackground', '@/components/MovyaContextHelp', '@/components/TokenIcon', '@/components/TokenSelector'];
   return nextResolve(mocked.includes(specifier) ? require.resolve('./fixtures/chatRuntime') : specifier, context);
 } });
 const { MovyaChatSheet }: typeof import('../src/components/MovyaChatSheet') = require('../src/components/MovyaChatSheet');
@@ -97,6 +97,8 @@ test('contact count, address lookup and conversational contact creation use save
   await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
   await send(tree, '¿Cuántos contactos tengo?');
   assert.ok(content(tree).includes('Tienes 2 contactos guardados'));
+  await send(tree, 'How many contacts do I have?');
+  assert.ok(content(tree).includes('Tienes 2 contactos guardados'));
   await send(tree, 'Dime todos mis contactos');
   assert.ok(content(tree).includes('Tus contactos son: Prueba, Aya'));
   await send(tree, '¿Cuál es el Address de Prueba?');
@@ -117,6 +119,8 @@ test('activity is shown in chat and chained transactions are split into reviewed
   assert.ok(content(tree).includes('Enviaste dinero a Prueba'));
   await send(tree, 'Las últimas 2');
   assert.ok(content(tree).includes('Tus últimas 1 operaciones'));
+  await send(tree, 'Tell me the last 4 movements that I did');
+  assert.ok(content(tree).includes('Tus últimas 1 operaciones'));
   await act(() => tree.unmount());
 });
 
@@ -126,7 +130,7 @@ test('a chained swap prepares the exact received amount for a separately confirm
   const swapsBefore = calls.swapSubmits.length;
   await act(() => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); });
   await send(tree, 'Quiero agregar un contacto que se llama Nico');
-  await send(tree, 'Cambia 1 USDC a XLM y después envía ese monto a Aya');
+  await send(tree, 'Quiero cambiar 1 USDC a XLM y mandarle después ese monto a Aya');
   assert.ok(content(tree).includes('Revisa tu cambio'));
   assert.equal(calls.swapSubmits.length, swapsBefore);
   await act(async () => button(tree, 'Sí, cambiar').props.onPress());
@@ -141,8 +145,22 @@ test('a chained swap prepares the exact received amount for a separately confirm
   assert.equal(calls.submit.length, paymentsBefore + 1);
   await send(tree, 'Dime todos mis contactos');
   assert.ok(content(tree).includes('Tus contactos son: Prueba, Aya'));
-  assert.ok(!content(tree).includes('Ver detalles'));
-  assert.ok(!content(tree).includes('Enviado'));
+  assert.ok(content(tree).includes('Ver detalles'));
+  assert.ok(content(tree).includes('Enviado'));
+  await act(() => tree.unmount());
+});
+
+test('the header can clear the saved conversation without touching wallet activity', async () => {
+  let tree!: ReactTestRenderer;
+  await act(async () => { tree = create(createElement(MovyaChatSheet, { open: true, onClose: () => {} })); await Promise.resolve(); });
+  await send(tree, 'Dime todos mis contactos');
+  assert.ok(content(tree).includes('Tus contactos son: Prueba, Aya'));
+  const clear = buttons(tree).find(item => item.props.accessibilityLabel === 'Vaciar conversación')!;
+  await act(() => clear.props.onPress());
+  const actions = calls.alerts.at(-1)?.[2];
+  await act(async () => { actions.find((action: any) => action.text === 'Vaciar chat').onPress(); await Promise.resolve(); });
+  assert.ok(!content(tree).includes('Tus contactos son: Prueba, Aya'));
+  assert.equal(calls.historyClears.at(-1), 'owner');
   await act(() => tree.unmount());
 });
 
