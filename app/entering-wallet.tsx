@@ -4,6 +4,7 @@ import { Animated, Dimensions, Easing, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
+import { colors } from '@/theme/tokens';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -48,6 +49,6 @@ export default function EnteringWalletScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#DCEBFA' },
+  screen: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

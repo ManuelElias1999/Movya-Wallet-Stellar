@@ -24,10 +24,10 @@ export function ChatHistoryReceiptCard({ receipt }: { receipt: ChatReceiptHistor
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 22, padding: 13, marginBottom: 16, backgroundColor: '#F8FCFF', borderWidth: 1.5, borderColor: '#BBD6FF' },
+  card: { borderRadius: 22, padding: 13, marginBottom: 16, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: '#BBD6FF' },
   header: { flexDirection: 'row', alignItems: 'center' }, icon: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.positive, alignItems: 'center', justifyContent: 'center' },
   copy: { flex: 1, marginLeft: 11 }, title: { color: colors.positive, fontSize: 15, fontWeight: '900' }, summary: { color: colors.ink, fontSize: 12, lineHeight: 17, marginTop: 2, fontWeight: '700' },
-  detailsButton: { minHeight: 38, marginTop: 9, borderRadius: 12, backgroundColor: '#E8F1FF', paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, detailsButtonText: { color: colors.brand, fontSize: 12, fontWeight: '800' },
+  detailsButton: { minHeight: 38, marginTop: 9, borderRadius: 12, backgroundColor: colors.brandSoft, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, detailsButtonText: { color: colors.brand, fontSize: 12, fontWeight: '800' },
   details: { borderTopWidth: 1, borderTopColor: '#D3E2F2', marginTop: 12, paddingTop: 2 }, label: { color: colors.muted, fontSize: 11, marginTop: 12 }, value: { color: colors.ink, fontSize: 11, lineHeight: 17, marginTop: 4 },
-  link: { minHeight: 44, justifyContent: 'center', alignItems: 'center', padding: 10, borderRadius: 14, backgroundColor: '#E8F1FF', marginTop: 12 },
+  link: { minHeight: 44, justifyContent: 'center', alignItems: 'center', padding: 10, borderRadius: 14, backgroundColor: colors.brandSoft, marginTop: 12 },
 });

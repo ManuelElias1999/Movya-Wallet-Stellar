@@ -4,6 +4,7 @@ import { Keyboard, View } from 'react-native';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { MovyaChatSheet } from '@/components/MovyaChatSheet';
 import { tabForPath } from '@/services/presentation';
+import { colors } from '@/theme/tokens';
 
 export default function AppLayout() {
   const pathname = usePathname();
@@ -11,7 +12,7 @@ export default function AppLayout() {
   const [chatOpen, setChatOpen] = useState(false);
   useEffect(() => { setChatOpen(false); Keyboard.dismiss(); }, [pathname]);
   return <View style={{ flex: 1 }}>
-    <Stack screenOptions={{ animation: 'none', contentStyle: { backgroundColor: '#E9EFF5' }, headerShown: false }}>
+    <Stack screenOptions={{ animation: 'none', contentStyle: { backgroundColor: colors.background }, headerShown: false }}>
       <Stack.Screen name="index" /><Stack.Screen name="activity" />
       <Stack.Screen name="portfolio" /><Stack.Screen name="contacts" />
       <Stack.Screen name="send" /><Stack.Screen name="receive" />

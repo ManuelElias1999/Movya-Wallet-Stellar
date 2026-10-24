@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 13 },
   icon: { width: 42, height: 42, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   positiveIcon: { backgroundColor: colors.positiveSoft },
-  neutralIcon: { backgroundColor: '#EEF1F6' },
+  neutralIcon: { backgroundColor: colors.surfaceSoft },
   copy: { flex: 1, marginLeft: 12 },
   type: { color: colors.ink, fontSize: 15, fontWeight: '700' },
   detail: { color: colors.muted, fontSize: 12, marginTop: 3 },

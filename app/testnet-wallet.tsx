@@ -68,11 +68,11 @@ export default function TestnetWalletScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#D8E1EB' }, content: { padding: 20, gap: 18, maxWidth: 760, width: '100%', alignSelf: 'center' },
+  safe: { flex: 1, backgroundColor: colors.background }, content: { padding: 20, gap: 18, maxWidth: 760, width: '100%', alignSelf: 'center' },
   card: { backgroundColor: colors.surface, borderRadius: 24, padding: 20 }, title: { fontSize: 19, fontWeight: '800', color: colors.ink },
   copy: { fontSize: 13, lineHeight: 20, color: colors.text, marginTop: 10 }, notice: { fontSize: 12, lineHeight: 19, color: colors.brandDark, marginTop: 14, backgroundColor: colors.brandSoft, borderRadius: 12, padding: 12 },
   address: { fontSize: 12, lineHeight: 20, color: colors.ink, marginTop: 16 }, balances: { marginVertical: 8 },
   button: { minHeight: 52, padding: 12, backgroundColor: colors.brand, borderRadius: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 9, marginTop: 14 }, buttonText: { color: '#fff', fontWeight: '800', fontSize: 14 },
   secondary: { minHeight: 48, padding: 12, backgroundColor: colors.brandSoft, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginTop: 12 }, secondaryText: { color: colors.brandDark, fontSize: 13, fontWeight: '700' }, disabled: { opacity: 0.45 },
-  input: { marginTop: 16, padding: 14, minHeight: 52, borderRadius: 14, borderWidth: 1, borderColor: colors.border, color: colors.ink, backgroundColor: '#F1F6FC' },
+  input: { marginTop: 16, padding: 14, minHeight: 52, borderRadius: 14, borderWidth: 1, borderColor: colors.border, color: colors.ink, backgroundColor: colors.surfaceSoft },
 });

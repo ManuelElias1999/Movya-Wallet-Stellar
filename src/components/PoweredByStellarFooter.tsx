@@ -14,6 +14,6 @@ export function PoweredByStellarFooter() {
 
 const styles = StyleSheet.create({
   footer: { alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 28 },
-  text: { color: colors.navy, fontSize: 11, fontWeight: '800', letterSpacing: 0.15 },
-  logo: { width: 72, height: 21, resizeMode: 'contain' },
+  text: { color: colors.muted, fontSize: 11, fontWeight: '800', letterSpacing: 0.15 },
+  logo: { width: 72, height: 21, resizeMode: 'contain', tintColor: colors.ink },
 });

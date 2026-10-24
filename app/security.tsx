@@ -50,7 +50,7 @@ export default function SecurityScreen() {
       .finally(() => setBiometricSaving(false));
   };
 
-  return <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#D8E1EB' }}>
+  return <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: colors.background }}>
     <InternalScreenBackground />
     <PageHeader title="Seguridad" subtitle="Protege el acceso a tu wallet" backTo="/settings" />
     <ScrollView contentContainerStyle={styles.content}>

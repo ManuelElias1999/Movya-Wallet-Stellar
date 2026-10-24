@@ -21,7 +21,7 @@ export function PageHeader({ title, subtitle, backTo, onBack }: PageHeaderProps)
   return (
     <View style={styles.shell}>
       <BlurView intensity={54} tint="dark" style={[styles.header, Platform.OS === 'web' ? webGlass : null]}>
-        <LinearGradient colors={['rgba(31,80,135,0.8)', 'rgba(60,127,150,0.64)']} end={{ x: 1, y: 0 }} pointerEvents="none" start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={['rgba(12,31,55,0.96)', 'rgba(18,55,80,0.92)']} end={{ x: 1, y: 0 }} pointerEvents="none" start={{ x: 0, y: 0 }} style={StyleSheet.absoluteFill} />
         <View pointerEvents="none" style={styles.shine} />
         <PressableScale accessibilityLabel="Volver" onPress={back} pressedScale={0.9} style={styles.back}>
           <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
@@ -39,8 +39,8 @@ export function PageHeader({ title, subtitle, backTo, onBack }: PageHeaderProps)
 const webGlass = { backdropFilter: 'blur(30px) saturate(150%)', WebkitBackdropFilter: 'blur(30px) saturate(150%)' } as const;
 
 const styles = StyleSheet.create({
-  shell: { minHeight: 70, width: '100%', overflow: 'hidden', borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.34)', shadowColor: '#173C65', shadowOpacity: 0.13, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 5, zIndex: 10 },
-  header: { minHeight: 70, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 8, backgroundColor: 'rgba(42,92,137,0.32)' },
+  shell: { minHeight: 64, width: '100%', overflow: 'hidden', borderBottomWidth: 1, borderColor: colors.border, shadowColor: '#000000', shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 7 }, elevation: 5, zIndex: 10 },
+  header: { minHeight: 64, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 7, backgroundColor: 'rgba(9,20,35,0.72)' },
   shine: { position: 'absolute', left: 0, right: 0, top: 0, height: '50%', backgroundColor: 'rgba(255,255,255,0.045)' },
   back: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
   copy: { flex: 1, alignItems: 'center', paddingHorizontal: 5 },

@@ -41,7 +41,7 @@ export function AssetDetailSheet({ asset, onClose }: AssetDetailSheetProps) {
   return (
     <Modal animationType="slide" onRequestClose={onClose} transparent visible>
       <Pressable onPress={onClose} style={styles.backdrop} />
-      <BlurView intensity={85} tint="light" style={styles.sheet}>
+      <BlurView intensity={85} tint="dark" style={styles.sheet}>
         <View style={styles.handle} />
         <View style={styles.topRow}>
           <TokenIcon code={asset.code} color={asset.color} size={52} />
@@ -72,11 +72,11 @@ export function AssetDetailSheet({ asset, onClose }: AssetDetailSheetProps) {
 
 const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(4,15,36,0.42)' },
-  sheet: { borderTopLeftRadius: 34, borderTopRightRadius: 34, overflow: 'hidden', padding: 22, paddingBottom: 32, backgroundColor: 'rgba(247,251,255,0.88)', borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.75)' },
+  sheet: { borderTopLeftRadius: 34, borderTopRightRadius: 34, overflow: 'hidden', padding: 22, paddingBottom: 32, backgroundColor: colors.surface, borderTopWidth: 1, borderColor: colors.border },
   handle: { width: 43, height: 5, borderRadius: 3, backgroundColor: 'rgba(83,105,137,0.28)', alignSelf: 'center', marginBottom: 20 },
-  topRow: { flexDirection: 'row', alignItems: 'center' }, assetIcon: { width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }, assetLetter: { color: '#FFFFFF', fontSize: 19, fontWeight: '900' }, assetCopy: { flex: 1, marginLeft: 12 }, name: { color: colors.ink, fontSize: 18, fontWeight: '800' }, code: { color: colors.muted, fontSize: 11, marginTop: 4 }, close: { width: 39, height: 39, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.72)', alignItems: 'center', justifyContent: 'center' },
-  priceCard: { borderRadius: 25, padding: 18, marginTop: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.75)' }, priceLabel: { color: colors.muted, fontSize: 11, fontWeight: '700' }, price: { color: colors.ink, fontSize: 32, fontWeight: '900', letterSpacing: -1, marginTop: 4 },
-  change: { position: 'absolute', right: 17, top: 19, height: 30, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.positiveSoft, borderRadius: 11, paddingHorizontal: 9 }, changeNegative: { backgroundColor: '#FCEAF0' }, changeText: { color: colors.positive, fontSize: 11, fontWeight: '800' }, changeTextNegative: { color: '#C84B63' }, chart: { height: 92, marginTop: 10 }, periodRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 3 }, period: { color: colors.muted, fontSize: 9 }, demo: { color: colors.brand, fontSize: 9, fontWeight: '900', letterSpacing: 0.8 },
-  balanceCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.72)', borderRadius: 18, borderWidth: 1, borderColor: 'rgba(255,255,255,0.9)', padding: 15, marginTop: 14 }, balanceLabel: { color: colors.muted, fontSize: 10 }, balance: { color: colors.ink, fontSize: 14, fontWeight: '800', marginTop: 4 }, balanceValue: { color: colors.brand, fontSize: 15, fontWeight: '800' },
+  topRow: { flexDirection: 'row', alignItems: 'center' }, assetIcon: { width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }, assetLetter: { color: '#FFFFFF', fontSize: 19, fontWeight: '900' }, assetCopy: { flex: 1, marginLeft: 12 }, name: { color: colors.ink, fontSize: 18, fontWeight: '800' }, code: { color: colors.muted, fontSize: 11, marginTop: 4 }, close: { width: 39, height: 39, borderRadius: 15, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
+  priceCard: { borderRadius: 25, padding: 18, marginTop: 20, borderWidth: 1, borderColor: colors.border }, priceLabel: { color: colors.muted, fontSize: 11, fontWeight: '700' }, price: { color: colors.ink, fontSize: 32, fontWeight: '900', letterSpacing: -1, marginTop: 4 },
+  change: { position: 'absolute', right: 17, top: 19, height: 30, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.positiveSoft, borderRadius: 11, paddingHorizontal: 9 }, changeNegative: { backgroundColor: colors.dangerSoft }, changeText: { color: colors.positive, fontSize: 11, fontWeight: '800' }, changeTextNegative: { color: colors.danger }, chart: { height: 92, marginTop: 10 }, periodRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 3 }, period: { color: colors.muted, fontSize: 9 }, demo: { color: colors.brand, fontSize: 9, fontWeight: '900', letterSpacing: 0.8 },
+  balanceCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 18, borderWidth: 1, borderColor: colors.border, padding: 15, marginTop: 14 }, balanceLabel: { color: colors.muted, fontSize: 10 }, balance: { color: colors.ink, fontSize: 14, fontWeight: '800', marginTop: 4 }, balanceValue: { color: colors.brand, fontSize: 15, fontWeight: '800' },
   description: { color: colors.text, fontSize: 11, lineHeight: 17, marginVertical: 16 },
 });

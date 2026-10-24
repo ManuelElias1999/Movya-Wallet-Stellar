@@ -88,9 +88,9 @@ export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentS
 }
 
 const styles = StyleSheet.create({
-  card: { padding: 16, borderRadius: 22, backgroundColor: '#F8FCFF', borderWidth: 1.5, borderColor: '#BBD6FF', marginBottom: 16 },
+  card: { padding: 16, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: '#BBD6FF', marginBottom: 16 },
   title: { color: colors.ink, fontSize: 15, fontWeight: '800' },
-  summary: { backgroundColor: '#E8F2FF', borderWidth: 1.5, borderColor: '#AFCFFF', borderRadius: 18, padding: 15, marginTop: 12 },
+  summary: { backgroundColor: colors.brandSoft, borderWidth: 1.5, borderColor: colors.brandIce, borderRadius: 18, padding: 15, marginTop: 12 },
   summaryLabel: { color: colors.muted, fontSize: 10, fontWeight: '800', letterSpacing: 0.7, textTransform: 'uppercase' },
   amount: { color: colors.brandDark, fontSize: 31, lineHeight: 38, fontWeight: '900', marginTop: 3 },
   summaryDivider: { height: 1, backgroundColor: '#C3D9F3', marginVertical: 12 },
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   label: { color: colors.muted, fontSize: 11, fontWeight: '700', marginTop: 12 }, copy: { color: colors.text, fontSize: 13, lineHeight: 19, marginTop: 6 },
   address: { color: colors.ink, fontSize: 11, lineHeight: 17, marginTop: 5 }, actions: { flexDirection: 'row', gap: 8 }, flex: { flex: 1 },
   primary: { minHeight: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 14, backgroundColor: colors.brand, marginTop: 12, padding: 10 }, primaryText: { color: '#FFFFFF', fontSize: 13, fontWeight: '800' },
-  secondary: { minHeight: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 14, backgroundColor: '#E8F1FF', marginTop: 12, padding: 10 },
+  secondary: { minHeight: 44, justifyContent: 'center', alignItems: 'center', borderRadius: 14, backgroundColor: colors.brandSoft, marginTop: 12, padding: 10 },
   error: { color: '#B52D42', fontSize: 13, lineHeight: 19, marginTop: 12 }, progress: { alignItems: 'center', gap: 8, marginTop: 14 },
-  successCard: { padding: 13 }, successHeader: { flexDirection: 'row', alignItems: 'center' }, successIcon: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.positive, alignItems: 'center', justifyContent: 'center' }, successCopy: { flex: 1, marginLeft: 11 }, successTitle: { color: colors.positive, fontSize: 15, fontWeight: '900' }, successSummary: { color: colors.ink, fontSize: 12, lineHeight: 17, marginTop: 2, fontWeight: '700' }, detailsButton: { minHeight: 38, marginTop: 9, borderRadius: 12, backgroundColor: '#E8F1FF', paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, detailsButtonText: { color: colors.brand, fontSize: 12, fontWeight: '800' }, expandedDetails: { borderTopWidth: 1, borderTopColor: '#D3E2F2', marginTop: 12, paddingTop: 2 },
+  successCard: { padding: 13 }, successHeader: { flexDirection: 'row', alignItems: 'center' }, successIcon: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.positive, alignItems: 'center', justifyContent: 'center' }, successCopy: { flex: 1, marginLeft: 11 }, successTitle: { color: colors.positive, fontSize: 15, fontWeight: '900' }, successSummary: { color: colors.ink, fontSize: 12, lineHeight: 17, marginTop: 2, fontWeight: '700' }, detailsButton: { minHeight: 38, marginTop: 9, borderRadius: 12, backgroundColor: colors.brandSoft, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, detailsButtonText: { color: colors.brand, fontSize: 12, fontWeight: '800' }, expandedDetails: { borderTopWidth: 1, borderTopColor: '#D3E2F2', marginTop: 12, paddingTop: 2 },
 });

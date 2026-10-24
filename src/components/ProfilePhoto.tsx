@@ -1,4 +1,5 @@
 import { Image, StyleSheet, View } from 'react-native';
+import { colors } from '@/theme/tokens';
 
 type ProfilePhotoProps = { size?: number };
 
@@ -15,5 +16,5 @@ export function ProfilePhoto({ size = 40 }: ProfilePhotoProps) {
 }
 
 const styles = StyleSheet.create({
-  frame: { overflow: 'hidden', backgroundColor: '#D8E8F6', borderWidth: 1, borderColor: 'rgba(255,255,255,0.72)' },
+  frame: { overflow: 'hidden', backgroundColor: colors.surfaceSoft, borderWidth: 1, borderColor: colors.border },
 });

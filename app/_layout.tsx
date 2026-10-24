@@ -17,7 +17,7 @@ export default function RootLayout() {
   return (
     <LanguageProvider><SafeAreaProvider>
       <AuthProvider><TestnetWalletProvider><ContactsProvider>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <AppRoutes />
       </ContactsProvider></TestnetWalletProvider></AuthProvider>
     </SafeAreaProvider></LanguageProvider>

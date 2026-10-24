@@ -23,8 +23,8 @@ export function RecipientRiskNotice({ risk, destination }: { risk: RecipientRisk
   </View>;
 }
 const styles = StyleSheet.create({
-  box: { marginTop: 16, padding: 14, borderRadius: 14, backgroundColor: '#FFF6E5', borderWidth: 1, borderColor: '#F1C46B' },
-  danger: { backgroundColor: '#FDECEF', borderColor: '#E59AA6' },
+  box: { marginTop: 16, padding: 14, borderRadius: 14, backgroundColor: colors.warningSoft, borderWidth: 1, borderColor: '#7F5E2E' },
+  danger: { backgroundColor: colors.dangerSoft, borderColor: '#754052' },
   title: { color: colors.ink, fontSize: 13, fontWeight: '800' }, copy: { color: colors.text, fontSize: 12, lineHeight: 18, marginTop: 6 },
   label: { color: colors.muted, fontSize: 11, fontWeight: '700', marginTop: 10 }, address: { color: colors.ink, fontSize: 12, lineHeight: 18, marginTop: 3, fontVariant: ['tabular-nums'] },
 });

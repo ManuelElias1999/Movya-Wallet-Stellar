@@ -54,9 +54,9 @@ export default function ActivityScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#D8E1EB' },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 125 },
-  statusCard: { flexDirection: 'row', backgroundColor: 'rgba(232,248,242,0.9)', borderRadius: radius.md, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.92)', shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 13, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
+  statusCard: { flexDirection: 'row', backgroundColor: colors.positiveSoft, borderRadius: radius.md, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: colors.border, shadowColor: '#000000', shadowOpacity: 0.22, shadowRadius: 13, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   statusIcon: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center' },
   statusCopy: { flex: 1, marginLeft: 12 },
   statusTitle: { color: colors.ink, fontSize: 14, fontWeight: '700' },
@@ -64,9 +64,9 @@ const styles = StyleSheet.create({
   historyHeader: { marginTop: 28, marginBottom: 12, gap: 12 },
   month: { color: colors.ink, fontSize: 17, fontWeight: '700' },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  filter: { minHeight: 36, paddingHorizontal: 13, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.72)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.94)' },
+  filter: { minHeight: 36, paddingHorizontal: 13, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   filterActive: { backgroundColor: colors.navy, borderColor: colors.navy },
   filterText: { color: colors.muted, fontSize: 11, fontWeight: '800' },
   filterTextActive: { color: '#FFFFFF' },
-  card: { backgroundColor: 'rgba(255,255,255,0.88)', borderRadius: radius.md, borderWidth: 1, borderColor: 'rgba(255,255,255,0.94)', paddingHorizontal: 15, shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
+  card: { backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 15, shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 15, shadowOffset: { width: 0, height: 8 }, elevation: 4 },
 });

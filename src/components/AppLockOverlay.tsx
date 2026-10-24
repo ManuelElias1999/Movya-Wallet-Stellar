@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   icon: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center', alignSelf: 'center', borderRadius: 18, backgroundColor: colors.brandSoft },
   title: { marginTop: 12, color: colors.ink, fontSize: 20, fontWeight: '900', textAlign: 'center' },
   email: { marginTop: 7, color: colors.brandDark, fontSize: 13, fontWeight: '800', textAlign: 'center' },
-  field: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, paddingLeft: 14, paddingRight: 4, borderWidth: 1, borderColor: colors.border, borderRadius: 15, backgroundColor: '#FFFFFF' },
+  field: { minHeight: 54, flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14, paddingLeft: 14, paddingRight: 4, borderWidth: 1, borderColor: colors.border, borderRadius: 15, backgroundColor: colors.surfaceElevated },
   input: { flex: 1, minWidth: 0, minHeight: 52, color: colors.ink, fontSize: 14 },
   message: { marginTop: 10, color: '#A33B4B', fontSize: 11, lineHeight: 16, textAlign: 'center' },
   primary: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 16, borderRadius: 16, backgroundColor: colors.brand },

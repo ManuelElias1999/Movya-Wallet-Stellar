@@ -15,7 +15,7 @@ import { LanguageSelector } from '@/components/LanguageSelector';
 import { useLanguage } from '@/i18n/Language';
 
 const rows = [
-  { icon: 'person-outline' as const, title: 'Datos personales', subtitle: 'Nombre, correo y teléfono', tint: '#E8F1FF', color: '#176BFF' },
+  { icon: 'person-outline' as const, title: 'Datos personales', subtitle: 'Nombre, correo y teléfono', tint: colors.brandSoft, color: '#176BFF' },
   { icon: 'shield-checkmark-outline' as const, title: 'Seguridad', subtitle: 'Acceso y recuperación', tint: '#E4F8F5', color: '#008B83' },
   { icon: 'cash-outline' as const, title: 'Moneda principal', subtitle: 'USD', tint: '#F0EBFF', color: '#7655D9' },
   { icon: 'help-circle-outline' as const, title: 'Ayuda', subtitle: 'Preguntas y soporte', tint: '#FFF3DE', color: '#B66A00' },
@@ -49,7 +49,7 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>Preferencias</Text>
         <View style={styles.card}>
           <View style={styles.row}>
-            <View style={[styles.rowIcon, { backgroundColor: '#FCEAF0' }]}><Ionicons name="notifications-outline" size={20} color="#B94F72" /></View>
+            <View style={[styles.rowIcon, { backgroundColor: colors.dangerSoft }]}><Ionicons name="notifications-outline" size={20} color={colors.danger} /></View>
             <View style={styles.rowCopy}><Text style={styles.rowTitle}>Notificaciones</Text><Text style={styles.rowSubtitle}>Próximamente: fondos recibidos y alertas de seguridad</Text></View>
             <View style={styles.switchWrap}>
               <Switch disabled trackColor={{ false: '#CED5E0', true: colors.brandIce }} thumbColor="#FFFFFF" value={false} />
@@ -73,10 +73,10 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#D8E1EB' }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 125 },
-  profile: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.86)', borderRadius: radius.lg, borderWidth: 1, borderColor: 'rgba(255,255,255,0.94)', padding: 17, shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
+  safeArea: { flex: 1, backgroundColor: colors.background }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 125 },
+  profile: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: 17, shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   avatar: { width: 54, height: 54, borderRadius: 27, overflow: 'hidden', backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginRight: 13 }, name: { color: colors.ink, fontSize: 17, fontWeight: '800' }, email: { color: colors.muted, fontSize: 11, marginTop: 4 },
-  sectionTitle: { color: colors.ink, fontSize: 16, fontWeight: '800', marginTop: 26, marginBottom: 10 }, card: { backgroundColor: 'rgba(255,255,255,0.86)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.94)', borderRadius: radius.md, paddingHorizontal: 14, shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
+  sectionTitle: { color: colors.ink, fontSize: 16, fontWeight: '800', marginTop: 26, marginBottom: 10 }, card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 14, shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   row: { minHeight: 70, flexDirection: 'row', alignItems: 'center' }, divider: { borderTopWidth: 1, borderTopColor: colors.border }, rowIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }, rowCopy: { flex: 1, marginLeft: 11 }, rowTitle: { color: colors.ink, fontSize: 14, fontWeight: '700' }, rowSubtitle: { color: colors.muted, fontSize: 10, marginTop: 3 },
   switchWrap: { width: 54, marginLeft: 10, alignItems: 'flex-end', justifyContent: 'center' },
   dangerTitle: { color: '#B84252', fontSize: 14, fontWeight: '800' },

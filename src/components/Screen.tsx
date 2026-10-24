@@ -30,7 +30,7 @@ export function Screen({ children, scroll = true }: ScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#E8F1FF' },
+  safeArea: { flex: 1, backgroundColor: colors.background },
   scrollContent: { flexGrow: 1 },
   content: { flex: 1, width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 12, paddingBottom: 32 },
 });
