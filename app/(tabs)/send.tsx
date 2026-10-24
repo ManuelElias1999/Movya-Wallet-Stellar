@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Pressable, Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -17,9 +19,10 @@ import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance, preparePayment, type PaymentAsset, type PaymentReceipt, type PaymentReview } from '@/services/stellar/payments';
 import { useContacts } from '@/context/ContactsContext';
 import { resolveContactWithConfirmation } from '@/components/confirmContactAddress';
-import { colors, radius } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 
 export default function SendScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
   const params = useLocalSearchParams<{ contact?: string; contactId?: string; address?: string; amount?: string; token?: string }>();
   const wallet = useTestnetWallet();
   const saved = useContacts();
@@ -149,7 +152,7 @@ export default function SendScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background }, flex: { flex: 1 }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 40 },
   networkBadge: { marginTop: 14 },
   contextHelp: { marginTop: 24 },

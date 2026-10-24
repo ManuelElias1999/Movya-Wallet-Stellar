@@ -1,3 +1,6 @@
+import type { ViewStyle } from 'react-native';
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -14,13 +17,15 @@ import { useAuth } from '@/context/AuthContext';
 import { WalletForge } from '@/components/WalletForge';
 import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
 import { PasswordInput } from '@/components/PasswordInput';
-import { colors } from '@/theme/tokens';
+
 import { checkPasswordStrength, MIN_PASSWORD_LENGTH } from '@/services/security/passwordStrength';
 import { isMfaRequired } from '@/services/backend/mfa';
+import { ThemeSelector } from '@/components/ThemeSelector';
 
 type AuthMode = 'login' | 'register';
 
 export default function WelcomeScreen() {
+  const { styles, colors, mode } = useThemedStyles(createStyles);
   const router = useRouter();
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const auth = useAuth();
@@ -81,9 +86,9 @@ export default function WelcomeScreen() {
               <Text style={styles.brand}>Movya Wallet</Text>
               <Text style={styles.tagline}>Un mensaje, una transacción</Text>
             </View>
+            <View style={{ marginBottom: 18 }}><ThemeSelector /></View>
 
-            <BlurView intensity={72} tint="dark" style={[styles.authCard, Platform.OS === 'web' ? webGlass : null]}>
-              <View pointerEvents="none" style={styles.cardShine} />
+            <BlurView intensity={72} tint={mode} style={[styles.authCard, Platform.OS === 'web' ? webGlass : null]}>
               {!pendingEmail ? <View style={styles.modeTabs}>
                 <PressableScale disabled={busy} onPress={() => changeAuthMode('login')} style={[styles.modeTab, authMode === 'login' && styles.modeTabActive]}>
                   <Text style={[styles.modeText, authMode === 'login' && styles.modeTextActive]}>Ingresar</Text>
@@ -194,12 +199,12 @@ export default function WelcomeScreen() {
   );
 }
 
-const webGlass = { backdropFilter: 'blur(28px) saturate(170%)', WebkitBackdropFilter: 'blur(28px) saturate(170%)' } as const;
+const webGlass: ViewStyle & { backdropFilter: string; WebkitBackdropFilter: string } = { backdropFilter: 'blur(28px) saturate(170%)', WebkitBackdropFilter: 'blur(28px) saturate(170%)' };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background }, flex: { flex: 1 }, scroll: { flexGrow: 1, paddingHorizontal: 18, paddingVertical: 22 }, page: { flex: 1, width: '100%', maxWidth: 480, alignSelf: 'center', justifyContent: 'center' },
   brandArea: { alignItems: 'center', marginBottom: 22 }, logoHalo: { width: 92, height: 92, borderRadius: 30, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, shadowColor: '#000000', shadowOpacity: 0.3, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, elevation: 8 }, logo: { width: 82, height: 82, resizeMode: 'contain' }, brand: { color: colors.ink, fontSize: 28, fontWeight: '900', letterSpacing: -0.8, marginTop: 13 }, tagline: { maxWidth: 330, color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: 6 },
-  authCard: { overflow: 'hidden', borderRadius: 30, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, padding: 18, shadowColor: colors.navy, shadowOpacity: 0.2, shadowRadius: 26, shadowOffset: { width: 0, height: 14 }, elevation: 8 }, cardShine: { position: 'absolute', left: 1, right: 1, top: 1, height: '30%', borderTopLeftRadius: 29, borderTopRightRadius: 29, backgroundColor: 'rgba(255,255,255,0.18)' },
+  authCard: { overflow: 'hidden', borderRadius: 30, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, padding: 18, shadowColor: colors.navy, shadowOpacity: 0.2, shadowRadius: 26, shadowOffset: { width: 0, height: 14 }, elevation: 8 },
   modeTabs: { flexDirection: 'row', padding: 4, borderRadius: 18, backgroundColor: colors.background }, modeTab: { flex: 1, height: 42, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }, modeTabActive: { backgroundColor: colors.surfaceElevated, shadowColor: '#000000', shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 2 }, modeText: { color: colors.muted, fontSize: 13, fontWeight: '800' }, modeTextActive: { color: colors.brandDark },
   cardHeading: { marginVertical: 20 }, title: { color: colors.ink, fontSize: 21, fontWeight: '900', letterSpacing: -0.35 }, description: { color: colors.muted, fontSize: 12, lineHeight: 17, marginTop: 5 },
   identityTabs: { flexDirection: 'row', gap: 9, marginBottom: 10 }, identityTab: { flex: 1, height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceSoft }, identityTabActive: { borderColor: colors.brandIce, backgroundColor: colors.brandSoft }, identityText: { color: colors.muted, fontSize: 12, fontWeight: '700' }, identityTextActive: { color: colors.brand },

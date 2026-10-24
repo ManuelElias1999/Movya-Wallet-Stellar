@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
@@ -7,9 +9,9 @@ import { PasswordInput } from '@/components/PasswordInput';
 import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
 import { PressableScale } from '@/components/PressableScale';
 import { isMfaRequired } from '@/services/backend/mfa';
-import { colors } from '@/theme/tokens';
 
 export function AppLockOverlay() {
+  const { styles, colors } = useThemedStyles(createStyles);
   const auth = useAuth();
   const [password, setPassword] = useState('');
   const [mfaCode, setMfaCode] = useState('');
@@ -65,7 +67,7 @@ export function AppLockOverlay() {
   </View>;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   overlay: { position: 'absolute', inset: 0, zIndex: 1000, elevation: 1000, backgroundColor: 'rgba(7,24,52,0.64)' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 22 },
   card: { width: '100%', maxWidth: 420, padding: 20, borderRadius: 24, backgroundColor: colors.surface, shadowColor: '#000000', shadowOpacity: 0.25, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 12 },

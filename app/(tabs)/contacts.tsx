@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Alert, Pressable, Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -13,9 +15,10 @@ import { useContacts } from '@/context/ContactsContext';
 import type { Contact } from '@/services/backend/contacts';
 import { resolveContactWithConfirmation } from '@/components/confirmContactAddress';
 import { KeyboardSheet } from '@/components/KeyboardSheet';
-import { colors, radius } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 
 export default function ContactsScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
   const router = useRouter();
   const saved = useContacts();
   const { contacts } = saved;
@@ -172,7 +175,7 @@ export default function ContactsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 125 },
   search: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md, backgroundColor: colors.surface, paddingHorizontal: 15, height: 54, marginTop: 18, shadowColor: '#000000', shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 2 }, input: { flex: 1, marginLeft: 10, color: colors.ink, fontSize: 14 },
   contextHelp: { marginTop: 22 },

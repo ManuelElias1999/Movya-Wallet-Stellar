@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Pressable, Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -7,7 +9,6 @@ import Svg, { Defs, LinearGradient as SvgGradient, Path, Stop } from 'react-nati
 
 import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
 import { TokenIcon } from '@/components/TokenIcon';
-import { colors } from '@/theme/tokens';
 
 export type AssetDetail = {
   code: string;
@@ -34,6 +35,7 @@ const metadata: Record<string, Pick<AssetDetail, 'unitPrice' | 'change' | 'descr
 };
 
 export function AssetDetailSheet({ asset, onClose }: AssetDetailSheetProps) {
+  const { styles, colors, mode } = useThemedStyles(createStyles);
   if (!asset) return null;
   const details = { ...(metadata[asset.code] ?? {}), unitPrice: asset.unitPrice ?? metadata[asset.code]?.unitPrice, change: asset.change ?? metadata[asset.code]?.change };
   const positive = !details.change?.startsWith('-');
@@ -41,7 +43,7 @@ export function AssetDetailSheet({ asset, onClose }: AssetDetailSheetProps) {
   return (
     <Modal animationType="slide" onRequestClose={onClose} transparent visible>
       <Pressable onPress={onClose} style={styles.backdrop} />
-      <BlurView intensity={85} tint="dark" style={styles.sheet}>
+      <BlurView intensity={85} tint={mode} style={styles.sheet}>
         <View style={styles.handle} />
         <View style={styles.topRow}>
           <TokenIcon code={asset.code} color={asset.color} size={52} />
@@ -70,7 +72,7 @@ export function AssetDetailSheet({ asset, onClose }: AssetDetailSheetProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(4,15,36,0.42)' },
   sheet: { borderTopLeftRadius: 34, borderTopRightRadius: 34, overflow: 'hidden', padding: 22, paddingBottom: 32, backgroundColor: colors.surface, borderTopWidth: 1, borderColor: colors.border },
   handle: { width: 43, height: 5, borderRadius: 3, backgroundColor: 'rgba(83,105,137,0.28)', alignSelf: 'center', marginBottom: 20 },

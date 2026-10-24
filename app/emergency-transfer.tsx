@@ -6,7 +6,7 @@ import { ActivityIndicator, Keyboard, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PageHeader } from '@/components/PageHeader';
 import { PressableScale } from '@/components/PressableScale';
-import { secureStyles as styles } from '@/components/secureStyles';
+import { useSecureStyles } from '@/components/secureStyles';
 import { useSensitiveScreen } from '@/components/useSensitiveScreen';
 import { useAuth } from '@/context/AuthContext';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
@@ -16,7 +16,6 @@ import { createRecoveryWallet } from '@/services/stellar/recovery';
 import { prepareSweep, submitSweep } from '@/services/stellar/sweep';
 import { SubmissionUnknownError } from '@/services/stellar/payments';
 import { MIN_PASSWORD_LENGTH } from '@/services/security/passwordStrength';
-import { colors } from '@/theme/tokens';
 
 type Step = 'intro' | 'words' | 'confirm' | 'done';
 const positions = () => { const all = [...Array(12).keys()]; const out: number[] = []; while (out.length < 3) out.push(all.splice(Math.floor(Math.random() * all.length), 1)[0]); return out.sort((a, b) => a - b); };
@@ -24,6 +23,7 @@ const positions = () => { const all = [...Array(12).keys()]; const out: number[]
 // Emergency alternative to key rotation: moves XLM and USDC to a brand-new
 // wallet and points the Movya account to it. The address changes.
 export default function EmergencyTransferScreen() {
+  const { styles, colors } = useSecureStyles();
   const auth = useAuth(); const wallet = useTestnetWallet(); const router = useRouter();
   const [step, setStep] = useState<Step>('intro');
   const [password, setPassword] = useState('');

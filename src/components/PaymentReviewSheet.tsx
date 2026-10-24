@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text } from '@/i18n/primitives';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Linking, Modal, ScrollView, StyleSheet, View } from 'react-native';
@@ -13,10 +15,11 @@ import { readRecentRecipients, rememberRecipient } from '@/services/security/rec
 import { assertNotDuplicate, recordPayment } from '@/services/security/duplicateGuard';
 import { assetBalance } from '@/services/stellar/payments';
 import { checkSubmission, SubmissionUnknownError, submitPayment, type PaymentReceipt, type PaymentReview } from '@/services/stellar/payments';
-import { colors } from '@/theme/tokens';
+
 import { formatEnteredAmount } from '@/services/presentation';
 
 export function PaymentReviewSheet({ review, onClose, onSuccess }: { review: PaymentReview | null; onClose: () => void; onSuccess: (receipt: PaymentReceipt) => void }) {
+  const { styles, colors } = useThemedStyles(createStyles);
   const wallet = useTestnetWallet();
   const insets = useSafeAreaInsets();
   const lock = useRef(false);
@@ -91,7 +94,7 @@ export function PaymentReviewSheet({ review, onClose, onSuccess }: { review: Pay
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(5,16,35,0.48)', justifyContent: 'flex-end' }, sheet: { padding: 24, backgroundColor: colors.surface, borderTopLeftRadius: 28, borderTopRightRadius: 28, maxHeight: '90%', width: '100%', maxWidth: 760, alignSelf: 'center' },
   title: { fontSize: 20, fontWeight: '800', color: colors.ink }, amount: { fontSize: 28, fontWeight: '800', color: colors.brandDark, marginTop: 18 },
   label: { fontSize: 11, fontWeight: '700', color: colors.muted, marginTop: 16 }, address: { fontSize: 12, lineHeight: 18, color: colors.ink, marginTop: 5 }, value: { fontSize: 13, color: colors.ink, marginTop: 5 }, note: { fontSize: 12, lineHeight: 19, color: colors.muted, marginTop: 18 }, error: { color: '#B52D42', fontSize: 12, lineHeight: 19, marginTop: 16 },

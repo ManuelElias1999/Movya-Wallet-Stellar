@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -10,18 +12,20 @@ import { PressableScale } from '@/components/PressableScale';
 import { ProfilePhoto } from '@/components/ProfilePhoto';
 import { useAuth } from '@/context/AuthContext';
 import { displayName as getDisplayName } from '@/services/presentation';
-import { colors, radius } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { useLanguage } from '@/i18n/Language';
+import { ThemeSelector } from '@/components/ThemeSelector';
 
-const rows = [
+const getRows = (colors: ThemeColors) => [
   { icon: 'person-outline' as const, title: 'Datos personales', subtitle: 'Nombre, correo y teléfono', tint: colors.brandSoft, color: '#176BFF' },
-  { icon: 'shield-checkmark-outline' as const, title: 'Seguridad', subtitle: 'Acceso y recuperación', tint: '#E4F8F5', color: '#008B83' },
-  { icon: 'cash-outline' as const, title: 'Moneda principal', subtitle: 'USD', tint: '#F0EBFF', color: '#7655D9' },
-  { icon: 'help-circle-outline' as const, title: 'Ayuda', subtitle: 'Preguntas y soporte', tint: '#FFF3DE', color: '#B66A00' },
+  { icon: 'shield-checkmark-outline' as const, title: 'Seguridad', subtitle: 'Acceso y recuperación', tint: colors.positiveSoft, color: colors.positive },
+  { icon: 'cash-outline' as const, title: 'Moneda principal', subtitle: 'USD', tint: colors.brandSoft, color: colors.brandDark },
+  { icon: 'help-circle-outline' as const, title: 'Ayuda', subtitle: 'Preguntas y soporte', tint: colors.warningSoft, color: colors.warning },
 ];
 
 export default function SettingsScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
   const { language } = useLanguage();
   const router = useRouter();
   const auth = useAuth();
@@ -38,7 +42,7 @@ export default function SettingsScreen() {
         </View>
         <Text style={styles.sectionTitle}>Cuenta</Text>
         <View style={styles.card}>
-          {rows.map((row, index) => (
+          {getRows(colors).map((row, index) => (
             <PressableScale key={row.title} onPress={row.title === 'Seguridad' ? () => router.push('/security') : undefined} style={[styles.row, index > 0 && styles.divider]}>
               <View style={[styles.rowIcon, { backgroundColor: row.tint }]}><Ionicons name={row.icon} size={20} color={row.color} /></View>
               <View style={styles.rowCopy}><Text style={styles.rowTitle}>{row.title}</Text><Text style={styles.rowSubtitle}>{row.subtitle}</Text></View>
@@ -47,6 +51,11 @@ export default function SettingsScreen() {
           ))}
         </View>
         <Text style={styles.sectionTitle}>Preferencias</Text>
+        <View style={[styles.card, { paddingVertical: 16, marginBottom: 12 }]}>
+          <Text style={styles.rowTitle}>Apariencia</Text>
+          <Text style={styles.rowSubtitle}>Elige modo claro u oscuro. Tu preferencia queda guardada.</Text>
+          <ThemeSelector />
+        </View>
         <View style={styles.card}>
           <View style={styles.row}>
             <View style={[styles.rowIcon, { backgroundColor: colors.dangerSoft }]}><Ionicons name="notifications-outline" size={20} color={colors.danger} /></View>
@@ -72,7 +81,7 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 125 },
   profile: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: 17, shadowColor: colors.navy, shadowOpacity: 0.13, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   avatar: { width: 54, height: 54, borderRadius: 27, overflow: 'hidden', backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginRight: 13 }, name: { color: colors.ink, fontSize: 17, fontWeight: '800' }, email: { color: colors.muted, fontSize: 11, marginTop: 4 },

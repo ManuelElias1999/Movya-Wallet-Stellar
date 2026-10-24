@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text } from '@/i18n/primitives';
 import { useEffect, useMemo, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
@@ -7,10 +9,11 @@ import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { type ActivityPeriod, type StellarActivity, filterActivityByPeriod, getActivityHistory } from '@/services/stellar/activity';
 import { useContacts } from '@/context/ContactsContext';
 import { formatEnteredAmount, formatReceivedAmount, paymentDescription } from '@/services/presentation';
-import { colors } from '@/theme/tokens';
+
 import { useLanguage } from '@/i18n/Language';
 
 export function TestnetPaymentHistory({ hidden = false, limit, period = 'all' }: { hidden?: boolean; limit?: number; period?: ActivityPeriod }) {
+  const { styles } = useThemedStyles(createStyles);
   const { locale } = useLanguage();
   const wallet = useTestnetWallet();
   const { contacts } = useContacts();
@@ -49,4 +52,4 @@ export function TestnetPaymentHistory({ hidden = false, limit, period = 'all' }:
   </View>;
 }
 
-const styles = StyleSheet.create({ empty: { color: colors.muted, fontSize: 12, lineHeight: 19, paddingVertical: 18 } });
+const createStyles = (colors: ThemeColors) => StyleSheet.create({ empty: { color: colors.muted, fontSize: 12, lineHeight: 19, paddingVertical: 18 } });

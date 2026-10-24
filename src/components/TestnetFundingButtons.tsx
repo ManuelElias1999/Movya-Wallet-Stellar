@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
@@ -6,11 +8,12 @@ import { useEffect, useRef, useState } from 'react';
 import { AppState, Linking, StyleSheet, View } from 'react-native';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance, enableUSDC, fundTestnetAccount, readTestnetAccount, SubmissionUnknownError } from '@/services/stellar/payments';
-import { colors } from '@/theme/tokens';
+
 import { PressableScale } from './PressableScale';
 import { NavigationGlass } from './NavigationGlass';
 
 export function TestnetFundingButtons() {
+  const { styles } = useThemedStyles(createStyles);
   const wallet = useTestnetWallet(); const router = useRouter();
   const lock = useRef(false); const [busy, setBusy] = useState<'XLM' | 'USDC' | null>(null); const [message, setMessage] = useState('');
   useEffect(() => {
@@ -48,7 +51,7 @@ export function TestnetFundingButtons() {
     {message ? <Text accessibilityLiveRegion="polite" style={styles.message}>{message}</Text> : null}
   </View>;
 }
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { marginTop: 14 }, row: { flexDirection: 'row', gap: 10 },
   button: { flex: 1, borderRadius: 999, backgroundColor: 'transparent', shadowColor: '#00123F', shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 5 },
   surface: { minHeight: 46, width: '100%', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },

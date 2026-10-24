@@ -1,13 +1,16 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
 import { Pressable, Text } from '@/i18n/primitives';
 import { type createSwapFlow, type SwapState } from '@/services/swapFlow';
 import { USDC_ISSUER } from '@/services/stellar/payments';
-import { colors } from '@/theme/tokens';
+
 import { formatEnteredAmount, formatReceivedAmount } from '@/services/presentation';
 import { Ionicons } from '@expo/vector-icons';
 
 export function SwapReviewCard({ state, flow, onCancel }: { state: SwapState; flow: ReturnType<typeof createSwapFlow>; onCancel?: () => void }) {
+  const { styles, colors } = useThemedStyles(createStyles);
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   const [detailsVisible, setDetailsVisible] = useState(false);
   useEffect(() => {
@@ -78,7 +81,7 @@ export function SwapReviewCard({ state, flow, onCancel }: { state: SwapState; fl
   </View>;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { borderRadius: 22, padding: 16, marginVertical: 14, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: '#BBD6FF' },
   title: { color: colors.ink, fontSize: 18, fontWeight: '800' }, label: { color: colors.muted, fontSize: 11, marginTop: 14 }, amount: { color: colors.brandDark, fontSize: 23, fontWeight: '800', marginTop: 5 }, value: { color: colors.ink, fontSize: 14, marginTop: 5 },
   address: { color: colors.ink, fontSize: 11, lineHeight: 17, marginTop: 5 }, note: { color: colors.muted, fontSize: 12, lineHeight: 18, marginTop: 12 }, error: { color: '#B52D42', fontSize: 13, lineHeight: 19, marginTop: 12 },

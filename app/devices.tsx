@@ -6,14 +6,14 @@ import { ActivityIndicator, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PageHeader } from '@/components/PageHeader';
 import { PressableScale } from '@/components/PressableScale';
-import { secureStyles as styles } from '@/components/secureStyles';
+import { useSecureStyles } from '@/components/secureStyles';
 import { useAuth } from '@/context/AuthContext';
 import { currentDeviceId, listDevices, revokeDevice, revokeOtherDevices, type DeviceRow } from '@/services/backend/devices';
-import { colors } from '@/theme/tokens';
 
 const when = (iso: string) => new Date(iso).toLocaleString();
 
 export default function DevicesScreen() {
+  const { styles, colors } = useSecureStyles();
   const auth = useAuth(); const router = useRouter();
   const owner = auth.user?.id;
   const [devices, setDevices] = useState<DeviceRow[] | null>(null);

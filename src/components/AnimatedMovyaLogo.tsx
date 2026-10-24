@@ -1,10 +1,12 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { useEffect, useRef } from 'react';
 import { Animated, Easing, StyleSheet } from 'react-native';
 import { MovyaLogo } from './MovyaLogo';
-import { colors } from '@/theme/tokens';
 
 type AnimatedMovyaLogoProps = { size?: number; delayMs?: number; repeat?: boolean; showGlow?: boolean; outlineColor?: string };
 export function AnimatedMovyaLogo({ size = 48, delayMs = 3800, repeat = true, showGlow = true, outlineColor = '#4D6A87' }: AnimatedMovyaLogoProps) {
+  const { styles } = useThemedStyles(createStyles);
   const pulse = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     const gesture = Animated.sequence([
@@ -27,4 +29,4 @@ export function AnimatedMovyaLogo({ size = 48, delayMs = 3800, repeat = true, sh
     ] }}><MovyaLogo size={size} outlineColor={outlineColor} /></Animated.View>
   </Animated.View>;
 }
-const styles = StyleSheet.create({ glow: { position: 'absolute', width: '100%', height: '100%', borderRadius: 18, backgroundColor: colors.brand } });
+const createStyles = (colors: ThemeColors) => StyleSheet.create({ glow: { position: 'absolute', width: '100%', height: '100%', borderRadius: 18, backgroundColor: colors.brand } });

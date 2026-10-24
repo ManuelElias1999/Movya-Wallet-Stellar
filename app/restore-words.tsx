@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Alert, Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -12,7 +14,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { isMfaRequired } from '@/services/backend/mfa';
 import { MIN_PASSWORD_LENGTH } from '@/services/security/passwordStrength';
-import { colors } from '@/theme/tokens';
 
 // One screen for both cases:
 //  - the wallet's own 12 words (for example after a password reset made the
@@ -20,6 +21,7 @@ import { colors } from '@/theme/tokens';
 //  - the recovery kit (lost or stolen phone): authorizes a new key for this
 //    device and disables every other device key.
 export default function RestoreWordsScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
   const auth = useAuth(); const router = useRouter(); const wallet = useTestnetWallet();
   const [mfaCode, setMfaCode] = useState(''); const [needsCode, setNeedsCode] = useState(false);
   const [words, setWords] = useState(''); const [password, setPassword] = useState('');
@@ -83,7 +85,7 @@ export default function RestoreWordsScreen() {
     </KeyboardAvoidingView>
   </SafeAreaView>;
 }
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background }, content: { padding: 20, maxWidth: 760, width: '100%', alignSelf: 'center' }, card: { padding: 20, backgroundColor: colors.surface, borderRadius: 24 },
   icon: { width: 58, height: 58, borderRadius: 19, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }, title: { color: colors.ink, fontSize: 19, fontWeight: '800', lineHeight: 26 },
   copy: { color: colors.text, fontSize: 13, lineHeight: 21, marginTop: 10 }, notice: { color: colors.brandDark, fontSize: 12, lineHeight: 20, padding: 14, backgroundColor: colors.brandSoft, borderRadius: 14, marginTop: 16 },

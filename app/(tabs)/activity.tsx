@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
@@ -11,7 +13,7 @@ import { PressableScale } from '@/components/PressableScale';
 import { demoActivity } from '@/data/demo';
 import { TestnetPaymentHistory } from '@/components/TestnetPaymentHistory';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
-import { colors, radius } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 import type { ActivityPeriod } from '@/services/stellar/activity';
 
 const periods: { key: ActivityPeriod; label: string }[] = [
@@ -22,6 +24,7 @@ const periods: { key: ActivityPeriod; label: string }[] = [
 ];
 
 export default function ActivityScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
   const wallet = useTestnetWallet();
   const [period, setPeriod] = useState<ActivityPeriod>('all');
   const demoRows = period === 'today' ? demoActivity.slice(0, 1) : demoActivity;
@@ -53,7 +56,7 @@ export default function ActivityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 125 },
   statusCard: { flexDirection: 'row', backgroundColor: colors.positiveSoft, borderRadius: radius.md, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: colors.border, shadowColor: '#000000', shadowOpacity: 0.22, shadowRadius: 13, shadowOffset: { width: 0, height: 7 }, elevation: 4 },

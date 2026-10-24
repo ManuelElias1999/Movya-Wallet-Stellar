@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -7,12 +9,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
 import { PressableScale } from '@/components/PressableScale';
 import { NavigationGlass } from '@/components/NavigationGlass';
-import { colors } from '@/theme/tokens';
 
 import { type NavigationTab } from '@/services/presentation';
 type BottomNavigationProps = { active: NavigationTab; onMovyaPress?: () => void };
 
 export function BottomNavigation({ active, onMovyaPress }: BottomNavigationProps) {
+  const { styles } = useThemedStyles(createStyles);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(insets.bottom, 10);
@@ -48,6 +50,7 @@ export function BottomNavigation({ active, onMovyaPress }: BottomNavigationProps
 type NavItemProps = { active: boolean; icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void };
 
 function NavItem({ active, icon, label, onPress }: NavItemProps) {
+  const { styles, colors } = useThemedStyles(createStyles);
   return (
     <PressableScale haptic={false} onPress={onPress} pressedScale={0.9} accessibilityRole="tab" accessibilityState={{ selected: active }} style={[styles.item, active && styles.itemActive]}>
       <View style={[styles.iconWrap, active && styles.iconWrapActive]}>
@@ -58,7 +61,7 @@ function NavItem({ active, icon, label, onPress }: NavItemProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   shell: { position: 'absolute', left: 12, right: 12, bottom: 8, zIndex: 40, backgroundColor: 'transparent', shadowColor: '#00123F', shadowOpacity: 0.24, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, elevation: 16 },
   bar: { height: 76, width: '100%', maxWidth: 720, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingHorizontal: 5, borderRadius: 999 },
   item: { width: 61, height: 62, alignItems: 'center', justifyContent: 'center' }, iconWrap: { width: 36, height: 31, borderRadius: 13, alignItems: 'center', justifyContent: 'center' }, itemActive: { backgroundColor: colors.surfaceElevated, borderRadius: 20, borderWidth: 1, borderColor: colors.brandIce }, iconWrapActive: { backgroundColor: colors.brandSoft }, label: { color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: '700', marginTop: 2 }, labelActive: { color: colors.brandDark, fontWeight: '900' },

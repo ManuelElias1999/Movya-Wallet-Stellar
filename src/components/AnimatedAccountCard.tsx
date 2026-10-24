@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Pressable, Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef } from 'react';
@@ -7,7 +9,6 @@ import * as Haptics from 'expo-haptics';
 
 import { PressableScale } from '@/components/PressableScale';
 import { MovyaLogo } from '@/components/MovyaLogo';
-import { colors } from '@/theme/tokens';
 
 type AnimatedAccountCardProps = {
   amountsVisible: boolean;
@@ -18,6 +19,7 @@ type AnimatedAccountCardProps = {
 };
 
 export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmount = '$1,629.24', balanceLabel = 'Saldo total en USD', ownerName = 'Usuario' }: AnimatedAccountCardProps) {
+  const { styles } = useThemedStyles(createStyles);
   const movement = useRef(new Animated.Value(0)).current;
   const shake = useRef(new Animated.Value(0)).current;
 
@@ -103,7 +105,7 @@ export function AnimatedAccountCard({ amountsVisible, onToggleAmounts, totalAmou
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { borderRadius: 28, minHeight: 220, padding: 22, justifyContent: 'space-between', overflow: 'hidden', shadowColor: '#0B4FB8', shadowOpacity: 0.28, shadowRadius: 26, shadowOffset: { width: 0, height: 14 }, elevation: 9 },
   lightSweep: { position: 'absolute', top: -95, bottom: -95, width: 115 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
@@ -121,6 +123,6 @@ const styles = StyleSheet.create({
   eyeButton: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginLeft: 10, backgroundColor: 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.28)' },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   owner: { color: 'rgba(255,255,255,0.76)', fontSize: 10, fontWeight: '700', letterSpacing: 1.2 },
-  stellarPill: { width: 43, height: 31, backgroundColor: colors.surface, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  stellarPill: { width: 43, height: 31, backgroundColor: '#FFFFFF', borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   stellarLogo: { width: 27, height: 22, resizeMode: 'contain' },
 });

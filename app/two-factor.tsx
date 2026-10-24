@@ -7,12 +7,12 @@ import QRCode from 'react-native-qrcode-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PageHeader } from '@/components/PageHeader';
 import { PressableScale } from '@/components/PressableScale';
-import { secureStyles as styles } from '@/components/secureStyles';
+import { useSecureStyles } from '@/components/secureStyles';
 import { useSensitiveScreen } from '@/components/useSensitiveScreen';
 import { confirmTotpEnrollment, disableTotp, startTotpEnrollment, verifiedTotpFactors } from '@/services/backend/mfa';
-import { colors } from '@/theme/tokens';
 
 export default function TwoFactorScreen() {
+  const { styles, colors } = useSecureStyles();
   const [factorCount, setFactorCount] = useState<number | null>(null);
   const [enrollment, setEnrollment] = useState<{ factorId: string; uri: string; secret: string } | null>(null);
   const [code, setCode] = useState(''); const [busy, setBusy] = useState(false); const [message, setMessage] = useState('');

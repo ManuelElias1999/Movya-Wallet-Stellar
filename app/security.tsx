@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Alert, Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -11,10 +13,10 @@ import { useAuth } from '@/context/AuthContext';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { readDiscoverable, setDiscoverable } from '@/services/backend/accounts';
 import { recoveryState } from '@/services/stellar/signers';
-import { colors } from '@/theme/tokens';
 
 type RowProps = { icon: keyof typeof Ionicons.glyphMap; title: string; subtitle: string; onPress?: () => void; right?: ReactNode };
 function Row({ icon, title, subtitle, onPress, right }: RowProps) {
+  const { styles, colors } = useThemedStyles(createStyles);
   return <PressableScale disabled={!onPress} onPress={onPress} style={styles.card}>
     <View style={styles.icon}><Ionicons name={icon} color={colors.brand} size={23} /></View>
     <View style={{ flex: 1 }}><Text style={styles.title}>{title}</Text><Text style={styles.subtitle}>{subtitle}</Text></View>
@@ -23,6 +25,7 @@ function Row({ icon, title, subtitle, onPress, right }: RowProps) {
 }
 
 export default function SecurityScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
   const router = useRouter(); const auth = useAuth(); const wallet = useTestnetWallet();
   const userId = auth.user?.id;
   const [discoverable, setDiscoverableState] = useState<boolean | null>(null);
@@ -72,7 +75,7 @@ export default function SecurityScreen() {
     </ScrollView>
   </SafeAreaView>;
 }
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingBottom: 32 },
   card: { marginTop: 14, minHeight: 88, padding: 16, borderRadius: 20, backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', gap: 12 },
   icon: { width: 46, height: 46, borderRadius: 16, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' },

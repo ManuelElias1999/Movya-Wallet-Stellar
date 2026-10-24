@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
 import { useContacts } from '@/context/ContactsContext';
@@ -6,10 +8,11 @@ import { assessRecipient } from '@/services/security/recipientRisk';
 import { formatEnteredAmount } from '@/services/presentation';
 import { Pressable, Text } from '@/i18n/primitives';
 import type { ChatPaymentState, createChatPaymentFlow } from '@/services/chatPayment';
-import { colors } from '@/theme/tokens';
+
 import { Ionicons } from '@expo/vector-icons';
 
 export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentState; flow: ReturnType<typeof createChatPaymentFlow>; onCancel?: () => void }) {
+  const { styles, colors } = useThemedStyles(createStyles);
   const { contacts } = useContacts();
   const { review, request, receipt } = state;
   const [acknowledged, setAcknowledged] = useState(false);
@@ -87,7 +90,7 @@ export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentS
   </View>;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { padding: 16, borderRadius: 22, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: '#BBD6FF', marginBottom: 16 },
   title: { color: colors.ink, fontSize: 15, fontWeight: '800' },
   summary: { backgroundColor: colors.brandSoft, borderWidth: 1.5, borderColor: colors.brandIce, borderRadius: 18, padding: 15, marginTop: 12 },

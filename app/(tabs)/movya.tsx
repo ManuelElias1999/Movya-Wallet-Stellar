@@ -1,11 +1,13 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MovyaChatSheet } from '@/components/MovyaChatSheet';
-import { colors } from '@/theme/tokens';
 
 export default function MovyaScreen() {
+  const { styles } = useThemedStyles(createStyles);
   const router = useRouter();
   const { prompt } = useLocalSearchParams<{ prompt?: string }>();
 
@@ -16,6 +18,6 @@ export default function MovyaScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
 });

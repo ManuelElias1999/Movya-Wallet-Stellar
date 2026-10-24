@@ -1,8 +1,10 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Pressable, Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
@@ -13,7 +15,7 @@ import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackg
 import { PoweredByStellarFooter } from '@/components/PoweredByStellarFooter';
 import { PressableScale } from '@/components/PressableScale';
 import { NavigationGlass } from '@/components/NavigationGlass';
-import { ProfilePhoto } from '@/components/ProfilePhoto';
+
 import { TokenIcon } from '@/components/TokenIcon';
 import { demoActivity, demoAssets } from '@/data/demo';
 import { useAuth } from '@/context/AuthContext';
@@ -23,8 +25,9 @@ import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { useMarketPrices } from '@/hooks/useMarketPrices';
 import { assetUsdValue, formatMarketChange, formatUnitPrice, formatUsd, portfolioUsdTotal } from '@/services/marketPrices';
 import { displayName as getDisplayName, formatAssetBalance } from '@/services/presentation';
-import { colors } from '@/theme/tokens';
+
 import { useLanguage } from '@/i18n/Language';
+import { DashboardHeader } from '@/components/DashboardHeader';
 
 const actionGradientColors = ['rgba(33,76,180,0.92)', 'rgba(47,108,207,0.86)'] as const;
 
@@ -36,6 +39,7 @@ const quickActions = [
 ];
 
 export default function HomeScreen() {
+  const { styles, colors, mode } = useThemedStyles(createStyles);
   const { locale } = useLanguage();
   const router = useRouter();
   const auth = useAuth();
@@ -59,28 +63,10 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <StatusBar style="light" />
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       <AnimatedDashboardBackground />
 
-      <View style={styles.headerShell}>
-      <NavigationGlass style={styles.header}>
-        <View style={styles.profileRow}>
-          <PressableScale accessibilityLabel="Abrir mi cuenta" accessibilityRole="button" onPress={() => router.push('/settings')} style={styles.avatar}>{auth.user ? <Text translate={false} style={styles.avatarInitial}>{displayName[0]?.toUpperCase()}</Text> : <ProfilePhoto size={38} />}</PressableScale>
-          <View style={styles.greeting}>
-            <Text numberOfLines={1} style={styles.hello}>Hola, <Text translate={false}>{displayName.split(/\s+/)[0]}</Text></Text>
-            <Text numberOfLines={1} style={styles.welcome}>Un mensaje, una transacción</Text>
-          </View>
-        </View>
-        <View style={styles.headerActions}>
-          <PressableScale accessibilityLabel="Actualizar portafolio" accessibilityRole="button" disabled={account.loading || market.loading} onPress={() => void Promise.all([account.refresh(), market.refresh(true)])} pressedScale={0.9} style={styles.headerButton}>
-            {account.loading || market.loading ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Ionicons color="#FFFFFF" name="refresh-outline" size={21} />}
-          </PressableScale>
-          <PressableScale accessibilityLabel="Abrir ajustes" accessibilityRole="button" onPress={() => router.push('/settings')} pressedScale={0.9} style={styles.headerButton}>
-            <Ionicons color="#FFFFFF" name="options-outline" size={21} />
-          </PressableScale>
-        </View>
-      </NavigationGlass>
-      </View>
+      <DashboardHeader name={displayName} loading={account.loading || market.loading} onProfile={() => router.push('/settings')} onRefresh={() => void Promise.all([account.refresh(), market.refresh(true)])} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <AnimatedAccountCard ownerName={displayName} amountsVisible={amountsVisible} onToggleAmounts={() => setAmountsVisible((value) => !value)} totalAmount={account.isDemo ? '$1,629.24' : account.loading && !account.data ? 'Cargando…' : market.loading && !market.data ? 'Cotizando…' : formatUsd(totalUsd, locale)} balanceLabel="Valor total estimado en USD" />
@@ -133,10 +119,9 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
-  headerShell: { width: '100%', maxWidth: 744, alignSelf: 'center', paddingHorizontal: 12, paddingTop: 4, paddingBottom: 8, shadowColor: '#00123F', shadowOpacity: 0.24, shadowRadius: 22, shadowOffset: { width: 0, height: 10 }, elevation: 10 },
-  header: { width: '100%', minHeight: 68, borderRadius: 999, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 8, gap: 8 }, profileRow: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' }, avatar: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 10, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.24)' }, avatarInitial: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' }, greeting: { flex: 1, minWidth: 0 }, eyebrow: { color: 'rgba(255,255,255,0.76)', fontSize: 9, fontWeight: '800', letterSpacing: 1.5, marginBottom: 3 }, hello: { color: '#FFFFFF', fontSize: 17, fontWeight: '900', letterSpacing: -0.3 }, welcome: { color: 'rgba(255,255,255,0.82)', fontSize: 10, marginTop: 2 }, headerActions: { flexDirection: 'row', gap: 8 }, headerButton: { width: 44, height: 44, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.24)' },
+
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 136 },
   actionsRow: { flexDirection: 'row', gap: 10, marginTop: 16 }, actionItem: { flex: 1, minWidth: 0, borderRadius: 22, backgroundColor: 'transparent', shadowColor: '#00123F', shadowOpacity: 0.24, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 6 }, actionSurface: { minHeight: 72, width: '100%', borderRadius: 22, alignItems: 'center', justifyContent: 'center', paddingVertical: 9, gap: 5 }, actionIcon: { width: 30, height: 30, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.24)' }, actionLabel: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
   sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 31, marginBottom: 12 }, sectionTitle: { color: colors.ink, fontSize: 19, fontWeight: '900', letterSpacing: -0.35 }, sectionSubtitle: { color: colors.muted, fontSize: 10, marginTop: 3 }, sectionAction: { color: colors.brand, fontSize: 11, fontWeight: '800' },

@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -11,7 +13,7 @@ import { PressableScale } from '@/components/PressableScale';
 import { useAuth } from '@/context/AuthContext';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import type { RecoveryMaterial } from '@/services/stellar/recovery';
-import { colors } from '@/theme/tokens';
+
 import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
 import { createSensitiveClipboard } from '@/services/sensitiveClipboard';
 
@@ -24,6 +26,7 @@ const challengePositions = () => {
 };
 
 export default function WalletBackupScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
   const auth = useAuth(); const wallet = useTestnetWallet(); const router = useRouter(); const lock = useRef(false); const generation = useRef(0);
   const captureOwner = useRef<string | null>(null);
   const [password, setPassword] = useState(''); const [busy, setBusy] = useState(false);
@@ -178,7 +181,7 @@ export default function WalletBackupScreen() {
     </KeyboardAvoidingView>
   </SafeAreaView>;
 }
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background }, content: { padding: 20, maxWidth: 760, width: '100%', alignSelf: 'center' }, card: { padding: 20, backgroundColor: colors.surface, borderRadius: 24 },
   icon: { width: 58, height: 58, borderRadius: 19, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }, title: { color: colors.ink, fontSize: 19, fontWeight: '800', lineHeight: 26 },
   copy: { color: colors.text, fontSize: 13, lineHeight: 21, marginTop: 10 }, notice: { color: colors.brandDark, fontSize: 12, lineHeight: 20, padding: 14, backgroundColor: colors.brandSoft, borderRadius: 14, marginTop: 16 },

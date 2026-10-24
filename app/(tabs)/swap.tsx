@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Pressable, Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
@@ -27,6 +29,7 @@ const tokenInfo: Record<string, { name: string; color: string }> = {
 };
 
 export default function SwapScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
   const [from, setFrom] = useState<PaymentAsset>('XLM');
   const [to, setTo] = useState<PaymentAsset>('USDC');
   const [amount, setAmount] = useState('');
@@ -149,7 +152,7 @@ export default function SwapScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 44 },
   label: { color: colors.text, fontSize: 13, fontWeight: '800', marginTop: 18, marginBottom: 9 },

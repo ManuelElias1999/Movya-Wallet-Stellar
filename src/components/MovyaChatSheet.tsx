@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Alert, Pressable, Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -8,7 +10,6 @@ import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ActivityIndicator, Animated, BackHandler, Dimensions, Easing, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors } from '@/theme/tokens';
 import { MovyaLogo } from '@/components/MovyaLogo';
 import { useAuth } from '@/context/AuthContext';
 import { displayName, formatAssetBalance, formatEnteredAmount, formatReceivedAmount, paymentDescription } from '@/services/presentation';
@@ -57,6 +58,7 @@ function activityLine(activity: StellarActivity, publicKey: string, contacts: { 
 }
 
 export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetProps) {
+  const { styles, colors, mode } = useThemedStyles(createStyles);
   const { t, locale } = useLanguage();
   const wallet = useTestnetWallet();
   const auth = useAuth();
@@ -631,11 +633,11 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
 
   return (
     <>
-    {open ? <StatusBar style="light" /> : null}
+    {open ? <StatusBar style={mode === 'dark' ? 'light' : 'dark'} /> : null}
     <Animated.View pointerEvents={open ? 'auto' : 'none'} style={[styles.sheet, { transform: [{ translateY }] }]}> 
       <View style={styles.chatBackdrop} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flex}>
-        <BlurView intensity={86} tint="dark" style={[styles.header, { minHeight: 58 + insets.top, paddingTop: insets.top }]}>
+        <BlurView intensity={86} tint={mode} style={[styles.header, { minHeight: 58 + insets.top, paddingTop: insets.top }]}>
           <Pressable accessibilityLabel="Volver" accessibilityState={{ disabled: (['submitting', 'unknown'].includes(payment.phase) || swapBlocked(swapState)) }} disabled={(['submitting', 'unknown'].includes(payment.phase) || swapBlocked(swapState))} onPress={closeChat} style={styles.closeButton}><Ionicons name="chevron-back" size={27} color={colors.ink} /></Pressable>
           <View style={styles.identity}>
             <View style={styles.logoWrap}><MovyaLogo size={38} /><View style={styles.statusDot} /></View>
@@ -651,7 +653,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
           ) : message.role === 'movya' ? (
             <View key={message.id} style={styles.movyaGroup}>
               <View style={styles.senderRow}><MovyaLogo size={28} style={{ marginRight: 6 }} /><Text style={styles.sender}>Movya</Text><View style={styles.aiBadge}><Ionicons name="sparkles" size={10} color={colors.brand} /><Text style={styles.aiText}>IA</Text></View></View>
-              <BlurView intensity={72} tint="dark" style={[styles.bubble, styles.movyaBubble]}>
+              <BlurView intensity={72} tint={mode} style={[styles.bubble, styles.movyaBubble]}>
                 <Text style={styles.messageText}>{message.text}</Text>
                 <Text style={styles.messageTime}>Ahora</Text>
               </BlurView>
@@ -671,13 +673,13 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
               <LinearGradient colors={['#176BFF', '#064AAE']} end={{ x: 1, y: 1 }} style={[styles.bubble, styles.userBubble]}><Text translate={false} style={[styles.messageText, styles.userText]}>{message.text}</Text><Text style={styles.userTime}>Ahora</Text></LinearGradient>
             </View>
           ))}
-          {interpreting ? <View style={styles.movyaGroup}><View style={styles.senderRow}><MovyaLogo size={28} style={{ marginRight: 6 }} /><Text style={styles.sender}>Movya</Text><View style={styles.aiBadge}><Ionicons name="sparkles" size={10} color={colors.brand} /><Text style={styles.aiText}>IA</Text></View></View><BlurView intensity={72} tint="dark" style={[styles.bubble, styles.movyaBubble, styles.thinkingBubble]}><ActivityIndicator color={colors.brand} size="small" /><Text style={styles.thinkingText}>Entendiendo tu mensaje…</Text></BlurView></View> : null}
+          {interpreting ? <View style={styles.movyaGroup}><View style={styles.senderRow}><MovyaLogo size={28} style={{ marginRight: 6 }} /><Text style={styles.sender}>Movya</Text><View style={styles.aiBadge}><Ionicons name="sparkles" size={10} color={colors.brand} /><Text style={styles.aiText}>IA</Text></View></View><BlurView intensity={72} tint={mode} style={[styles.bubble, styles.movyaBubble, styles.thinkingBubble]}><ActivityIndicator color={colors.brand} size="small" /><Text style={styles.thinkingText}>Entendiendo tu mensaje…</Text></BlurView></View> : null}
           {!(swapState.phase === 'success' && swapState.receipt && archivedReceiptHashes.has(swapState.receipt.hash)) ? <SwapReviewCard state={swapState} flow={swapFlow} onCancel={() => { setChainedTransfer(null); setSuggestionsVisible(true); }} /> : null}
           {!(payment.phase === 'success' && payment.receipt && archivedReceiptHashes.has(payment.receipt.hash)) ? <ChatPaymentCard state={payment} flow={flow} onCancel={() => { setChainedTransfer(null); setSuggestionsVisible(true); }} /> : null}
           {suggestionsVisible ? <View style={styles.suggestions}>{suggestions.map((suggestion) => <Pressable key={suggestion} disabled={paymentBusy} accessibilityState={{ disabled: paymentBusy }} onPress={() => void sendDirect(t(suggestion))} style={styles.suggestion}><Ionicons name="sparkles-outline" size={14} color={colors.brand} /><Text style={styles.suggestionText}>{suggestion}</Text><Ionicons name="arrow-up-circle" size={15} color={colors.brand} /></Pressable>)}</View> : null}
         </ScrollView>
 
-        <BlurView intensity={88} tint="dark" style={[styles.composerArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <BlurView intensity={88} tint={mode} style={[styles.composerArea, { paddingBottom: Math.max(insets.bottom, 12) }]}>
           {recording ? (
             <View style={styles.recordingComposer}>
               <Pressable onPress={cancelRecording} style={styles.cancelRecording}><Ionicons name="trash-outline" size={20} color="#C84B63" /></Pressable>
@@ -699,15 +701,15 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1 }, sheet: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 50, elevation: 20, overflow: 'hidden', backgroundColor: colors.background }, chatBackdrop: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#0A101A' },
-  header: { minHeight: 58, width: '100%', paddingHorizontal: 6, flexDirection: 'row', alignItems: 'center', overflow: 'hidden', borderBottomWidth: 1, borderColor: colors.border, backgroundColor: 'rgba(13,23,37,0.94)' }, closeButton: { width: 42, height: 44, alignItems: 'center', justifyContent: 'center' }, infoButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }, headerDisabled: { opacity: 0.45 },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  flex: { flex: 1 }, sheet: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, zIndex: 50, elevation: 20, overflow: 'hidden', backgroundColor: colors.background }, chatBackdrop: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: colors.chatBackground },
+  header: { minHeight: 58, width: '100%', paddingHorizontal: 6, flexDirection: 'row', alignItems: 'center', overflow: 'hidden', borderBottomWidth: 1, borderColor: colors.border, backgroundColor: colors.surface }, closeButton: { width: 42, height: 44, alignItems: 'center', justifyContent: 'center' }, infoButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }, headerDisabled: { opacity: 0.45 },
   identity: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center' }, identityCopy: { flex: 1, minWidth: 0 }, logoWrap: { width: 38, height: 38, marginRight: 9 }, logo: { width: 38, height: 38, resizeMode: 'contain' }, statusDot: { position: 'absolute', right: -1, bottom: 0, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.positive, borderWidth: 2, borderColor: colors.surface }, title: { color: colors.ink, fontSize: 16, fontWeight: '800' }, status: { color: colors.positive, fontSize: 10, fontWeight: '600', marginTop: 2 },
   messages: { padding: 17, paddingBottom: 28 }, today: { alignSelf: 'center', color: colors.muted, fontSize: 9, fontWeight: '800', letterSpacing: 1.2, marginBottom: 18 }, movyaGroup: { alignItems: 'flex-start', marginBottom: 16 }, senderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, marginLeft: 3 }, messageAvatar: { width: 28, height: 28, resizeMode: 'contain', marginRight: 6 }, sender: { color: colors.ink, fontSize: 11, fontWeight: '800' }, aiBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: colors.brandSoft, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 3, marginLeft: 6 }, aiText: { color: colors.brand, fontSize: 8, fontWeight: '900' }, userGroup: { alignItems: 'flex-end', marginBottom: 15 }, userSender: { color: colors.muted, fontSize: 9, fontWeight: '800', marginRight: 4, marginBottom: 5 },
   thinkingBubble: { flexDirection: 'row', alignItems: 'center', gap: 9, paddingVertical: 13 }, thinkingText: { color: colors.muted, fontSize: 12, fontWeight: '700' },
-  bubble: { maxWidth: '84%', borderRadius: 20, paddingHorizontal: 15, paddingTop: 11, paddingBottom: 8, overflow: 'hidden' }, movyaBubble: { backgroundColor: 'rgba(23,34,53,0.96)', borderWidth: 1, borderColor: colors.border, borderTopLeftRadius: 6, shadowColor: '#000000', shadowOpacity: 0.22, shadowRadius: 13, shadowOffset: { width: 0, height: 6 }, elevation: 4 }, userBubble: { borderTopRightRadius: 6, shadowColor: '#000000', shadowOpacity: 0.22, shadowRadius: 13, shadowOffset: { width: 0, height: 6 }, elevation: 4 }, messageText: { color: colors.text, fontSize: 14, lineHeight: 20 }, userText: { color: '#FFFFFF' }, messageTime: { color: colors.muted, fontSize: 8, alignSelf: 'flex-end', marginTop: 5 }, userTime: { color: 'rgba(255,255,255,0.7)', fontSize: 8, alignSelf: 'flex-end', marginTop: 5 },
+  bubble: { maxWidth: '84%', borderRadius: 20, paddingHorizontal: 15, paddingTop: 11, paddingBottom: 8, overflow: 'hidden' }, movyaBubble: { backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border, borderTopLeftRadius: 6, shadowColor: '#000000', shadowOpacity: 0.22, shadowRadius: 13, shadowOffset: { width: 0, height: 6 }, elevation: 4 }, userBubble: { borderTopRightRadius: 6, shadowColor: '#000000', shadowOpacity: 0.22, shadowRadius: 13, shadowOffset: { width: 0, height: 6 }, elevation: 4 }, messageText: { color: colors.text, fontSize: 14, lineHeight: 20 }, userText: { color: '#FFFFFF' }, messageTime: { color: colors.muted, fontSize: 8, alignSelf: 'flex-end', marginTop: 5 }, userTime: { color: 'rgba(255,255,255,0.7)', fontSize: 8, alignSelf: 'flex-end', marginTop: 5 },
   voiceBubble: { minWidth: 235, flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 11 }, playButton: { width: 35, height: 35, borderRadius: 13, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }, voiceWave: { flex: 1, height: 31, flexDirection: 'row', alignItems: 'center', gap: 3, marginHorizontal: 10 }, voiceBar: { width: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.82)' }, voiceDuration: { color: '#FFFFFF', fontSize: 9, fontWeight: '700' },
   suggestions: { gap: 8, marginTop: 6, alignItems: 'flex-start' }, suggestion: { flexDirection: 'row', alignItems: 'center', gap: 7, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.brandIce, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 9, shadowColor: '#000000', shadowOpacity: 0.2, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 3 }, suggestionText: { color: colors.brandDark, fontSize: 11, fontWeight: '700' },
-  composerArea: { paddingHorizontal: 14, paddingTop: 11, paddingBottom: 12, overflow: 'hidden', backgroundColor: 'rgba(12,20,32,0.97)', borderTopWidth: 1, borderTopColor: colors.border, shadowColor: '#000000', shadowOpacity: 0.25, shadowRadius: 14, shadowOffset: { width: 0, height: -5 } }, composer: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceElevated, borderRadius: 25, borderWidth: 1, borderColor: colors.border, padding: 7, minHeight: 57, shadowColor: '#000000', shadowOpacity: 0.2, shadowRadius: 9, shadowOffset: { width: 0, height: 4 } }, attachButton: { width: 43, height: 43, borderRadius: 15, backgroundColor: colors.surfaceSoft, alignItems: 'center', justifyContent: 'center' }, input: { flex: 1, color: colors.ink, fontSize: 14, lineHeight: 20, minHeight: 43, maxHeight: 100, textAlignVertical: 'center', includeFontPadding: false, paddingVertical: 10, paddingHorizontal: 9 }, sendButton: { width: 43, height: 43, borderRadius: 16, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', shadowColor: colors.brand, shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } }, micButton: { backgroundColor: colors.surfaceSoft },
+  composerArea: { paddingHorizontal: 14, paddingTop: 11, paddingBottom: 12, overflow: 'hidden', backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, shadowColor: '#000000', shadowOpacity: 0.25, shadowRadius: 14, shadowOffset: { width: 0, height: -5 } }, composer: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceElevated, borderRadius: 25, borderWidth: 1, borderColor: colors.border, padding: 7, minHeight: 57, shadowColor: '#000000', shadowOpacity: 0.2, shadowRadius: 9, shadowOffset: { width: 0, height: 4 } }, attachButton: { width: 43, height: 43, borderRadius: 15, backgroundColor: colors.surfaceSoft, alignItems: 'center', justifyContent: 'center' }, input: { flex: 1, color: colors.ink, fontSize: 14, lineHeight: 20, minHeight: 43, maxHeight: 100, textAlignVertical: 'center', includeFontPadding: false, paddingVertical: 10, paddingHorizontal: 9 }, sendButton: { width: 43, height: 43, borderRadius: 16, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', shadowColor: colors.brand, shadowOpacity: 0.25, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } }, micButton: { backgroundColor: colors.surfaceSoft },
   recordingComposer: { height: 57, flexDirection: 'row', alignItems: 'center', gap: 9, backgroundColor: colors.surfaceElevated, borderRadius: 25, borderWidth: 1, borderColor: colors.border, padding: 7 }, cancelRecording: { width: 40, height: 40, borderRadius: 15, backgroundColor: colors.dangerSoft, alignItems: 'center', justifyContent: 'center' }, recordingStatus: { flex: 1, flexDirection: 'row', alignItems: 'center' }, recordingDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#E5536C', marginRight: 7 }, recordingTime: { color: colors.ink, fontSize: 12, fontWeight: '800' }, liveWave: { flex: 1, height: 28, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }, liveBar: { width: 3, borderRadius: 2, backgroundColor: colors.brand }, securityRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 8 }, security: { color: colors.muted, fontSize: 9 },
 });

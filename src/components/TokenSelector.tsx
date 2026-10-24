@@ -1,9 +1,10 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text } from '@/i18n/primitives';
 import { StyleSheet, View } from 'react-native';
 
 import { PressableScale } from '@/components/PressableScale';
 import { TokenIcon } from '@/components/TokenIcon';
-import { colors } from '@/theme/tokens';
 
 type TokenSelectorProps = { value: string; onChange: (value: string) => void; options?: string[] };
 
@@ -15,6 +16,7 @@ const tokenMeta: Record<string, { name: string; color: string }> = {
 };
 
 export function TokenSelector({ value, onChange, options = ['USDC', 'XLM', 'EURC', 'AQUA'] }: TokenSelectorProps) {
+  const { styles, colors } = useThemedStyles(createStyles);
   return (
     <View style={styles.container}>
       {options.map((option) => (
@@ -28,7 +30,7 @@ export function TokenSelector({ value, onChange, options = ['USDC', 'XLM', 'EURC
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { gap: 10 },
   option: { height: 58, flexDirection: 'row', alignItems: 'center', borderRadius: 18, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, paddingHorizontal: 14, shadowColor: colors.navy, shadowOpacity: 0.09, shadowRadius: 9, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
   active: { borderColor: colors.brand, backgroundColor: colors.brandSoft },

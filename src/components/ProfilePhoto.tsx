@@ -1,9 +1,11 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Image, StyleSheet, View } from 'react-native';
-import { colors } from '@/theme/tokens';
 
 type ProfilePhotoProps = { size?: number };
 
 export function ProfilePhoto({ size = 40 }: ProfilePhotoProps) {
+  const { styles } = useThemedStyles(createStyles);
   return (
     <View style={[styles.frame, { width: size, height: size, borderRadius: size / 2 }]}>
       <Image
@@ -15,6 +17,6 @@ export function ProfilePhoto({ size = 40 }: ProfilePhotoProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   frame: { overflow: 'hidden', backgroundColor: colors.surfaceSoft, borderWidth: 1, borderColor: colors.border },
 });

@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text } from '@/i18n/primitives';
 import { Image, ImageSourcePropType, StyleSheet, View } from 'react-native';
 
@@ -11,6 +13,7 @@ const tokenImages: Record<string, ImageSourcePropType> = {
 };
 
 export function TokenIcon({ code, color = colors.navy, size = 42 }: TokenIconProps) {
+  const { styles } = useThemedStyles(createStyles);
   const source = tokenImages[code];
   const imageSize = Math.round(size * 0.84);
 
@@ -21,7 +24,7 @@ export function TokenIcon({ code, color = colors.navy, size = 42 }: TokenIconPro
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(31,75,116,0.12)' },
   fallback: { color: '#FFFFFF', fontWeight: '900' },
 });

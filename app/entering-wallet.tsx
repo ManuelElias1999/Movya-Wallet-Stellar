@@ -1,14 +1,16 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Animated, Dimensions, Easing, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
-import { colors } from '@/theme/tokens';
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function EnteringWalletScreen() {
+  const { styles } = useThemedStyles(createStyles);
   const router = useRouter();
   const travelX = useRef(new Animated.Value(Math.min(screenWidth * 0.68, 520))).current;
   const runningY = useRef(new Animated.Value(0)).current;
@@ -48,7 +50,7 @@ export default function EnteringWalletScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

@@ -1,8 +1,8 @@
+import { useTheme } from '@/theme/Theme';
 import { Pressable } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
-import { colors } from '@/theme/tokens';
 
 export function usePasswordVisibility(password: string, busy: boolean) {
   const [visible, setVisible] = useState(false);
@@ -20,6 +20,7 @@ export function usePasswordVisibility(password: string, busy: boolean) {
 }
 
 export function PasswordVisibilityButton({ visible, onPress, disabled }: { visible: boolean; onPress: () => void; disabled?: boolean }) {
+  const { colors } = useTheme();
   return <Pressable accessibilityRole="button" accessibilityLabel={visible ? 'Ocultar contraseña' : 'Mostrar contraseña'} accessibilityState={{ disabled: Boolean(disabled) }} disabled={disabled} onPress={onPress} style={{ width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}>
     <Ionicons color={visible ? colors.brand : colors.muted} name={visible ? 'eye-off-outline' : 'eye-outline'} size={21} />
   </Pressable>;

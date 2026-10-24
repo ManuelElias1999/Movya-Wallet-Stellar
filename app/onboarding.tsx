@@ -1,3 +1,6 @@
+import type { ViewStyle } from 'react-native';
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -11,7 +14,7 @@ import { AnimatedDashboardBackground } from '@/components/AnimatedDashboardBackg
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
 import { PressableScale } from '@/components/PressableScale';
 import { MovyaLogo } from '@/components/MovyaLogo';
-import { colors } from '@/theme/tokens';
+
 import { useAuth } from '@/context/AuthContext';
 import { displayName } from '@/services/presentation';
 
@@ -23,6 +26,7 @@ const steps = [
 ];
 
 export default function OnboardingScreen() {
+  const { styles, colors, mode } = useThemedStyles(createStyles);
   const router = useRouter();
   const auth = useAuth();
   const [step, setStep] = useState(0);
@@ -51,7 +55,7 @@ export default function OnboardingScreen() {
           <Text style={styles.description}>{current.description}</Text>
         </View>
 
-        <BlurView intensity={74} tint="dark" style={[styles.demoCard, Platform.OS === 'web' ? webGlass : null]}>
+        <BlurView intensity={74} tint={mode} style={[styles.demoCard, Platform.OS === 'web' ? webGlass : null]}>
           <View style={styles.previewStack}>
             <View pointerEvents={step === 0 ? 'auto' : 'none'} style={[styles.previewLayer, step !== 0 && styles.previewHidden]}><OpenMovyaPreview /></View>
             <View pointerEvents={step === 1 ? 'auto' : 'none'} style={[styles.previewLayer, step !== 1 && styles.previewHidden]}><ChatPreview /></View>
@@ -80,6 +84,7 @@ export default function OnboardingScreen() {
 }
 
 function OpenMovyaPreview() {
+  const { styles, colors } = useThemedStyles(createStyles);
   return (
     <View style={styles.openPreview}>
       <LinearGradient colors={['#071F43', '#0A3E78', '#0B6EAA']} end={{ x: 1, y: 1 }} start={{ x: 0, y: 0 }} style={styles.fakeBalanceCard}>
@@ -111,6 +116,7 @@ function OpenMovyaPreview() {
 }
 
 function ChatPreview() {
+  const { styles, colors } = useThemedStyles(createStyles);
   const auth = useAuth();
   const name = displayName(auth.user?.user_metadata).split(/\s+/)[0];
   return (
@@ -125,6 +131,7 @@ function ChatPreview() {
 }
 
 function ConfirmationPreview() {
+  const { styles } = useThemedStyles(createStyles);
   return (
     <View style={styles.phoneDemo}>
       <View style={styles.chatHeader}><View style={[styles.chatLogo, { borderWidth: 0 }]}><DemoAnimatedLogo size={39} /></View><View><Text style={styles.chatName}>Movya</Text><Text style={styles.chatStatus}>En línea</Text></View></View>
@@ -136,6 +143,7 @@ function ConfirmationPreview() {
 }
 
 function SuccessPreview() {
+  const { styles, colors } = useThemedStyles(createStyles);
   return (
     <View style={styles.phoneDemo}>
       <View style={styles.chatHeader}><View style={[styles.chatLogo, { borderWidth: 0 }]}><DemoAnimatedLogo size={39} /></View><View><Text style={styles.chatName}>Movya</Text><Text style={styles.chatStatus}>En línea</Text></View></View>
@@ -148,6 +156,7 @@ function SuccessPreview() {
 }
 
 function DemoComposer() {
+  const { styles, colors } = useThemedStyles(createStyles);
   return <View style={styles.fakeComposer}><Ionicons color={colors.muted} name="mic-outline" size={18} /><Text style={styles.fakeComposerText}>Pregúntale algo a Movya…</Text><View style={styles.fakeSend}><Ionicons color="#FFFFFF" name="arrow-up" size={15} /></View></View>;
 }
 
@@ -156,12 +165,13 @@ function DemoAnimatedLogo({ size }: { size: number }) {
 }
 
 function DemoMessageLogo() {
+  const { styles } = useThemedStyles(createStyles);
   return <View style={[styles.messageLogoRing, { borderWidth: 0 }]}><MovyaLogo size={29} /></View>;
 }
 
-const webGlass = { backdropFilter: 'blur(28px) saturate(170%)', WebkitBackdropFilter: 'blur(28px) saturate(170%)' } as const;
+const webGlass: ViewStyle & { backdropFilter: string; WebkitBackdropFilter: string } = { backdropFilter: 'blur(28px) saturate(170%)', WebkitBackdropFilter: 'blur(28px) saturate(170%)' };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background }, header: { width: '100%', maxWidth: 760, alignSelf: 'center', height: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 }, miniBrand: { flexDirection: 'row', alignItems: 'center', gap: 7 }, miniLogo: { width: 34, height: 34, resizeMode: 'contain' }, miniBrandText: { color: colors.ink, fontSize: 17, fontWeight: '900' }, skip: { paddingHorizontal: 15, paddingVertical: 9, borderRadius: 13, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }, skipText: { color: colors.brandDark, fontSize: 11, fontWeight: '800' },
   content: { flexGrow: 1, width: '100%', maxWidth: 590, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 22, paddingBottom: 28, justifyContent: 'center' }, copy: { marginBottom: 26 }, eyebrow: { color: colors.brandDark, fontSize: 10, fontWeight: '900', letterSpacing: 1.5 }, title: { color: colors.ink, fontSize: 28, lineHeight: 33, fontWeight: '900', letterSpacing: -0.8, marginTop: 8 }, description: { color: colors.muted, fontSize: 13, lineHeight: 20, marginTop: 10, maxWidth: 500 },
   demoCard: { minHeight: 480, borderRadius: 31, overflow: 'hidden', padding: 22, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, shadowColor: '#000000', shadowOpacity: 0.3, shadowRadius: 25, shadowOffset: { width: 0, height: 13 }, elevation: 8 }, previewStack: { flex: 1, minHeight: 434 }, previewLayer: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, opacity: 1 }, previewHidden: { opacity: 0 }, centerPreview: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14 }, bigLogoHalo: { width: 126, height: 126, borderRadius: 42, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceElevated, shadowColor: '#000000', shadowOpacity: 0.3, shadowRadius: 24, shadowOffset: { width: 0, height: 10 } }, bigLogo: { width: 116, height: 116, resizeMode: 'contain' }, onlineDot: { position: 'absolute', right: 7, bottom: 8, width: 17, height: 17, borderRadius: 9, backgroundColor: colors.positive, borderWidth: 3, borderColor: colors.surface }, previewTitle: { color: colors.ink, fontSize: 21, fontWeight: '900', marginTop: 17 }, previewText: { maxWidth: 320, color: colors.muted, fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 7 }, capabilities: { flexDirection: 'row', gap: 8, marginTop: 20 }, capability: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 13, backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }, capabilityText: { color: colors.brandDark, fontSize: 10, fontWeight: '800' },

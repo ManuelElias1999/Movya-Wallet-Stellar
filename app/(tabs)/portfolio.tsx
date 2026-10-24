@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
@@ -14,10 +16,11 @@ import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { useMarketPrices } from '@/hooks/useMarketPrices';
 import { assetUsdValue, formatMarketChange, formatUnitPrice, formatUsd, portfolioUsdTotal } from '@/services/marketPrices';
 import { formatAssetBalance } from '@/services/presentation';
-import { colors } from '@/theme/tokens';
+
 import { useLanguage } from '@/i18n/Language';
 
 export default function PortfolioScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
   const { locale } = useLanguage();
   const [selectedAsset, setSelectedAsset] = useState<AssetDetail | null>(null);
   const account = useStellarAccount();
@@ -72,7 +75,7 @@ export default function PortfolioScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background },
   content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 44 },
   summary: { minHeight: 104, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, borderRadius: 24, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, shadowColor: '#000000', shadowOpacity: 0.24, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },

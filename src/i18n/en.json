@@ -1,4 +1,13 @@
 {
+  "Apariencia": "Appearance",
+  "Claro": "Light",
+  "Oscuro": "Dark",
+  "Modo claro": "Light mode",
+  "Modo oscuro": "Dark mode",
+  "Activar modo claro": "Switch to light mode",
+  "Activar modo oscuro": "Switch to dark mode",
+  "Elige modo claro u oscuro. Tu preferencia queda guardada.": "Choose light or dark mode. Your preference stays saved.",
+  "Abrir ajustes y mi cuenta": "Open settings and my account",
   "Español": "Spanish",
   "Idioma": "Language",
   "Idioma y región": "Language and region",

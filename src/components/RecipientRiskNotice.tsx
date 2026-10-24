@@ -1,11 +1,13 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { StyleSheet, View } from 'react-native';
 import { Text } from '@/i18n/primitives';
 import { groupAddress, type RecipientRisk } from '@/services/security/recipientRisk';
-import { colors } from '@/theme/tokens';
 
 // Shown on payment reviews: new recipient badge, look-alike warning and the
 // extra step for large payments to new addresses.
 export function RecipientRiskNotice({ risk, destination }: { risk: RecipientRisk; destination: string }) {
+  const { styles } = useThemedStyles(createStyles);
   if (!risk.isNew && !risk.lookalike) return null;
   return <View style={[styles.box, risk.lookalike ? styles.danger : null]} accessibilityLiveRegion="polite">
     {risk.lookalike ? <>
@@ -22,7 +24,7 @@ export function RecipientRiskNotice({ risk, destination }: { risk: RecipientRisk
     {risk.needsExtraConfirmation && !risk.lookalike ? <Text style={styles.copy}>Por el monto, te pediremos una confirmación adicional.</Text> : null}
   </View>;
 }
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   box: { marginTop: 16, padding: 14, borderRadius: 14, backgroundColor: colors.warningSoft, borderWidth: 1, borderColor: '#7F5E2E' },
   danger: { backgroundColor: colors.dangerSoft, borderColor: '#754052' },
   title: { color: colors.ink, fontSize: 13, fontWeight: '800' }, copy: { color: colors.text, fontSize: 12, lineHeight: 18, marginTop: 6 },

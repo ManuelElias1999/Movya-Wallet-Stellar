@@ -1,12 +1,13 @@
+import { useTheme } from '@/theme/Theme';
 import { Stack, usePathname } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Keyboard, View } from 'react-native';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { MovyaChatSheet } from '@/components/MovyaChatSheet';
 import { tabForPath } from '@/services/presentation';
-import { colors } from '@/theme/tokens';
 
 export default function AppLayout() {
+  const { colors } = useTheme();
   const pathname = usePathname();
   const active = tabForPath(pathname);
   const [chatOpen, setChatOpen] = useState(false);

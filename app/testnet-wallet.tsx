@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
@@ -12,9 +14,9 @@ import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance, SubmissionUnknownError } from '@/services/stellar/payments';
 import { useAuth } from '@/context/AuthContext';
 import { TestnetFundingButtons } from '@/components/TestnetFundingButtons';
-import { colors } from '@/theme/tokens';
 
 export default function TestnetWalletScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
   const wallet = useTestnetWallet();
   const auth = useAuth();
   const router = useRouter();
@@ -67,7 +69,7 @@ export default function TestnetWalletScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background }, content: { padding: 20, gap: 18, maxWidth: 760, width: '100%', alignSelf: 'center' },
   card: { backgroundColor: colors.surface, borderRadius: 24, padding: 20 }, title: { fontSize: 19, fontWeight: '800', color: colors.ink },
   copy: { fontSize: 13, lineHeight: 20, color: colors.text, marginTop: 10 }, notice: { fontSize: 12, lineHeight: 19, color: colors.brandDark, marginTop: 14, backgroundColor: colors.brandSoft, borderRadius: 12, padding: 12 },

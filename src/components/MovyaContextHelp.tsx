@@ -1,3 +1,5 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Pressable, Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -7,7 +9,6 @@ import { Modal, StyleSheet, View } from 'react-native';
 
 import { AnimatedMovyaLogo } from '@/components/AnimatedMovyaLogo';
 import { PressableScale } from '@/components/PressableScale';
-import { colors } from '@/theme/tokens';
 
 type MovyaContextHelpProps = {
   question: string;
@@ -17,6 +18,7 @@ type MovyaContextHelpProps = {
 };
 
 export function MovyaContextHelp({ question, actionPrompt, explanationTitle, explanationSteps }: MovyaContextHelpProps) {
+  const { styles, colors, mode } = useThemedStyles(createStyles);
   const router = useRouter();
   const [visible, setVisible] = useState(true);
   const [explaining, setExplaining] = useState(false);
@@ -41,7 +43,7 @@ export function MovyaContextHelp({ question, actionPrompt, explanationTitle, exp
       <Modal animationType="fade" onRequestClose={() => setExplaining(false)} transparent visible={explaining}>
         <Pressable onPress={() => setExplaining(false)} style={styles.backdrop} />
         <View style={styles.modalPosition} pointerEvents="box-none">
-          <BlurView intensity={88} tint="dark" style={styles.explanation}>
+          <BlurView intensity={88} tint={mode} style={styles.explanation}>
             <View style={styles.explanationHeader}>
               <View style={styles.modalLogo}><AnimatedMovyaLogo size={48} /></View>
               <View style={styles.titleCopy}><Text style={styles.modalEyebrow}>MOVYA TE EXPLICA</Text><Text style={styles.modalTitle}>{explanationTitle}</Text></View>
@@ -58,7 +60,7 @@ export function MovyaContextHelp({ question, actionPrompt, explanationTitle, exp
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'flex-end' },
   logoWrap: { width: 47, height: 47, alignItems: 'center', justifyContent: 'center', marginBottom: 5 }, online: { position: 'absolute', right: 0, bottom: 1, width: 10, height: 10, borderRadius: 5, backgroundColor: colors.positive, borderWidth: 2, borderColor: '#F9FBFF' },
   copy: { flex: 1, marginLeft: 10, paddingLeft: 14, paddingRight: 32, paddingTop: 12, paddingBottom: 13, backgroundColor: colors.surface, borderRadius: 20, borderBottomLeftRadius: 6, borderWidth: 1, borderColor: colors.border, shadowColor: '#000000', shadowOpacity: 0.22, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 }, eyebrow: { color: colors.brand, fontSize: 9, fontWeight: '900', letterSpacing: 0.35 }, question: { color: colors.ink, fontSize: 13, lineHeight: 18, fontWeight: '700', marginTop: 3 }, actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 10 },

@@ -1,4 +1,6 @@
-import { Pressable, Share, Text } from '@/i18n/primitives';
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
+import { Share, Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { useState } from 'react';
@@ -12,11 +14,12 @@ import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { PressableScale } from '@/components/PressableScale';
 import { StellarNetworkBadge } from '@/components/StellarNetworkBadge';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
-import { colors, radius } from '@/theme/tokens';
+import { radius } from '@/theme/tokens';
 
 const fallbackAddress = 'GAJIBAJ3YTJLXHVROCHO374P3LM4YLQFGT6WLWS2NOWO2PLHH3CWMDDQ';
 
 export default function ReceiveScreen() {
+  const { styles, colors } = useThemedStyles(createStyles);
   const wallet = useTestnetWallet();
   const demoAddress = wallet.publicKey ?? fallbackAddress;
   const [copied, setCopied] = useState(false);
@@ -81,7 +84,7 @@ export default function ReceiveScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.background }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 40, alignItems: 'center' },
   helper: { width: '100%', marginTop: 18 },
   title: { color: colors.ink, fontSize: 23, fontWeight: '800', marginTop: 10, textAlign: 'center' }, subtitle: { color: colors.muted, fontSize: 13, lineHeight: 19, textAlign: 'center', marginTop: 7, paddingHorizontal: 20 },

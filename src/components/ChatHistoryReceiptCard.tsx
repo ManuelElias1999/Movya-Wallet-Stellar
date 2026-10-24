@@ -1,12 +1,14 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Pressable, Text } from '@/i18n/primitives';
 import type { ChatReceiptHistoryMessage } from '@/services/chatHistory';
-import { colors } from '@/theme/tokens';
 
 export function ChatHistoryReceiptCard({ receipt }: { receipt: ChatReceiptHistoryMessage }) {
+  const { styles, colors } = useThemedStyles(createStyles);
   const [expanded, setExpanded] = useState(false);
   return <View style={styles.card} accessibilityLiveRegion="polite">
     <View style={styles.header}>
@@ -23,7 +25,7 @@ export function ChatHistoryReceiptCard({ receipt }: { receipt: ChatReceiptHistor
   </View>;
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: { borderRadius: 22, padding: 13, marginBottom: 16, backgroundColor: colors.surface, borderWidth: 1.5, borderColor: '#BBD6FF' },
   header: { flexDirection: 'row', alignItems: 'center' }, icon: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.positive, alignItems: 'center', justifyContent: 'center' },
   copy: { flex: 1, marginLeft: 11 }, title: { color: colors.positive, fontSize: 15, fontWeight: '900' }, summary: { color: colors.ink, fontSize: 12, lineHeight: 17, marginTop: 2, fontWeight: '700' },

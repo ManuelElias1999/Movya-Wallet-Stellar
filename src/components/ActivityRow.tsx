@@ -1,8 +1,8 @@
+import type { ThemeColors } from '@/theme/tokens';
+import { useThemedStyles } from '@/theme/Theme';
 import { Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, View } from 'react-native';
-
-import { colors } from '@/theme/tokens';
 
 type ActivityRowProps = {
   type: string;
@@ -14,6 +14,7 @@ type ActivityRowProps = {
 };
 
 export function ActivityRow({ type, detail, amount, time, positive, hidden = false }: ActivityRowProps) {
+  const { styles, colors } = useThemedStyles(createStyles);
   const icon = type === 'Swap' ? 'swap-horizontal' : positive ? 'arrow-down' : 'arrow-up';
 
   return (
@@ -30,7 +31,7 @@ export function ActivityRow({ type, detail, amount, time, positive, hidden = fal
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 13 },
   icon: { width: 42, height: 42, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   positiveIcon: { backgroundColor: colors.positiveSoft },
