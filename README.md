@@ -51,7 +51,7 @@ This repository contains the Expo wallet application. The marketing website is a
 | Receive | QR code, public address, copy and native share | For receiving tokens on Stellar Testnet |
 | Contacts | Add by public address or registered email; search, rename, favorite and delete | Email lookup requires an exact verified account; no public directory |
 | Balances and activity | Live Horizon balances, sent/received payments, grouped swaps, saved contact names and explorer receipts | Main account balance is shown in XLM; no fabricated USD conversion |
-| Funding | Friendbot XLM request; USDC trustline setup and Circle faucet shortcut | Circle's request is completed externally; token delivery is not automatic |
+| Funding | New accounts automatically receive 5 XLM, enable the verified USDC trustline locally and receive 10 USDC | Testnet only; requires a funded backend distributor and applies once to wallets created after the funding migration |
 | Movya chat | Basic text intents, balance answers, contact selection and in-chat payment review, confirmation and receipts | Rule-based parser, not an integrated LLM; XLM/USDC signing uses the same validated payment service as Send |
 | Onboarding and UI | First-registration guide, wallet forge animation, fixed bottom navigation and password visibility controls | Guide is simulated; visual and keyboard behavior still require device QA |
 | Native acceleration | Local CommonCrypto/JCA module for backup key derivation outside JavaScript | Requires a compiled app; Expo Go uses the portable engine |
@@ -66,12 +66,12 @@ Earlier wallets created without a mnemonic retain their original address and pri
 2. **Let Movya prepare the wallet.** The mascot forges a wallet with a hammer, anvil and sparks while the app displays the actual operation stage and elapsed time. There is no simulated completion percentage.
 3. **Save the backup.** Verify your password to reveal and copy the recovery phrase or private key. Tapping the acknowledgment before viewing the backup explains what to do first. The reminder can also be deferred to **Cuenta → Seguridad → Respaldo y claves**.
 4. **Try the guide.** New registrations see an interactive tutorial that can be completed or skipped. Returning users go directly to the dashboard.
-5. **Fund the account.** Use **Pedir fondos en XLM** and **Pedir fondos en USDC** below the main dashboard actions.
+5. **Receive Testnet funds.** A newly created wallet automatically receives 5 XLM, signs its own USDC trustline on the device and then receives 10 USDC. No faucet step is shown on the dashboard.
 6. **Save someone.** Add a contact using a Stellar address or the exact email of another registered Movya user.
 7. **Send a payment.** Use Send or a command such as `Envía 0.1 XLM a Aya`. Review the full recipient, amount, asset, network and fee before confirming.
 8. **Check the result.** A confirmed payment or swap returns its hash and a link to that specific transaction in Stellar Expert. Activity uses the saved contact's name for transfers and groups each swap with its Movya fee into one movement.
 
-For an initial USDC test, activate both accounts with XLM, enable their USDC trustlines, obtain test USDC from Circle and refresh the balance before sending. The funding button does not bypass faucet eligibility checks, CAPTCHA or rate limits.
+The welcome balance is idempotent and limited to newly inserted wallets. A retry reuses the recorded Stellar transaction instead of constructing another payment. Existing accounts are not enrolled retroactively and can still use the separate developer Testnet screen when manual funding is needed.
 
 Each Testnet swap charges a 0.5% Movya fee in the asset the user provides. The entered amount already includes this fee: 99.5% is routed through Stellar DEX and 0.5% is sent to Movya's public treasury in the same atomic transaction. The review shows both portions, the separate maximum network fee and the complete treasury address before the user confirms.
 
@@ -82,6 +82,7 @@ Each Testnet swap charges a 0.5% Movya fee in the asset the user provides. The e
 | iOS, Android and web app | Expo SDK 57, React Native 0.86, React 19 and TypeScript |
 | Navigation and interface | Expo Router, React Native Animated, SVG, gradients, blur and safe-area handling |
 | Accounts and database | Supabase Auth, PostgreSQL, row-level security and wallet registration RPCs |
+| Welcome funding | Authenticated Supabase Edge Function, private Testnet distributor and resumable one-time funding records |
 | Wallet and transactions | Stellar SDK; transaction validation and signing on the client |
 | Blockchain reads and submission | Stellar Testnet Horizon |
 | Native storage | Expo SecureStore scoped to the account |
@@ -139,6 +140,7 @@ Run these migrations in order in your project's SQL Editor:
 3. [`20261019000000_security_hardening.sql`](supabase/migrations/20261019000000_security_hardening.sql)
 4. [`20261019010000_devices_contacts_mfa.sql`](supabase/migrations/20261019010000_devices_contacts_mfa.sql)
 5. [`20261019205037_bind_device_sessions.sql`](supabase/migrations/20261019205037_bind_device_sessions.sql)
+6. [`20261025200613_testnet_welcome_funding.sql`](supabase/migrations/20261025200613_testnet_welcome_funding.sql)
 
 Enable email/password authentication and configure confirmation templates and SMTP for verified-email onboarding. For a private Testnet test without SMTP, confirmation can be temporarily disabled; those email identities have not been proven to belong to the registrant. Restore verification before a public rollout.
 

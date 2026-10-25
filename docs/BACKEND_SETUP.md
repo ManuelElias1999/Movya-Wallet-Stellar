@@ -5,7 +5,7 @@
 The code is implemented; a Supabase project must be configured before email registration is live. Without both public environment values, the app offers **Continuar con mi wallet de pruebas** and retains the existing developer wallet. It does not pretend to register users.
 
 1. Create a Supabase project dedicated to Movya Testnet.
-2. In its **SQL Editor**, run the SQL migrations in filename order: `20261002010000_accounts_contacts.sql`, `20261002020000_recovery_words.sql`, `20261019000000_security_hardening.sql`, `20261019010000_devices_contacts_mfa.sql`, and `20261019205037_bind_device_sessions.sql`. Skip only migrations that are already recorded as applied. This creates profiles, encrypted wallet and contact backups, contacts, devices, row-level security policies, and the required RPCs.
+2. In its **SQL Editor**, run the SQL migrations in filename order: `20261002010000_accounts_contacts.sql`, `20261002020000_recovery_words.sql`, `20261019000000_security_hardening.sql`, `20261019010000_devices_contacts_mfa.sql`, `20261019205037_bind_device_sessions.sql`, and `20261025200613_testnet_welcome_funding.sql`. Skip only migrations that are already recorded as applied. This creates profiles, encrypted wallet and contact backups, contacts, devices, row-level security policies, and the required RPCs.
 3. In **Authentication**, enable Email/password, keep email confirmation enabled, and require passwords of at least 12 characters.
 4. In **Email Templates → Confirm signup**, include the code in the template:
 
@@ -26,14 +26,43 @@ The code is implemented; a Supabase project must be configured before email regi
    ```
 
    A legacy anon key also works. Never use a `service_role` JWT or `sb_secret_*` key. Do not overwrite the existing Stellar configuration.
-7. Restart Metro with `npx expo start --go --clear`.
+7. Configure and deploy the welcome-funding function as described below.
+8. Restart Metro with `npx expo start --go --clear`.
+
+## Automatic Testnet welcome funding
+
+Use a dedicated **Testnet-only** Stellar account as the distributor. It must have enough XLM for account creation, reserves and fees, plus the exact USDC Testnet asset issued by `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5`. Every new user consumes 5 XLM and 10 USDC, plus distributor fees. Never reuse this account on mainnet.
+
+In **Supabase Dashboard → Edge Functions → Secrets**, create:
+
+```text
+STELLAR_TESTNET_DISTRIBUTOR_SECRET
+```
+
+Its value is the distributor's Stellar secret beginning with `S`. Do not paste that value into chat, commit it, add it to Expo `.env`, or prefix it with `EXPO_PUBLIC_`. Supabase provides `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` to the function automatically.
+
+Deploy the function from the linked repository:
+
+```bash
+npx supabase functions deploy testnet-welcome-funding --project-ref YOUR_PROJECT_REF --no-verify-jwt
+```
+
+`--no-verify-jwt` disables only the gateway's legacy JWT check. The function itself requires the Bearer session and validates it with Supabase Auth before reading eligibility or moving funds.
+
+The migration enrolls only wallet rows inserted **after** it is applied. The app then performs this sequence automatically:
+
+1. The authenticated Edge Function verifies that the signed-in user owns the eligible public key and sends exactly 5 XLM.
+2. The device signs a `changeTrust` operation for the verified USDC issuer. The wallet private key never reaches Supabase.
+3. The Edge Function verifies the trustline and sends exactly 10 USDC.
+
+Each asset has an atomic lease plus a persisted signed transaction hash/XDR. If Horizon times out, a retry checks or resubmits that same transaction; it does not create a second gift. The funding table and its RPCs are inaccessible to `anon` and `authenticated`; only the service role used inside the function can operate them.
 
 For a private Testnet session without SMTP, you may temporarily disable **Confirm email**. Supabase then auto-confirms new users and Movya goes straight to wallet creation. Such an email has not been proven to belong to the registrant: email contacts are only test identities in this mode. Enable confirmation and configure SMTP before admitting real users. In the current hosted dashboard, editing the confirmation template may require custom SMTP first.
 
 ## User flow
 
 - Register with name, email and a password of at least 12 characters.
-- A new account gets its own wallet automatically. There is no option to link the separate developer wallet. Existing account wallets keep their address and funds.
+- A new account gets its own wallet automatically. There is no option to link the separate developer wallet. Existing account wallets keep their address and funds. After the funding migration, a newly inserted wallet also receives 5 XLM, enables USDC locally and receives 10 USDC automatically.
 - Enter the email code. After verification, the app authenticates the password, creates or restores the wallet, and opens the backup step. New wallets have 12 BIP39 English words. The backup step and Movya guide belong to account creation; subsequent login, session restoration and login on another device go straight to the dashboard. The guide can be completed or skipped and is not replayed after login. Confirm your password to view them, save them in order, and continue to the tutorial; you can also defer the reminder until later. A Stellar public key exists immediately; use **Pedir fondos en XLM** to activate it on the network.
 - In **Cuenta → Seguridad → Respaldo y claves**, confirm your password to view the phrase or the Stellar private key (S...). The screen hides its contents after a minute, on navigation and when the app leaves the foreground. Native capture prevention and iOS app-switcher protection are requested before disclosure. Web cannot block operating-system screenshots. Both reveal actions use the same button color. After password verification, explicit copy buttons copy the entire phrase in its original order or the private key, including during signup. Clipboard cleanup is best effort after 60 seconds and only clears the matching value, never newer clipboard text.
 - Wallets generated before mnemonic support keep their existing address and private key. They have no 12-word phrase and the app says so; it never fabricates words for an unrelated address.
@@ -47,8 +76,7 @@ For a private Testnet session without SMTP, you may temporarily disable **Confir
 - Payment history matches the counterparty’s complete address to saved contacts in either direction, follows contact renames, and retains shortened addresses for unknown parties. The chat greeting uses the signed-in display name.
 - Add a contact by a complete Stellar address (checksum verified) or a verified Movya email. Unknown/unverified emails are rejected. Duplicate addresses are rejected per owner.
 - Favorite, rename, search and delete contacts. Send and chat use the same saved list. `Envía 0.1 XLM a Juan` opens the real review screen when Juan is saved. Duplicate names require choosing a contact. Email destinations are resolved again before review.
-- **Pedir fondos en XLM** calls Friendbot and refreshes the balance. Friendbot determines eligibility; it is not an unlimited refill service.
-- **Pedir fondos en USDC** enables the official USDC trustline if needed (requires XLM for reserve/fee), copies the address, and opens Circle's faucet. Choose **USDC → Stellar Testnet**, paste the address and complete Circle's request. Circle uses CAPTCHA and rate limits, so this button does not claim automatic token delivery. Refresh the balance after returning.
+- The dashboard does not ask new users to visit Friendbot or Circle. Welcome funding runs in the background and the balance refreshes after XLM, trustline and USDC are confirmed. The manual developer Testnet route remains available for old/non-eligible test wallets.
 
 ## Data and security boundaries
 
@@ -66,6 +94,6 @@ This is a Testnet prototype, not a production wallet. In-app password reset/chan
 
 `npm run typecheck` and `npx expo export --platform ios --platform web` validate compilation. Hosted Supabase email delivery, real login and iPhone interaction require the configured project and manual verification; local database tests do not claim to cover those services.
 
-Manual acceptance: register two verified users, request XLM, add one by email, send 0.1 XLM, verify the ledger receipt, rename/favorite the contact, logout/login and check the same address/contact, then sign in on another device and verify the same words and address. On the iPhone, manually verify hiding when leaving the screen/backgrounding and native capture prevention. Never use mainnet funds.
+Manual acceptance: after deploying the migration, function and secret, register a new verified user and confirm that the dashboard reaches 5 XLM and 10 USDC without opening a faucet. Verify one XLM funding transaction, one local `changeTrust` transaction and one USDC funding transaction in Stellar Expert. Close/reopen the app during the process and confirm the balances do not double. Then add another user by email, send 0.1 XLM, verify the receipt, logout/login and check the same address/contact. Never use mainnet funds.
 
 References: [Supabase React Native Auth](https://supabase.com/docs/guides/auth/quickstarts/react-native), [Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security), [Custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp), [Circle faucet](https://faucet.circle.com/).

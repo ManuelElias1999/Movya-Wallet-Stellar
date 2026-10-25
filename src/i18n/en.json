@@ -863,5 +863,12 @@
   "¡Claro! Tus últimas {0} operaciones son:\n{1}": "Sure! Your latest {0} transactions are:\n{1}",
   "Vaciar conversación": "Clear conversation",
   "Se borrarán los mensajes y comprobantes guardados en este dispositivo. Tus fondos y tu actividad en Stellar no se borrarán.": "Messages and receipts saved on this device will be deleted. Your funds and Stellar activity will not be deleted.",
-  "Vaciar chat": "Clear chat"
+  "Vaciar chat": "Clear chat",
+  "Este QR corresponde a tu wallet de Testnet. En las cuentas nuevas, Movya habilita USDC y entrega los fondos de prueba automáticamente.": "This QR belongs to your Testnet wallet. For new accounts, Movya enables USDC and delivers test funds automatically.",
+  "No pudimos entregar los fondos de prueba. Vuelve a intentarlo.": "We could not deliver the test funds. Try again.",
+  "El backend devolvió un estado de fondos inválido.": "The backend returned an invalid funding status.",
+  "Stellar todavía está procesando tus fondos de bienvenida. Se reintentará cuando vuelvas a abrir Movya.": "Stellar is still processing your welcome funds. Movya will retry when you open it again.",
+  "Stellar todavía no muestra la cuenta nueva.": "Stellar does not show the new account yet.",
+  "La elegibilidad de los fondos cambió durante la activación.": "Funding eligibility changed during activation.",
+  "No pudimos completar tus fondos de bienvenida.": "We could not complete your welcome funding."
 }

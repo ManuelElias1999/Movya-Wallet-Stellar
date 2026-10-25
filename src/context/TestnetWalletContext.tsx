@@ -4,8 +4,10 @@ import { Platform } from 'react-native';
 import { useAuth } from './AuthContext';
 import { readPendingSweep, readWallet, readWalletMeta, removeWallet, updateWalletMeta, writeWallet, type WalletMeta } from '@/services/backend/storage';
 import { DeviceRevokedError, touchDevice } from '@/services/backend/devices';
+import { requestWelcomeFunding } from '@/services/backend/testnetWelcomeFunding';
 import { createRecoveryWallet } from '@/services/stellar/recovery';
 import { assertTestnet, readTestnetAccount, transactionHash, USDC_ISSUER, validateAddress, validateReview, type PaymentReview, type TestnetAccount } from '@/services/stellar/payments';
+import { runAutomaticWelcomeFunding } from '@/services/stellar/welcomeFunding';
 import { MOVYA_TREASURY, validateSwapReview, type SwapReview } from '@/services/stellar/swaps';
 import type { PreparedSweep } from '@/services/stellar/sweep';
 import type { PreparedRecoverySetup } from '@/services/stellar/signerTransactions';
@@ -43,6 +45,7 @@ export function TestnetWalletProvider({ children }: { children: ReactNode }) {
   const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const createLock = useRef(false);
+  const welcomeFundingRuns = useRef(new Set<string>());
   const generation = useRef(0);
   const publicKey = meta?.accountId ?? null;
 
@@ -132,6 +135,31 @@ export function TestnetWalletProvider({ children }: { children: ReactNode }) {
     transaction.sign(keypair);
     return transaction.toXDR();
   };
+
+  // A wallet inserted after the welcome-funding migration is eligible once.
+  // The backend sends XLM, this locally unlocked wallet signs only its own
+  // USDC trustline, and the backend then sends USDC. Distributor keys never
+  // enter this React Native process.
+  const welcomeHandlers = useRef({ signWith, refresh });
+  welcomeHandlers.current = { signWith, refresh };
+  useEffect(() => {
+    const signerPublicKey = meta?.signerPublicKey;
+    if (!auth.configured || !auth.ready || !initialized || !userId || !publicKey || !signerPublicKey) return;
+    const runId = `${userId}:${publicKey}`;
+    if (welcomeFundingRuns.current.has(runId)) return;
+    welcomeFundingRuns.current.add(runId);
+    let active = true;
+    void runAutomaticWelcomeFunding({
+      publicKey,
+      signerPublicKey,
+      signTrustline: xdr => welcomeHandlers.current.signWith(xdr, 'trustline'),
+      refresh: () => welcomeHandlers.current.refresh(),
+    }, { request: requestWelcomeFunding }).catch((failure) => {
+      welcomeFundingRuns.current.delete(runId);
+      if (active) setError(failure instanceof Error ? failure.message : 'No pudimos completar tus fondos de bienvenida.');
+    });
+    return () => { active = false; };
+  }, [auth.configured, auth.ready, initialized, userId, publicKey, meta?.signerPublicKey]);
 
   return <Context.Provider value={{
     publicKey, signerPublicKey: meta?.signerPublicKey ?? null, biometric: meta?.protection === 'biometric',

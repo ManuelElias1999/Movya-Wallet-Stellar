@@ -19,7 +19,6 @@ import { NavigationGlass } from '@/components/NavigationGlass';
 import { TokenIcon } from '@/components/TokenIcon';
 import { demoActivity, demoAssets } from '@/data/demo';
 import { useAuth } from '@/context/AuthContext';
-import { TestnetFundingButtons } from '@/components/TestnetFundingButtons';
 import { TestnetPaymentHistory } from '@/components/TestnetPaymentHistory';
 import { useStellarAccount } from '@/hooks/useStellarAccount';
 import { useMarketPrices } from '@/hooks/useMarketPrices';
@@ -82,8 +81,6 @@ export default function HomeScreen() {
             </PressableScale>
           ))}
         </View>
-
-        <TestnetFundingButtons />
 
         <View style={styles.sectionHeader}>
           <View><Text style={styles.sectionTitle}>Portafolio</Text><Text style={styles.sectionSubtitle}>Tus activos en Stellar</Text></View>

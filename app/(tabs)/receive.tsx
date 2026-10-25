@@ -64,7 +64,7 @@ export default function ReceiveScreen() {
         </View>
         <View style={styles.info}>
           <Ionicons name="information-circle-outline" size={21} color={colors.brand} />
-          <Text style={styles.infoText}>{wallet.publicKey ? 'Este QR corresponde a tu wallet de Testnet. Habilita USDC con el botón Pedir fondos en USDC desde Inicio antes de recibirlo.' : 'Este QR es de demostración. Crea tu cuenta Movya para recibir tokens de prueba.'}</Text>
+          <Text style={styles.infoText}>{wallet.publicKey ? 'Este QR corresponde a tu wallet de Testnet. En las cuentas nuevas, Movya habilita USDC y entrega los fondos de prueba automáticamente.' : 'Este QR es de demostración. Crea tu cuenta Movya para recibir tokens de prueba.'}</Text>
         </View>
         <View style={styles.helper}>
           <MovyaContextHelp
