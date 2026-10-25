@@ -29,6 +29,7 @@ export default function WalletBackupScreen() {
   const { styles, colors } = useThemedStyles(createStyles);
   const auth = useAuth(); const wallet = useTestnetWallet(); const router = useRouter(); const lock = useRef(false); const generation = useRef(0);
   const captureOwner = useRef<string | null>(null);
+  const scroll = useRef<ScrollView>(null);
   const [password, setPassword] = useState(''); const [busy, setBusy] = useState(false);
   const passwordVisibility = usePasswordVisibility(password, busy);
   const passwordInput = useRef<TextInput>(null);
@@ -72,7 +73,29 @@ export default function WalletBackupScreen() {
     // place where they are recording the words and return to the exact same
     // step. The app-switcher preview remains protected. Later disclosures from
     // Security still clear immediately on background.
-    const subscription = AppState.addEventListener('change', state => { if (state === 'background' && !auth.needsBackup) hide(); });
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'background') {
+        if (!auth.needsBackup) hide();
+        else Keyboard.dismiss();
+        return;
+      }
+      if (state !== 'active' || !auth.needsBackup) return;
+
+      // iOS may restore the keyboard before recalculating the ScrollView inset,
+      // leaving the confirmation card outside the visible viewport. It can also
+      // occasionally leave Expo's app-switcher privacy view attached. Reset both
+      // without clearing the words or the answers already entered.
+      requestAnimationFrame(() => scroll.current?.scrollTo({ y: 0, animated: false }));
+      if (Platform.OS === 'ios') {
+        const owner = captureOwner.current;
+        void ScreenCapture.disableAppSwitcherProtectionAsync()
+          .then(async () => {
+            if (!owner || captureOwner.current !== owner) return;
+            await ScreenCapture.enableAppSwitcherProtectionAsync();
+          })
+          .catch(() => undefined);
+      }
+    });
     const visibility = () => { if (typeof document !== 'undefined' && document.visibilityState !== 'visible' && !auth.needsBackup) hide(); };
     if (Platform.OS === 'web' && typeof document !== 'undefined') document.addEventListener('visibilitychange', visibility);
     return () => { subscription.remove(); if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', visibility); };
@@ -134,7 +157,7 @@ export default function WalletBackupScreen() {
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
     <PageHeader backTo={auth.needsBackup ? undefined : '/security'} onBack={step === 'confirm' ? returnToWords : undefined} title={auth.needsBackup ? 'Respalda tu wallet' : 'Respaldo y claves'} subtitle="Stellar Testnet · tu cuenta de pruebas" />
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.content}>
+      <ScrollView ref={scroll} automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'} keyboardShouldPersistTaps="handled" keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'} contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <View style={styles.icon}><Ionicons name="shield-checkmark-outline" size={30} color={colors.brand} /></View>
           <Text style={styles.title}>{step === 'confirm' ? 'Confirma tus 12 palabras' : step === 'protection' ? 'Protege Movya en este dispositivo' : 'Tu wallet también es tuya fuera de Movya'}</Text>
