@@ -144,11 +144,12 @@ export default function WalletBackupScreen() {
     }
     expectedWords.current = []; setAnswers({}); setMaterial(null); setMessage('Respaldo confirmado correctamente.'); setStep('protection');
   };
-  const finish = async (borrowedDevice: boolean) => {
+  const finish = async (passwordOnly: boolean) => {
     if (lock.current) return;
     lock.current = true; setBusy(true); setMessage('');
     try {
-      if (borrowedDevice) { await auth.disableDeviceBiometrics(); await wallet.reload(); }
+      if (passwordOnly) { await auth.disableDeviceBiometrics(); await wallet.reload(); }
+      else await auth.unlockWithDevice();
       await auth.acknowledgeBackup(); setDone(true);
     }
     catch (e) { setMessage(e instanceof Error ? e.message : 'No se pudo continuar.'); }
@@ -164,7 +165,7 @@ export default function WalletBackupScreen() {
           <Text style={styles.copy}>{step === 'confirm'
             ? 'Escribe las palabras solicitadas para comprobar que guardaste el respaldo en el orden correcto.'
             : step === 'protection'
-              ? 'Activa la biometría solamente si este teléfono es tuyo. Face ID y Touch ID pertenecen al dispositivo, no a tu cuenta de Movya.'
+              ? 'Face ID o huella es una forma rápida de volver a entrar. También puedes continuar con tu contraseña y enviar normalmente mientras Movya esté desbloqueada.'
               : 'Las 12 palabras permiten recuperar tu wallet en un servicio compatible. Guárdalas en su orden original, en un lugar privado.'}</Text>
           {step === 'reveal' ? <Text style={styles.notice}>Quien tenga tus palabras o tu clave privada puede controlar la wallet. No las compartas ni las envíes por chat. Movya no te las pedirá por correo.</Text> : null}
           {step === 'reveal' && !auth.user ? <>
@@ -186,9 +187,9 @@ export default function WalletBackupScreen() {
             <PressableScale disabled={busy || positions.some(position => !(answers[position] ?? '').trim())} onPress={confirmWords} style={[styles.button, (busy || positions.some(position => !(answers[position] ?? '').trim())) && styles.disabled]}><Text style={styles.buttonText}>Confirmar respaldo</Text></PressableScale>
             <PressableScale disabled={busy} onPress={returnToWords} style={styles.secondary}><Ionicons name="arrow-back" size={19} color={colors.brand} /><Text style={styles.secondaryText}>Volver a mis 12 palabras</Text></PressableScale>
           </> : <>
-            <Text style={styles.notice}>Si es un teléfono prestado, no guardaremos aquí la clave que firma tus operaciones. Podrás consultar el dashboard, pero no enviar ni hacer swaps desde este dispositivo.</Text>
+            <Text style={styles.notice}>Si continúas con contraseña, podrás enviar y cambiar dinero durante esta sesión. Al bloquear Movya, cerrar sesión o reiniciar la app tendrás que ingresar nuevamente.</Text>
             {wallet.biometric ? <PressableScale disabled={busy} onPress={() => void finish(false)} style={[styles.button, busy && styles.disabled]}><Ionicons name="finger-print-outline" size={20} color="white" /><Text style={styles.buttonText}>Activar Face ID o huella</Text></PressableScale> : null}
-            <PressableScale disabled={busy} onPress={() => void finish(true)} style={styles.secondary}><Ionicons name="phone-portrait-outline" size={19} color={colors.brand} /><Text style={styles.secondaryText}>{wallet.biometric ? 'Este teléfono no es mío · solo consulta' : 'Continuar en modo consulta'}</Text></PressableScale>
+            <PressableScale disabled={busy} onPress={() => void finish(true)} style={styles.secondary}><Ionicons name="key-outline" size={19} color={colors.brand} /><Text style={styles.secondaryText}>{wallet.biometric ? 'Continuar sin Face ID · usar contraseña' : 'Continuar con contraseña'}</Text></PressableScale>
           </>}
           {busy ? <ActivityIndicator color={colors.brand} style={{ marginTop: 16 }} /> : null}
           {message ? <Text accessibilityLiveRegion="polite" style={styles.notice}>{message}</Text> : null}

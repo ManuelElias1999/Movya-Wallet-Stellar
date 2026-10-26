@@ -35,13 +35,16 @@ export function parseContactChatRequest(message: string): ContactChatRequest | n
   const text = normalizedChat(message);
   if (!/contact|address|direccion/.test(text)) return null;
   if (/(?:cuant(?:os|as)|numero de|cantidad de|how many|number of).*contact|contact.*(?:tengo|guardad|do i have|saved)/.test(text)) return { kind: 'count' };
-  if (/(?:dime|muestra|muestrame|lista|listar|ver|quienes|cuales|todos|todas|mis|my|show|list|tell me).*(?:contact)|(?:contact).*(?:dime|muestra|lista|todos|todas|guardad|saved|show|list)/.test(text)) return { kind: 'list' };
   const address = message.trim().match(/(?:cu[aá]l\s+es\s+(?:el\s+)?|dime\s+(?:el\s+)?|what(?:'s|\s+is)\s+(?:the\s+)?)(?:address|direcci[oó]n)\s+(?:de|of)\s+(.+?)[?.!]*$/i);
   if (address?.[1]?.trim()) return { kind: 'address', name: address[1].trim() };
-  if (/(?:agregar|anadir|añadir|guardar|nuevo|add|save).*(?:contact)|(?:contact).*(?:agregar|anadir|añadir|guardar|add|save)/.test(text)) {
-    const named = message.trim().match(/(?:se\s+llama|llamad[oa]|named)\s+([\p{L}\p{M}][\p{L}\p{M}' -]{0,79})[?.!]*$/iu);
-    return { kind: 'add', ...(named?.[1]?.trim() ? { name: named[1].trim() } : {}) };
+  if (/(?:agreg(?:a|ar)|anad(?:e|ir)|añad(?:e|ir)|guard(?:a|ar)|nuevo|add|save).*(?:contact)|(?:contact).*(?:agreg(?:a|ar)|anad(?:e|ir)|añad(?:e|ir)|guard(?:a|ar)|add|save)/.test(text)) {
+    const explicit = message.trim().match(/(?:se\s+llama|llamad[oa]|named)\s+([\p{L}\p{M}][\p{L}\p{M}' -]{0,79})[?.!]*$/iu);
+    const direct = message.trim().match(/^(?:agreg(?:a|ar)|a[nñ]ad(?:e|ir)|guard(?:a|ar)|add|save)\s+(?:a\s+)?(.+?)\s+(?:a|en|to)\s+(?:mis|my)\s+contact(?:o|os|s)[?.!]*$/iu);
+    const candidate = (explicit?.[1] ?? direct?.[1])?.trim();
+    const name = candidate && !/^(?:alguien|una persona|un contacto|someone|a person|a contact)$/i.test(candidate) ? candidate : undefined;
+    return { kind: 'add', ...(name ? { name } : {}) };
   }
+  if (/(?:dime|muestra|muestrame|lista|listar|ver|quienes|cuales|todos|todas|mis|my|show|list|tell me).*(?:contact)|(?:contact).*(?:dime|muestra|lista|todos|todas|guardad|saved|show|list)/.test(text)) return { kind: 'list' };
   return null;
 }
 

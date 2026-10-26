@@ -9,7 +9,10 @@
     "scheme": "movya",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.movya.wallet.stellar"
+      "bundleIdentifier": "com.movya.wallet.stellar",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Movya usa Face ID para confirmar que eres tú antes de abrir tu wallet."
+      }
     },
     "android": {
       "package": "com.movya.wallet.stellar",

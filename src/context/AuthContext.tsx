@@ -294,7 +294,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const disableDeviceBiometrics = async () => {
     if (!session) throw new Error('Ingresa con tu correo antes de cambiar la protección de este dispositivo.');
     await disableLocalSigning(session.user.id);
-    unlockedWallet.clear();
+    // Keep the already authenticated key only in the current memory session.
+    // It is still cleared by lock, account change, app restart or sign-out.
+    // A future password login can decrypt the encrypted server backup again.
     setDeviceUnlockAvailable(false);
   };
   const setDeviceBiometricsEnabled = async (enabled: boolean) => {

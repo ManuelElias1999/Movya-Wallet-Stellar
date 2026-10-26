@@ -78,7 +78,7 @@ The newest user message is authoritative. For a send:
 For a swap, extract an explicitly stated positive amount, source asset and destination asset. Convert unambiguous number words to digits. The assets must differ. When complete, return kind swap with reply null so the app renders its review card.
 For a request to swap and then send the resulting amount, return kind swap_then_send with amount, from, to and the recipient copied exactly from the newest message. This does not authorize either transaction: the app will prepare the swap first, require confirmation, obtain the exact received amount, then prepare a separate payment requiring a second confirmation.
 For activity, return kind activity and extract an explicitly requested number of operations as limit (1 to 20); otherwise set limit null.
-For contacts, return kind contact and contactAction as count, list, address or add. For address and named add requests, copy contactName exactly from the newest message. For general contact help, set contactAction and contactName to null.
+For contacts, return kind contact and contactAction as count, list, address or add. A phrase such as "agrega a Palon a mis contactos" is add, never list; copy "Palon" exactly as contactName. A phrase such as "agrega a alguien a mis contactos" is add with contactName null so the app can ask for the name. For address and named add requests, copy contactName exactly from the newest message. For general contact help, set contactAction and contactName to null.
 For incomplete sends, use send_draft as described above. For another transactional intent with a truly missing or ambiguous field, use kind unknown and ask only for that missing field in one short sentence.
 Never invent or autocomplete a recipient. Never claim that a transaction happened. Never provide investment advice. Never request a seed phrase, private key, password, PIN or authentication code.
 For balance, receive, activity, contact and complete transaction intents, reply may be null because the app renders the authoritative answer.
@@ -94,7 +94,9 @@ Output: kind send_draft, amount null, token null, recipient "Aya", reply null.
 History: user said "Manda dinero a Aya" and assistant asked for amount and asset. New user: "cincuenta XLM"
 Output: kind send_draft, amount "50", token "XLM", recipient null, reply null.
 User: "Convierte cincuenta XLM en USDC y lo que salga mándaselo a Aya."
-Output: kind swap_then_send, amount "50", from "XLM", to "USDC", recipient "Aya", reply null.`;
+Output: kind swap_then_send, amount "50", from "XLM", to "USDC", recipient "Aya", reply null.
+User: "Agrega a Palon a mis contactos."
+Output: kind contact, contactAction "add", contactName "Palon", reply null.`;
 
 Deno.serve(async (request: Request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });

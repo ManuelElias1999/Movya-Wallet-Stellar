@@ -106,7 +106,6 @@ export function TestnetWalletProvider({ children }: { children: ReactNode }) {
     if (!scope) throw new Error('Ingresa para abrir tu wallet antes de confirmar.');
     const stored = await readMeta();
     if (!stored) throw new Error('Crea una wallet de Testnet antes de confirmar.');
-    if (auth.configured && stored.protection !== 'biometric') throw new Error('Este dispositivo no puede proteger firmas con Face ID, Touch ID o huella. Por seguridad úsalo solo para consultar y firma desde un dispositivo compatible.');
     const transaction = new Transaction(xdr, Networks.TESTNET);
     if (extra.expectedHash && transactionHash(transaction) !== extra.expectedHash) throw new Error('La operación ya no coincide con la revisión confirmada.');
     assertTransactionKind(transaction as unknown as TransactionLike, { account: stored.accountId, usdcIssuer: USDC_ISSUER, treasury: MOVYA_TREASURY, ...extra }, expectedKind);
@@ -124,9 +123,11 @@ export function TestnetWalletProvider({ children }: { children: ReactNode }) {
     // A key rotated out from another device must stop here, before biometrics.
     assertDeviceCanSign(await readTestnetAccount(stored.accountId), stored.signerPublicKey);
     if (scope !== currentScope.current) throw new Error('La sesión cambió. Revisa el envío nuevamente.');
-    // Authentication opens the signing key once and keeps it only in memory.
-    // Locking, changing account or signing out clears it, so normal operations
-    // in the same unlocked session do not ask for Face ID again.
+    // Password or device authentication opens the signing key once and keeps
+    // it only in this account-bound memory session. Face ID is optional quick
+    // access, not a requirement for sending. Locking, changing account or
+    // signing out clears the in-memory key, so normal operations never ask for
+    // Face ID again after Movya is already open.
     const wallet = auth.configured ? auth.readUnlockedWallet() : await readWallet(userId).catch(() => null);
     if (!wallet) throw new Error('Movya está bloqueada. Vuelve a desbloquearla antes de confirmar.');
     if (scope !== currentScope.current) throw new Error('La sesión cambió. Revisa el envío nuevamente.');

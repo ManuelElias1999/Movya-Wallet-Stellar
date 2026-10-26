@@ -53,6 +53,8 @@ test('chat recognizes activity, contact queries and chained transactions without
   assert.deepEqual(parseContactChatRequest('Dime todos mis contactos'), { kind: 'list' });
   assert.deepEqual(parseContactChatRequest('¿Cuál es el Address de Aya?'), { kind: 'address', name: 'Aya' });
   assert.deepEqual(parseContactChatRequest('Quiero agregar un nuevo contacto, se llama Nico'), { kind: 'add', name: 'Nico' });
+  assert.deepEqual(parseContactChatRequest('Agrega a Palon a mis contactos'), { kind: 'add', name: 'Palon' });
+  assert.deepEqual(parseContactChatRequest('Agrega a alguien a mis contactos'), { kind: 'add' });
   assert.equal(isChainedTransactionRequest('Cambia 1 USDC a XLM y después envía ese monto a Aya'), true);
   assert.equal(isChainedTransactionRequest('Cambia 1 USDC a XLM'), false);
   assert.deepEqual(parseChainedSwapSendRequest('Cambia 1 USDC a XLM y después envía ese monto a Aya'), { amount: '1', from: 'USDC', to: 'XLM', recipient: 'Aya' });
