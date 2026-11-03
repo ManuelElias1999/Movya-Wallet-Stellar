@@ -24,9 +24,9 @@ export function ActivityRow({ type, detail, amount, time, positive, hidden = fal
       </View>
       <View style={styles.copy}>
         <Text style={styles.type}>{type}</Text>
-        <Text style={styles.detail}>{detail} · {time}</Text>
+        <Text numberOfLines={2} style={styles.detail}>{detail} · {time}</Text>
       </View>
-      <Text style={[styles.amount, positive && styles.positiveText]}>{hidden ? '••••' : amount}</Text>
+      <Text adjustsFontSizeToFit minimumFontScale={0.75} numberOfLines={1} style={[styles.amount, positive && styles.positiveText]}>{hidden ? '••••' : amount}</Text>
     </View>
   );
 }
@@ -36,9 +36,9 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   icon: { width: 42, height: 42, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   positiveIcon: { backgroundColor: colors.positiveSoft },
   neutralIcon: { backgroundColor: colors.surfaceSoft },
-  copy: { flex: 1, marginLeft: 12 },
+  copy: { flex: 1, minWidth: 0, marginLeft: 12 },
   type: { color: colors.ink, fontSize: 15, fontWeight: '700' },
   detail: { color: colors.muted, fontSize: 12, marginTop: 3 },
-  amount: { color: colors.ink, fontSize: 13, fontWeight: '700' },
+  amount: { color: colors.ink, fontSize: 13, fontWeight: '700', flexShrink: 1, maxWidth: '40%', marginLeft: 10, textAlign: 'right' },
   positiveText: { color: colors.positive },
 });
