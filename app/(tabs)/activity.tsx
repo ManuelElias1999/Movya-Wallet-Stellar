@@ -16,11 +16,11 @@ import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { radius } from '@/theme/tokens';
 import type { ActivityPeriod } from '@/services/stellar/activity';
 
-const periods: { key: ActivityPeriod; label: string }[] = [
-  { key: 'today', label: 'Hoy' },
-  { key: '7d', label: '7 días' },
-  { key: '30d', label: '30 días' },
-  { key: 'all', label: 'Todo' },
+const periods: { key: ActivityPeriod; label: string; summary: string }[] = [
+  { key: 'today', label: 'Hoy', summary: 'Mostrando movimientos de hoy' },
+  { key: '7d', label: '7 días', summary: 'Mostrando movimientos de los últimos 7 días' },
+  { key: '30d', label: '30 días', summary: 'Mostrando movimientos de los últimos 30 días' },
+  { key: 'all', label: 'Todo', summary: 'Mostrando todos los movimientos' },
 ];
 
 export default function ActivityScreen() {
@@ -43,10 +43,11 @@ export default function ActivityScreen() {
         <View style={styles.historyHeader}>
           <Text style={styles.month}>{wallet.publicKey ? 'Stellar Testnet' : 'Actividad · Demo'}</Text>
           <View accessibilityRole="radiogroup" style={styles.filters}>
-            {periods.map((item) => <PressableScale accessibilityRole="radio" accessibilityState={{ checked: period === item.key }} key={item.key} onPress={() => setPeriod(item.key)} style={[styles.filter, period === item.key && styles.filterActive]}>
+            {periods.map((item) => <PressableScale accessibilityLabel={`Filtrar por ${item.label}`} accessibilityRole="radio" accessibilityState={{ checked: period === item.key }} key={item.key} onPress={() => setPeriod(item.key)} style={[styles.filter, period === item.key && styles.filterActive]}>
               <Text style={[styles.filterText, period === item.key && styles.filterTextActive]}>{item.label}</Text>
             </PressableScale>)}
           </View>
+          <Text accessibilityLiveRegion="polite" style={styles.periodSummary}>{periods.find(item => item.key === period)?.summary}</Text>
         </View>
         <View style={styles.card}>
           {wallet.publicKey ? <TestnetPaymentHistory period={period} /> : demoRows.map((item) => <ActivityRow key={item.id} {...item} />)}
@@ -67,6 +68,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   historyHeader: { marginTop: 28, marginBottom: 12, gap: 12 },
   month: { color: colors.ink, fontSize: 17, fontWeight: '700' },
   filters: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  periodSummary: { color: colors.muted, fontSize: 11, fontWeight: '600' },
   filter: { minHeight: 36, paddingHorizontal: 13, borderRadius: 999, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   filterActive: { backgroundColor: colors.navy, borderColor: colors.navy },
   filterText: { color: colors.muted, fontSize: 11, fontWeight: '800' },
