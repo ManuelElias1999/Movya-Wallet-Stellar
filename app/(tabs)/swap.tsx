@@ -17,6 +17,7 @@ import { SwapReviewCard } from '@/components/SwapReviewCard';
 import { type PaymentAsset } from '@/services/stellar/payments';
 import { readSwapSpendable } from '@/services/stellar/swaps';
 import { swapBlocked } from '@/services/swapFlow';
+import { sanitizeSwapAmountInput } from '@/services/swapPresentation';
 
 const tokenInfo: Record<string, { name: string; color: string }> = {
   USDC: { name: 'USD digital', color: '#2775CA' },
@@ -55,7 +56,7 @@ export default function SwapScreen() {
     return () => { clearTimeout(timer); flow.clear(); };
   }, [amount, from, to, wallet.publicKey, flow]);
 
-  const editAmount = (value: string) => { if (!blocked) { flow.clear(); setAmount(value); } };
+  const editAmount = (value: string) => { if (!blocked) { flow.clear(); setAmount(sanitizeSwapAmountInput(value)); } };
   const chooseFrom = (value: string) => {
     if (blocked) return;
     flow.clear();
