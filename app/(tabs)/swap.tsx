@@ -17,7 +17,7 @@ import { SwapReviewCard } from '@/components/SwapReviewCard';
 import { type PaymentAsset } from '@/services/stellar/payments';
 import { readSwapSpendable } from '@/services/stellar/swaps';
 import { swapBlocked } from '@/services/swapFlow';
-import { sanitizeSwapAmountInput, swapAmountForPercentage } from '@/services/swapPresentation';
+import { formatSwapRate, quoteSecondsRemaining, sanitizeSwapAmountInput, swapAmountForPercentage } from '@/services/swapPresentation';
 
 const tokenInfo: Record<string, { name: string; color: string }> = {
   USDC: { name: 'USD digital', color: '#2775CA' },
@@ -39,6 +39,7 @@ export default function SwapScreen() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [spendable, setSpendable] = useState<Record<PaymentAsset, string> | null>(null);
   const [balanceError, setBalanceError] = useState('');
+  const [quoteNow, setQuoteNow] = useState(() => Math.floor(Date.now() / 1000));
   useEffect(() => {
     let active = true;
     setSpendable(null); setBalanceError('');
@@ -55,6 +56,13 @@ export default function SwapScreen() {
     const timer = setTimeout(() => void flow.start({ source, amount, from, to }), 400);
     return () => { clearTimeout(timer); flow.clear(); };
   }, [amount, from, to, wallet.publicKey, flow]);
+
+  useEffect(() => {
+    if (state.phase !== 'review') return;
+    setQuoteNow(Math.floor(Date.now() / 1000));
+    const timer = setInterval(() => setQuoteNow(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(timer);
+  }, [state.phase, state.review?.expiresAt]);
 
   const editAmount = (value: string) => { if (!blocked) { flow.clear(); setAmount(sanitizeSwapAmountInput(value)); } };
   const chooseFrom = (value: string) => {
@@ -123,6 +131,12 @@ export default function SwapScreen() {
           <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5} style={styles.output}>{state.review?.estimated ?? (amount ? '—' : '0.00')}</Text>
           <View style={[styles.amountToken, styles.outputToken]}><Text style={styles.amountTokenText}>{to}</Text></View>
         </View>
+        {state.phase === 'review' && state.review ? (
+          <View style={styles.quoteMeta}>
+            <Text style={styles.quoteRate}>{formatSwapRate(state.review)}</Text>
+            <Text style={styles.quoteExpiry}>{quoteSecondsRemaining(state.review.expiresAt, quoteNow) > 0 ? `Válida por ${quoteSecondsRemaining(state.review.expiresAt, quoteNow)} s` : 'Cotización vencida'}</Text>
+          </View>
+        ) : null}
 
         {state.phase === 'quoting' ? <View style={styles.quoteLoading}><ActivityIndicator color={colors.brand} /><Text>Buscando cotización en Stellar…</Text></View> : null}
         {state.error ? <Text accessibilityLiveRegion="polite" style={styles.error}>{state.error}</Text> : null}
@@ -182,6 +196,9 @@ const styles = StyleSheet.create({
   outputBox: { height: 76, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(225,239,255,0.95)', borderWidth: 1.5, borderColor: '#AFCDF4', borderRadius: 21, paddingLeft: 15, paddingRight: 10, marginTop: 10, shadowColor: colors.navy, shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   output: { flex: 1, color: colors.ink, fontSize: 30, fontWeight: '800' },
   outputToken: { borderColor: '#B9D5F7' },
+  quoteMeta: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 10 },
+  quoteRate: { flex: 1, color: colors.ink, fontSize: 12, fontWeight: '700' },
+  quoteExpiry: { color: colors.muted, fontSize: 12, fontWeight: '700' },
   balanceRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 }, balance: { color: colors.muted, fontSize: 12, lineHeight: 19 },
   quickAmounts: { flexDirection: 'row', gap: 8, marginTop: 9 },
   quickButton: { flex: 1, minHeight: 40, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: '#E3EEFF', borderWidth: 1, borderColor: '#C8DDF6' },

@@ -28,3 +28,16 @@ export function swapAmountForPercentage(spendable: string, percentage: number) {
   if (stroops === null || !Number.isInteger(percentage) || percentage < 0 || percentage > 100) return '';
   return formatStellarAmount(stroops * BigInt(percentage) / 100n);
 }
+
+export function formatSwapRate(review: { swapAmount: string; estimated: string; from: string; to: string }) {
+  const source = parseStellarAmount(review.swapAmount);
+  const destination = parseStellarAmount(review.estimated);
+  if (source === null || destination === null || source === 0n) return '';
+  const rate = formatStellarAmount(destination * STROOPS_PER_UNIT / source);
+  return `1 ${review.from} ≈ ${rate} ${review.to}`;
+}
+
+export function quoteSecondsRemaining(expiresAt: number, nowSeconds = Math.floor(Date.now() / 1000)) {
+  if (!Number.isFinite(expiresAt) || !Number.isFinite(nowSeconds)) return 0;
+  return Math.max(0, Math.ceil(expiresAt - nowSeconds));
+}

@@ -4,6 +4,7 @@ import { Pressable, Text } from '@/i18n/primitives';
 import { type createSwapFlow, type SwapState } from '@/services/swapFlow';
 import { USDC_ISSUER } from '@/services/stellar/payments';
 import { colors } from '@/theme/tokens';
+import { formatSwapRate, quoteSecondsRemaining } from '@/services/swapPresentation';
 
 export function SwapReviewCard({ state, flow, onCancel }: { state: SwapState; flow: ReturnType<typeof createSwapFlow>; onCancel?: () => void }) {
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
@@ -26,13 +27,14 @@ export function SwapReviewCard({ state, flow, onCancel }: { state: SwapState; fl
       <Text style={styles.label}>Comisión de Movya (0,5 %)</Text><Text style={styles.value}>{review.appFee} {review.from}</Text>
       <Text style={styles.note}>La comisión de Movya ya está incluida en el monto que entregas.</Text>
       <Text style={styles.label}>Recibes aproximadamente</Text><Text style={styles.amount}>{review.estimated} {review.to}</Text>
+      <Text style={styles.label}>Tasa estimada</Text><Text style={styles.value}>{formatSwapRate(review)}</Text>
       <Text style={styles.label}>Comisión máxima de red</Text><Text style={styles.value}>{review.fee} XLM</Text>
       <Text style={styles.label}>Red</Text><Text style={styles.value}>Stellar DEX · Testnet</Text>
       <Text style={styles.label}>Tu wallet recibe el cambio</Text><Text translate={false} selectable style={styles.address}>{review.source}</Text>
       <Text style={styles.label}>Wallet de Movya</Text><Text translate={false} selectable style={styles.address}>{review.treasury}</Text>
       <Text style={styles.label}>Emisor de USDC</Text><Text translate={false} selectable style={styles.address}>{USDC_ISSUER}</Text>
       {state.phase === 'review' ? <>
-        <Text style={styles.note}>{expired ? 'La cotización expiró. Actualízala antes de confirmar.' : 'Esta cotización dura 60 segundos. Nada se cambia hasta que confirmes.'}</Text>
+        <Text style={styles.note}>{expired ? 'La cotización expiró. Actualízala antes de confirmar.' : `Cotización válida por ${quoteSecondsRemaining(review.expiresAt, now)} segundos. Nada se cambia hasta que confirmes.`}</Text>
         <View style={styles.actions}>
           <Pressable accessibilityRole="button" onPress={cancel} style={[styles.secondary, styles.flex]}><Text>No</Text></Pressable>
           <Pressable accessibilityRole="button" disabled={expired} accessibilityState={{ disabled: expired }} onPress={() => void flow.confirm()} style={[styles.primary, styles.flex, expired && styles.disabled]}><Text style={styles.primaryText}>Sí, cambiar</Text></Pressable>
