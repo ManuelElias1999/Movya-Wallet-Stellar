@@ -17,7 +17,7 @@ import { SwapReviewCard } from '@/components/SwapReviewCard';
 import { type PaymentAsset } from '@/services/stellar/payments';
 import { readSwapSpendable } from '@/services/stellar/swaps';
 import { swapBlocked } from '@/services/swapFlow';
-import { sanitizeSwapAmountInput } from '@/services/swapPresentation';
+import { sanitizeSwapAmountInput, swapAmountForPercentage } from '@/services/swapPresentation';
 
 const tokenInfo: Record<string, { name: string; color: string }> = {
   USDC: { name: 'USD digital', color: '#2775CA' },
@@ -96,8 +96,22 @@ export default function SwapScreen() {
         </View>
 
         <View style={styles.balanceRow}>
-          <View style={{ flex: 1 }}><Text style={styles.balance}>Saldo disponible: {spendable?.[from] ?? '…'} {from}</Text></View>
-          <Pressable accessibilityRole="button" disabled={blocked || !spendable} accessibilityState={{ disabled: blocked || !spendable }} onPress={() => { if (spendable) editAmount(spendable[from]); }} style={styles.maxButton}><Text style={styles.maxText}>Máximo</Text></Pressable>
+          <Text style={styles.balance}>Saldo disponible: {spendable?.[from] ?? '…'} {from}</Text>
+        </View>
+        <View style={styles.quickAmounts}>
+          {[25, 50, 75, 100].map(percentage => (
+            <Pressable
+              accessibilityLabel={percentage === 100 ? 'Usar saldo máximo' : `Usar ${percentage} por ciento del saldo`}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: blocked || !spendable }}
+              disabled={blocked || !spendable}
+              key={percentage}
+              onPress={() => { if (spendable) editAmount(swapAmountForPercentage(spendable[from], percentage)); }}
+              style={[styles.quickButton, (blocked || !spendable) && styles.quickButtonDisabled]}
+            >
+              <Text style={styles.quickText}>{percentage === 100 ? 'Máximo' : `${percentage} %`}</Text>
+            </Pressable>
+          ))}
         </View>
         {balanceError ? <Text style={styles.error}>{balanceError}</Text> : null}
 
@@ -168,8 +182,11 @@ const styles = StyleSheet.create({
   outputBox: { height: 76, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(225,239,255,0.95)', borderWidth: 1.5, borderColor: '#AFCDF4', borderRadius: 21, paddingLeft: 15, paddingRight: 10, marginTop: 10, shadowColor: colors.navy, shadowOpacity: 0.14, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   output: { flex: 1, color: colors.ink, fontSize: 30, fontWeight: '800' },
   outputToken: { borderColor: '#B9D5F7' },
-  balanceRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 }, balance: { color: colors.muted, fontSize: 12, lineHeight: 19 },
-  maxButton: { minHeight: 44, paddingHorizontal: 15, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: '#E3EEFF' }, maxText: { color: colors.brand, fontSize: 12, fontWeight: '800' },
+  balanceRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12 }, balance: { color: colors.muted, fontSize: 12, lineHeight: 19 },
+  quickAmounts: { flexDirection: 'row', gap: 8, marginTop: 9 },
+  quickButton: { flex: 1, minHeight: 40, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: '#E3EEFF', borderWidth: 1, borderColor: '#C8DDF6' },
+  quickButtonDisabled: { opacity: 0.45 },
+  quickText: { color: colors.brand, fontSize: 11, fontWeight: '800' },
   help: { color: colors.muted, fontSize: 11, lineHeight: 17, marginTop: 8 }, error: { color: '#B52D42', fontSize: 12, lineHeight: 18, marginTop: 12 }, quoteLoading: { alignItems: 'center', gap: 8, marginTop: 16 },
   reviewBackdrop: { flex: 1, backgroundColor: 'rgba(5,16,35,0.48)', justifyContent: 'flex-end' }, reviewDismiss: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }, reviewSheet: { maxHeight: '90%', padding: 18, paddingBottom: 40, backgroundColor: '#F8FBFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, width: '100%', maxWidth: 760, alignSelf: 'center' },
   button: { height: 56, borderRadius: 18, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginTop: 30, shadowColor: colors.brandDark, shadowOpacity: 0.25, shadowRadius: 13, shadowOffset: { width: 0, height: 7 }, elevation: 5 },

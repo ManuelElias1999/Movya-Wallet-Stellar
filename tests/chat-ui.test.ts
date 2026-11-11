@@ -96,7 +96,7 @@ test('Swap form auto-quotes, shows spendable funds, and MAX replaces the draft w
   const dismiss = buttons(tree).find(item => item.props.accessibilityLabel === 'Cerrar revisión')!;
   await act(() => dismiss.props.onPress());
   await act(() => button(tree, 'Máximo').props.onPress());
-  assert.equal(input().props.value, '97.4999900');
+  assert.equal(input().props.value, '97.49999');
   assert.ok(!content(tree).includes('44.0000000'));
   await act(() => tree.unmount());
 });
