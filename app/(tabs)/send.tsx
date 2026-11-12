@@ -17,6 +17,7 @@ import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance, preparePayment, type PaymentAsset, type PaymentReceipt, type PaymentReview } from '@/services/stellar/payments';
 import { useContacts } from '@/context/ContactsContext';
 import { resolveContactWithConfirmation } from '@/components/confirmContactAddress';
+import { isPositiveTransferAmount, looksLikeStellarPublicKey, sanitizeStellarAddressInput, sanitizeTransferAmountInput } from '@/services/transferPresentation';
 import { colors, radius } from '@/theme/tokens';
 
 export default function SendScreen() {
@@ -32,20 +33,34 @@ export default function SendScreen() {
   const [receipt, setReceipt] = useState<PaymentReceipt | null>(null);
   const initialContact = useMemo(() => contacts.find((item) => item.name === params.contact), [params.contact, contacts]);
   const [selectedContactId, setSelectedContactId] = useState(params.contactId ?? initialContact?.id ?? '');
-  const [address, setAddress] = useState(params.address ?? '');
+  const [address, setAddress] = useState(() => sanitizeStellarAddressInput(params.address ?? ''));
   const [token, setToken] = useState<PaymentAsset>(params.token === 'XLM' ? 'XLM' : 'USDC');
-  const [amount, setAmount] = useState(params.amount ?? '');
+  const [amount, setAmount] = useState(() => sanitizeTransferAmountInput(params.amount ?? ''));
   const [contactsOpen, setContactsOpen] = useState(false);
   const [tokensOpen, setTokensOpen] = useState(false);
   const selected = contacts.find((item) => item.id === selectedContactId);
-  const ready = Boolean(wallet.publicKey && wallet.account && amount && (selected || address.trim()) && !preparing && !receipt && !wallet.loading);
+  const amountReady = isPositiveTransferAmount(amount);
+  const recipientReady = Boolean(selected || looksLikeStellarPublicKey(address));
+  const ready = Boolean(wallet.publicKey && wallet.account && amountReady && recipientReady && !preparing && !receipt && !wallet.loading);
   const balance = wallet.account ? assetBalance(wallet.account, token)?.balance ?? '0' : '—';
   const tokenColors: Record<string, string> = { USDC: '#2775CA', XLM: colors.navy, EURC: '#6857E5', AQUA: '#00A6A6' };
 
   const pickContact = (id: string) => {
     setSelectedContactId(id);
     setAddress('');
+    setError('');
     setContactsOpen(false);
+  };
+
+  const editAmount = (value: string) => {
+    setAmount(sanitizeTransferAmountInput(value));
+    setError('');
+  };
+
+  const editAddress = (value: string) => {
+    setSelectedContactId('');
+    setAddress(sanitizeStellarAddressInput(value));
+    setError('');
   };
 
   const reviewPayment = async () => {
@@ -71,13 +86,14 @@ export default function SendScreen() {
           <Text style={styles.label}>Monto</Text>
           <View style={styles.amountCard}>
             <Text style={styles.currency}>{token === 'USDC' ? '$' : ''}</Text>
-            <TextInput keyboardType="decimal-pad" onChangeText={setAmount} placeholder="0.00" placeholderTextColor="#A7B2C5" style={styles.amountInput} value={amount} />
+            <TextInput keyboardType="decimal-pad" onChangeText={editAmount} placeholder="0.00" placeholderTextColor="#A7B2C5" style={styles.amountInput} value={amount} />
             <PressableScale onPress={() => setTokensOpen(true)} pressedScale={0.94} style={styles.tokenPill}>
               <View style={styles.tokenDot}><TokenIcon code={token} color={tokenColors[token]} size={23} /></View>
               <View style={styles.tokenPillCopy}><Text style={styles.tokenPillLabel}>TOKEN</Text><Text style={styles.tokenText}>{token}</Text></View>
               <Ionicons name="chevron-down" size={15} color={colors.brand} />
             </PressableScale>
           </View>
+          {amount && !amountReady ? <Text style={styles.validationHint}>Ingresa un monto mayor a 0 con hasta 7 decimales.</Text> : null}
           <View style={styles.balanceRow}><Text style={styles.balance}>Balance de Testnet: {wallet.loading ? 'Actualizando…' : `${balance} ${token}`}</Text><Pressable onPress={() => void wallet.refresh()}><Text style={styles.max}>Actualizar</Text></Pressable></View>
 
           <Text style={styles.label}>Destinatario</Text>
@@ -85,17 +101,18 @@ export default function SendScreen() {
             <View style={styles.selectedContact}>
               <View style={[styles.avatar, { backgroundColor: selected.color }]}><Text translate={false} style={styles.avatarText}>{selected.initials}</Text></View>
               <View style={styles.contactCopy}><Text translate={false} style={styles.contactName}>{selected.name}</Text><Text translate={false} style={styles.handle}>{selected.handle}</Text></View>
-              <Pressable onPress={() => setSelectedContactId('')} style={styles.clear}><Ionicons name="close" size={18} color={colors.muted} /></Pressable>
+              <Pressable onPress={() => { setSelectedContactId(''); setError(''); }} style={styles.clear}><Ionicons name="close" size={18} color={colors.muted} /></Pressable>
             </View>
           ) : (
             <View style={styles.recipientRow}>
               <View style={styles.addressBox}>
                 <Ionicons name="wallet-outline" size={19} color={colors.muted} />
-                <TextInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} autoCapitalize="characters" onChangeText={setAddress} placeholder="Pegar dirección G..." placeholderTextColor={colors.muted} style={styles.addressInput} value={address} />
+                <TextInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} autoCapitalize="characters" autoCorrect={false} onChangeText={editAddress} placeholder="Pegar dirección G..." placeholderTextColor={colors.muted} style={styles.addressInput} value={address} />
               </View>
               <PressableScale onPress={() => setContactsOpen(true)} pressedScale={0.94} style={styles.contactsButton}><Ionicons name="people" size={21} color={colors.brand} /><Text style={styles.contactsText}>Contactos</Text></PressableScale>
             </View>
           )}
+          {!selected && address && !recipientReady ? <Text style={styles.validationHint}>La dirección debe comenzar con G y tener 56 caracteres.</Text> : null}
           {selected ? <Pressable onPress={() => setContactsOpen(true)}><Text style={styles.changeContact}>Cambiar contacto</Text></Pressable> : <Text style={styles.help}>Puedes pegar una dirección o elegir una persona guardada.</Text>}
 
           <View style={styles.summary}>
@@ -141,7 +158,7 @@ export default function SendScreen() {
         <Pressable onPress={() => setTokensOpen(false)} style={styles.backdrop} />
         <View style={styles.sheet}>
           <View style={styles.sheetHandle} /><Text style={styles.sheetTitle}>Elegir activo</Text>
-          <TokenSelector options={['USDC', 'XLM']} onChange={(value) => { setToken(value as PaymentAsset); setTokensOpen(false); }} value={token} />
+          <TokenSelector options={['USDC', 'XLM']} onChange={(value) => { setToken(value as PaymentAsset); setError(''); setTokensOpen(false); }} value={token} />
         </View>
       </Modal>
       {review ? <PaymentReviewSheet key={review.hash} review={review} onClose={() => setReview(null)} onSuccess={(result) => { setReceipt(result); setReview(null); }} /> : null}
@@ -157,6 +174,7 @@ const styles = StyleSheet.create({
   amountCard: { height: 78, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(247,251,255,0.9)', borderRadius: 22, borderWidth: 1.5, borderColor: '#B9D3F4', paddingLeft: 15, paddingRight: 10, shadowColor: colors.navy, shadowOpacity: 0.16, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 5 }, currency: { width: 20, color: colors.muted, fontSize: 25, fontWeight: '700' }, amountInput: { flex: 1, minWidth: 0, color: colors.ink, fontSize: 30, fontWeight: '800', marginLeft: 1, paddingHorizontal: 0 },
   tokenPill: { width: 112, flexShrink: 0, height: 50, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(229,240,255,0.96)', borderWidth: 1, borderColor: '#BCD5F5', borderRadius: 17, paddingHorizontal: 9, shadowColor: colors.brandDark, shadowOpacity: 0.1, shadowRadius: 7, shadowOffset: { width: 0, height: 4 }, elevation: 2 }, tokenDot: { width: 23, height: 23, marginRight: 7 }, tokenPillCopy: { flex: 1 }, tokenPillLabel: { color: colors.muted, fontSize: 8, fontWeight: '800' }, tokenText: { color: colors.brandDark, fontSize: 12, fontWeight: '800', marginTop: 1 },
   balanceRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }, balance: { color: colors.muted, fontSize: 11 }, max: { color: colors.brand, fontSize: 11, fontWeight: '800' },
+  validationHint: { color: '#B52D42', fontSize: 10, lineHeight: 15, marginTop: 7 },
   recipientRow: { flexDirection: 'row', gap: 9 }, addressBox: { flex: 1, height: 62, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFDFB', borderRadius: 18, borderWidth: 1.5, borderColor: '#D9D1E7', paddingHorizontal: 13, shadowColor: colors.navy, shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 2 }, addressInput: { flex: 1, color: colors.ink, fontSize: 13, marginLeft: 8 },
   contactsButton: { width: 88, height: 58, alignItems: 'center', justifyContent: 'center', backgroundColor: '#E3EEFF', borderRadius: 18, borderWidth: 1, borderColor: colors.brandIce, shadowColor: colors.navy, shadowOpacity: 0.1, shadowRadius: 9, shadowOffset: { width: 0, height: 5 }, elevation: 2 }, contactsText: { color: colors.brand, fontSize: 9, fontWeight: '800', marginTop: 3 }, help: { color: colors.muted, fontSize: 10, lineHeight: 15, marginTop: 8 }, changeContact: { color: colors.brand, fontSize: 11, fontWeight: '800', marginTop: 9 },
   selectedContact: { height: 66, flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.brandIce, borderRadius: 19, paddingHorizontal: 12 }, avatar: { width: 43, height: 43, borderRadius: 15, alignItems: 'center', justifyContent: 'center' }, avatarText: { color: colors.ink, fontSize: 12, fontWeight: '800' }, contactCopy: { flex: 1, marginLeft: 11 }, contactName: { color: colors.ink, fontSize: 14, fontWeight: '700' }, handle: { color: colors.muted, fontSize: 11, marginTop: 3 }, clear: { width: 34, height: 34, borderRadius: 13, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
