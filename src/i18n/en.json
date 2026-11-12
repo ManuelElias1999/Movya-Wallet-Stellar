@@ -552,5 +552,20 @@
   "Responde Sí para confirmar el cambio o No para cancelarlo.": "Reply Yes to confirm the exchange or No to cancel it.",
   "Quiero cambiar XLM a USDC. Ayúdame a prepararlo.": "I want to exchange XLM for USDC. Help me prepare it.",
   "Comisión máxima de red": "Maximum network fee",
-  "Comisión máxima de red:": "Maximum network fee:"
+  "Comisión máxima de red:": "Maximum network fee:",
+  "Borrar dirección": "Clear address",
+  "Ingresa un monto mayor a 0 con hasta 7 decimales.": "Enter an amount greater than 0 with up to 7 decimal places.",
+  "La dirección debe comenzar con G y tener 56 caracteres.": "The address must start with G and contain 56 characters.",
+  "Aún no seleccionado": "Not selected yet",
+  "RESUMEN DEL ENVÍO": "TRANSFER SUMMARY",
+  "Todo listo para revisar": "Ready for review",
+  "CONFIRMACIÓN FINAL": "FINAL CONFIRMATION",
+  "ENVIARÁS": "YOU WILL SEND",
+  "Desde tu wallet": "From your wallet",
+  "Emisor verificado de USDC": "Verified USDC issuer",
+  "Esta revisión expiró. Vuelve al envío para generar una nueva.": "This review expired. Return to the transfer to create a new one.",
+  "La revisión expiró. Regresa para actualizarla.": "The review expired. Go back to refresh it.",
+  "Esta revisión vence en {0} s": "This review expires in {0} s",
+  "Movya firmará y enviará exactamente estos datos desde tu dispositivo. Verifica el monto y el destinatario antes de continuar.": "Movya will sign and send exactly these details from your device. Check the amount and recipient before continuing.",
+  "Revisión expirada": "Review expired"
 }
