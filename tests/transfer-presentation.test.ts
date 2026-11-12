@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   isPositiveTransferAmount,
   looksLikeStellarPublicKey,
+  paymentReviewSecondsRemaining,
   sanitizeStellarAddressInput,
   sanitizeTransferAmountInput,
   shortenStellarAddress,
@@ -34,4 +35,11 @@ test('pasted Stellar addresses are normalized without accepting incomplete keys'
 test('transfer previews keep short values and abbreviate long Stellar addresses', () => {
   assert.equal(shortenStellarAddress('GABC'), 'GABC');
   assert.equal(shortenStellarAddress(`G${'A'.repeat(55)}`), 'GAAAAAAA…AAAAAAAA');
+});
+
+test('payment review countdown reaches zero and never becomes negative', () => {
+  assert.equal(paymentReviewSecondsRemaining(130, 100), 30);
+  assert.equal(paymentReviewSecondsRemaining(100.2, 100), 1);
+  assert.equal(paymentReviewSecondsRemaining(99, 100), 0);
+  assert.equal(paymentReviewSecondsRemaining(Number.NaN, 100), 0);
 });

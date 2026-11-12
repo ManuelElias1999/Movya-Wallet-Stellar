@@ -29,3 +29,8 @@ export function shortenStellarAddress(value: string) {
   if (address.length <= 18) return address;
   return `${address.slice(0, 8)}…${address.slice(-8)}`;
 }
+
+export function paymentReviewSecondsRemaining(expiresAt: number, nowSeconds = Math.floor(Date.now() / 1000)) {
+  if (!Number.isFinite(expiresAt) || !Number.isFinite(nowSeconds)) return 0;
+  return Math.max(0, Math.ceil(expiresAt - nowSeconds));
+}
