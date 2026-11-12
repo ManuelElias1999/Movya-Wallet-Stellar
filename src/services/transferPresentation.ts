@@ -23,3 +23,9 @@ export function isPositiveTransferAmount(value: string) {
 export function looksLikeStellarPublicKey(value: string) {
   return STELLAR_PUBLIC_KEY_PATTERN.test(sanitizeStellarAddressInput(value));
 }
+
+export function shortenStellarAddress(value: string) {
+  const address = sanitizeStellarAddressInput(value);
+  if (address.length <= 18) return address;
+  return `${address.slice(0, 8)}…${address.slice(-8)}`;
+}

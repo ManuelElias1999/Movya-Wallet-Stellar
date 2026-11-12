@@ -6,6 +6,7 @@ import {
   looksLikeStellarPublicKey,
   sanitizeStellarAddressInput,
   sanitizeTransferAmountInput,
+  shortenStellarAddress,
 } from '../src/services/transferPresentation';
 
 test('manual transfer amounts accept comma decimals and never exceed Stellar precision', () => {
@@ -28,4 +29,9 @@ test('pasted Stellar addresses are normalized without accepting incomplete keys'
   assert.equal(looksLikeStellarPublicKey(address), true);
   assert.equal(looksLikeStellarPublicKey(`${address.slice(0, -1)}0`), false);
   assert.equal(looksLikeStellarPublicKey('GABC'), false);
+});
+
+test('transfer previews keep short values and abbreviate long Stellar addresses', () => {
+  assert.equal(shortenStellarAddress('GABC'), 'GABC');
+  assert.equal(shortenStellarAddress(`G${'A'.repeat(55)}`), 'GAAAAAAA…AAAAAAAA');
 });
