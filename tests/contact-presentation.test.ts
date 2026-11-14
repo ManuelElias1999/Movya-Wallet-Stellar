@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { contactAccountKind, filterAndSortContacts } from '../src/services/contactPresentation';
+import { contactAccountKind, filterAndSortContacts, isContactDraftReady, isContactIdentifierReady, sanitizeContactIdentifier } from '../src/services/contactPresentation';
 import type { Contact } from '../src/services/backend/contacts';
 
 const contacts: Contact[] = [
@@ -23,4 +23,16 @@ test('favorites stay first and the remaining contacts are alphabetical', () => {
 test('contact cards distinguish Movya accounts from external wallets', () => {
   assert.equal(contactAccountKind(contacts[0]), 'movya');
   assert.equal(contactAccountKind(contacts[1]), 'external');
+});
+
+test('new contact identifiers are normalized and validated before submission', () => {
+  const address = `G${'A'.repeat(55)}`;
+  assert.equal(sanitizeContactIdentifier(' MANU@EXAMPLE.COM ', 'email'), 'manu@example.com');
+  assert.equal(sanitizeContactIdentifier(` ${address.toLowerCase()}\n`, 'address'), address);
+  assert.equal(isContactIdentifierReady('manu@example.com', 'email'), true);
+  assert.equal(isContactIdentifierReady('manu@', 'email'), false);
+  assert.equal(isContactIdentifierReady(address, 'address'), true);
+  assert.equal(isContactIdentifierReady('GABC', 'address'), false);
+  assert.equal(isContactDraftReady('Manu', 'manu@example.com', 'email'), true);
+  assert.equal(isContactDraftReady('   ', 'manu@example.com', 'email'), false);
 });

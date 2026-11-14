@@ -578,5 +578,11 @@
   "Agregar primer contacto": "Add first contact",
   "Abrir contacto {0}": "Open {0}'s contact",
   "Cuenta Movya": "Movya account",
-  "Wallet externa": "External wallet"
+  "Wallet externa": "External wallet",
+  "Cuenta Movya vinculada": "Linked Movya account",
+  "Wallet externa guardada": "Saved external wallet",
+  "DIRECCIÓN STELLAR": "STELLAR ADDRESS",
+  "Esta es la dirección fijada que Movya verificará antes de cada envío.": "This is the pinned address Movya will verify before every transfer.",
+  "Ingresa un correo válido.": "Enter a valid email address.",
+  "Guardando…": "Saving…"
 }
