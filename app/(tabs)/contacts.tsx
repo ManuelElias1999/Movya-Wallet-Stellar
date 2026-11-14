@@ -11,7 +11,7 @@ import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { PressableScale } from '@/components/PressableScale';
 import { useContacts } from '@/context/ContactsContext';
 import type { Contact } from '@/services/backend/contacts';
-import { filterAndSortContacts } from '@/services/contactPresentation';
+import { contactAccountKind, filterAndSortContacts } from '@/services/contactPresentation';
 import { resolveContactWithConfirmation } from '@/components/confirmContactAddress';
 import { KeyboardSheet } from '@/components/KeyboardSheet';
 import { colors, radius } from '@/theme/tokens';
@@ -92,18 +92,20 @@ export default function ContactsScreen() {
         {saved.loading ? <Text style={styles.handle}>Cargando tus contactos…</Text> : null}
         {saved.error ? <Pressable onPress={() => void saved.refresh()}><Text style={styles.handle}>{saved.error} · Reintentar</Text></Pressable> : null}
         {!saved.persistent ? <Text style={styles.addDescription}>Estos contactos son de demostración. Ingresa con tu correo para guardar personas.</Text> : null}
-        <View style={styles.card}>
+        <View style={styles.contactList}>
           {!ordered.length && !saved.loading ? <View style={styles.emptyState}><View style={styles.emptyIcon}><Ionicons name={search ? 'search-outline' : 'people-outline'} size={25} color={colors.brand} /></View><Text style={styles.emptyTitle}>{search ? 'No encontramos coincidencias' : 'Tu lista está vacía'}</Text><Text style={styles.emptyText}>{search ? 'Prueba con otro nombre, correo o dirección Stellar.' : 'Agrega una persona para enviarle dinero sin volver a copiar su dirección.'}</Text><PressableScale onPress={() => search ? setSearch('') : setAdding(true)} style={styles.emptyButton}><Text style={styles.emptyButtonText}>{search ? 'Limpiar búsqueda' : 'Agregar primer contacto'}</Text></PressableScale></View> : null}
-          {ordered.map((contact, index) => (
-            <PressableScale key={contact.id} onPress={() => openContact(contact)} style={[styles.contact, index > 0 && styles.divider]}>
-              <View style={[styles.avatar, { backgroundColor: contact.color }]}><Text translate={false} style={styles.avatarText}>{contact.initials}</Text></View>
+          {ordered.map(contact => {
+            const accountKind = contactAccountKind(contact);
+            return <PressableScale accessibilityLabel={`Abrir contacto ${contact.name}`} key={contact.id} onPress={() => openContact(contact)} style={styles.contact}>
+              <View style={[styles.avatar, { backgroundColor: contact.color }]}><Text translate={false} style={styles.avatarText}>{contact.initials}</Text>{contact.favorite ? <View style={styles.favoriteBadge}><Ionicons name="star" size={10} color="#FFFFFF" /></View> : null}</View>
               <View style={styles.contactCopy}>
-                <View style={styles.nameRow}><Text translate={false} style={styles.name}>{contact.name}</Text>{contact.favorite ? <Ionicons name="star" size={14} color="#F5A623" /> : null}</View>
+                <Text translate={false} numberOfLines={1} style={styles.name}>{contact.name}</Text>
                 <Text translate={false} style={styles.handle}>{contact.handle}</Text>
+                <View style={[styles.kindPill, accountKind === 'external' && styles.kindPillExternal]}><Ionicons name={accountKind === 'movya' ? 'checkmark-circle' : 'wallet-outline'} size={12} color={accountKind === 'movya' ? colors.brand : '#6857E5'} /><Text style={[styles.kindText, accountKind === 'external' && styles.kindTextExternal]}>{accountKind === 'movya' ? 'Cuenta Movya' : 'Wallet externa'}</Text></View>
               </View>
-              <Ionicons name="chevron-forward" color={colors.muted} size={18} />
-            </PressableScale>
-          ))}
+              <View style={styles.openButton}><Ionicons name="chevron-forward" color={colors.brand} size={18} /></View>
+            </PressableScale>;
+          })}
         </View>
         <View style={styles.contextHelp}>
           <MovyaContextHelp
@@ -179,9 +181,9 @@ const styles = StyleSheet.create({
   search: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#D9D1E7', borderRadius: radius.md, backgroundColor: '#FFFDFB', paddingHorizontal: 15, height: 54, marginTop: 18, shadowColor: colors.navy, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 2 }, input: { flex: 1, marginLeft: 10, color: colors.ink, fontSize: 14 }, clearSearch: { width: 34, height: 40, alignItems: 'center', justifyContent: 'center' },
   contextHelp: { marginTop: 22 },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 26, marginBottom: 11 }, sectionTitle: { color: colors.ink, fontSize: 17, fontWeight: '800' }, contactCount: { color: colors.muted, fontSize: 10, fontWeight: '700', marginTop: 3 }, add: { width: 42, height: 42, borderRadius: 15, backgroundColor: colors.brandSoft, borderWidth: 1, borderColor: colors.brandIce, alignItems: 'center', justifyContent: 'center' },
-  card: { backgroundColor: '#EEF5FF', borderRadius: radius.md, borderWidth: 1.5, borderColor: '#C7D9F1', paddingHorizontal: 15, shadowColor: colors.navy, shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 2 }, contact: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }, divider: { borderTopWidth: 1, borderTopColor: '#D8E4F4' },
-  emptyState: { alignItems: 'center', paddingHorizontal: 24, paddingVertical: 30 }, emptyIcon: { width: 52, height: 52, borderRadius: 18, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' }, emptyTitle: { color: colors.ink, fontSize: 15, fontWeight: '800', marginTop: 13 }, emptyText: { color: colors.muted, fontSize: 11, lineHeight: 17, textAlign: 'center', marginTop: 6 }, emptyButton: { minHeight: 40, paddingHorizontal: 16, borderRadius: 14, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginTop: 16 }, emptyButtonText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
-  avatar: { width: 46, height: 46, borderRadius: 17, alignItems: 'center', justifyContent: 'center' }, avatarText: { color: colors.ink, fontSize: 13, fontWeight: '800' }, contactCopy: { flex: 1, marginLeft: 12 }, nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 }, name: { color: colors.ink, fontSize: 15, fontWeight: '700' }, handle: { color: colors.muted, fontSize: 12, marginTop: 3 },
+  contactList: { gap: 10 }, contact: { minHeight: 84, flexDirection: 'row', alignItems: 'center', padding: 13, backgroundColor: 'rgba(255,255,255,0.92)', borderRadius: 21, borderWidth: 1, borderColor: '#DCE8F6', shadowColor: colors.navy, shadowOpacity: 0.08, shadowRadius: 11, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  emptyState: { alignItems: 'center', paddingHorizontal: 24, paddingVertical: 30, backgroundColor: 'rgba(255,255,255,0.88)', borderRadius: 21, borderWidth: 1, borderColor: '#DCE8F6' }, emptyIcon: { width: 52, height: 52, borderRadius: 18, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' }, emptyTitle: { color: colors.ink, fontSize: 15, fontWeight: '800', marginTop: 13 }, emptyText: { color: colors.muted, fontSize: 11, lineHeight: 17, textAlign: 'center', marginTop: 6 }, emptyButton: { minHeight: 40, paddingHorizontal: 16, borderRadius: 14, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginTop: 16 }, emptyButtonText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
+  avatar: { width: 52, height: 52, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }, avatarText: { color: colors.ink, fontSize: 14, fontWeight: '900' }, favoriteBadge: { position: 'absolute', right: -4, top: -4, width: 20, height: 20, borderRadius: 10, backgroundColor: '#F5A623', borderWidth: 2, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }, contactCopy: { flex: 1, marginLeft: 13 }, name: { color: colors.ink, fontSize: 15, fontWeight: '800' }, handle: { color: colors.muted, fontSize: 11, marginTop: 3 }, kindPill: { alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.brandSoft, borderRadius: 8, paddingHorizontal: 7, paddingVertical: 3, marginTop: 7 }, kindPillExternal: { backgroundColor: '#F0EBFF' }, kindText: { color: colors.brandDark, fontSize: 8, fontWeight: '800' }, kindTextExternal: { color: '#5744A8' }, openButton: { width: 34, height: 34, borderRadius: 12, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
   backdrop: { flex: 1, backgroundColor: 'rgba(5,16,35,0.38)' }, sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 22, paddingBottom: 30 }, handleBar: { width: 42, height: 5, borderRadius: 3, backgroundColor: '#D4DBE6', alignSelf: 'center', marginBottom: 18 },
   favorite: { position: 'absolute', right: 0, top: 0, width: 44, height: 44, borderRadius: 16, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }, largeAvatar: { width: 74, height: 74, borderRadius: 26, alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }, largeInitials: { color: colors.ink, fontSize: 21, fontWeight: '800' }, sheetTitle: { color: colors.ink, fontSize: 22, fontWeight: '800', textAlign: 'center', marginTop: 13 }, sheetHandle: { color: colors.muted, fontSize: 13, textAlign: 'center', marginTop: 4 },
   sendButton: { height: 54, borderRadius: 18, backgroundColor: colors.brand, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 24 }, sendText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800', marginLeft: 7 },

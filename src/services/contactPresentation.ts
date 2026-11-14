@@ -15,3 +15,7 @@ export function filterAndSortContacts(contacts: Contact[], search: string) {
     ].join(' ')).includes(query))
     .sort((left, right) => Number(right.favorite) - Number(left.favorite) || left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }));
 }
+
+export function contactAccountKind(contact: Pick<Contact, 'email'>) {
+  return contact.email ? 'movya' : 'external';
+}

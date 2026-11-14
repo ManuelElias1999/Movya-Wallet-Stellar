@@ -575,5 +575,8 @@
   "Tu lista está vacía": "Your list is empty",
   "Prueba con otro nombre, correo o dirección Stellar.": "Try another name, email, or Stellar address.",
   "Agrega una persona para enviarle dinero sin volver a copiar su dirección.": "Add someone to send them money without copying their address again.",
-  "Agregar primer contacto": "Add first contact"
+  "Agregar primer contacto": "Add first contact",
+  "Abrir contacto {0}": "Open {0}'s contact",
+  "Cuenta Movya": "Movya account",
+  "Wallet externa": "External wallet"
 }

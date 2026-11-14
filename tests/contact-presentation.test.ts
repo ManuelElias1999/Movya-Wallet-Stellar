@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { filterAndSortContacts } from '../src/services/contactPresentation';
+import { contactAccountKind, filterAndSortContacts } from '../src/services/contactPresentation';
 import type { Contact } from '../src/services/backend/contacts';
 
 const contacts: Contact[] = [
@@ -18,4 +18,9 @@ test('contact search ignores accents and matches name, email, and full address',
 
 test('favorites stay first and the remaining contacts are alphabetical', () => {
   assert.deepEqual(filterAndSortContacts(contacts, '').map(contact => contact.id), ['2', '1', '3']);
+});
+
+test('contact cards distinguish Movya accounts from external wallets', () => {
+  assert.equal(contactAccountKind(contacts[0]), 'movya');
+  assert.equal(contactAccountKind(contacts[1]), 'external');
 });
