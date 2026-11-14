@@ -567,5 +567,13 @@
   "La revisión expiró. Regresa para actualizarla.": "The review expired. Go back to refresh it.",
   "Esta revisión vence en {0} s": "This review expires in {0} s",
   "Movya firmará y enviará exactamente estos datos desde tu dispositivo. Verifica el monto y el destinatario antes de continuar.": "Movya will sign and send exactly these details from your device. Check the amount and recipient before continuing.",
-  "Revisión expirada": "Review expired"
+  "Revisión expirada": "Review expired",
+  "Limpiar búsqueda": "Clear search",
+  "persona": "person",
+  "personas": "people",
+  "No encontramos coincidencias": "No matches found",
+  "Tu lista está vacía": "Your list is empty",
+  "Prueba con otro nombre, correo o dirección Stellar.": "Try another name, email, or Stellar address.",
+  "Agrega una persona para enviarle dinero sin volver a copiar su dirección.": "Add someone to send them money without copying their address again.",
+  "Agregar primer contacto": "Add first contact"
 }

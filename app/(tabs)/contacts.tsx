@@ -11,6 +11,7 @@ import { MovyaContextHelp } from '@/components/MovyaContextHelp';
 import { PressableScale } from '@/components/PressableScale';
 import { useContacts } from '@/context/ContactsContext';
 import type { Contact } from '@/services/backend/contacts';
+import { filterAndSortContacts } from '@/services/contactPresentation';
 import { resolveContactWithConfirmation } from '@/components/confirmContactAddress';
 import { KeyboardSheet } from '@/components/KeyboardSheet';
 import { colors, radius } from '@/theme/tokens';
@@ -29,7 +30,7 @@ export default function ContactsScreen() {
   const [newName, setNewName] = useState('');
   const [identifier, setIdentifier] = useState('');
   const [identifierType, setIdentifierType] = useState<'email' | 'address'>('email');
-  const ordered = useMemo(() => contacts.filter(c => `${c.name} ${c.handle}`.toLowerCase().includes(search.toLowerCase())).sort((a, b) => Number(b.favorite) - Number(a.favorite)), [contacts, search]);
+  const ordered = useMemo(() => filterAndSortContacts(contacts, search), [contacts, search]);
 
   const openContact = (contact: Contact) => {
     setSelected(contact);
@@ -85,13 +86,14 @@ export default function ContactsScreen() {
         <View style={styles.search}>
           <Ionicons name="search" size={18} color={colors.muted} />
           <TextInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} value={search} onChangeText={setSearch} placeholder="Buscar personas" placeholderTextColor={colors.muted} style={styles.input} />
+          {search ? <Pressable accessibilityLabel="Limpiar búsqueda" onPress={() => setSearch('')} style={styles.clearSearch}><Ionicons name="close-circle" size={19} color={colors.muted} /></Pressable> : null}
         </View>
-        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Tus contactos</Text><PressableScale accessibilityLabel="Agregar contacto" onPress={() => setAdding(true)} pressedScale={0.9} style={styles.add}><Ionicons name="person-add-outline" size={18} color={colors.brand} /></PressableScale></View>
+        <View style={styles.sectionHeader}><View><Text style={styles.sectionTitle}>Tus contactos</Text><Text style={styles.contactCount}>{ordered.length} {ordered.length === 1 ? 'persona' : 'personas'}</Text></View><PressableScale accessibilityLabel="Agregar contacto" onPress={() => setAdding(true)} pressedScale={0.9} style={styles.add}><Ionicons name="person-add-outline" size={18} color={colors.brand} /></PressableScale></View>
         {saved.loading ? <Text style={styles.handle}>Cargando tus contactos…</Text> : null}
         {saved.error ? <Pressable onPress={() => void saved.refresh()}><Text style={styles.handle}>{saved.error} · Reintentar</Text></Pressable> : null}
         {!saved.persistent ? <Text style={styles.addDescription}>Estos contactos son de demostración. Ingresa con tu correo para guardar personas.</Text> : null}
         <View style={styles.card}>
-          {!ordered.length && !saved.loading ? <Text style={[styles.handle, { padding: 20 }]}>Todavía no hay contactos. Agrega tu primera persona.</Text> : null}
+          {!ordered.length && !saved.loading ? <View style={styles.emptyState}><View style={styles.emptyIcon}><Ionicons name={search ? 'search-outline' : 'people-outline'} size={25} color={colors.brand} /></View><Text style={styles.emptyTitle}>{search ? 'No encontramos coincidencias' : 'Tu lista está vacía'}</Text><Text style={styles.emptyText}>{search ? 'Prueba con otro nombre, correo o dirección Stellar.' : 'Agrega una persona para enviarle dinero sin volver a copiar su dirección.'}</Text><PressableScale onPress={() => search ? setSearch('') : setAdding(true)} style={styles.emptyButton}><Text style={styles.emptyButtonText}>{search ? 'Limpiar búsqueda' : 'Agregar primer contacto'}</Text></PressableScale></View> : null}
           {ordered.map((contact, index) => (
             <PressableScale key={contact.id} onPress={() => openContact(contact)} style={[styles.contact, index > 0 && styles.divider]}>
               <View style={[styles.avatar, { backgroundColor: contact.color }]}><Text translate={false} style={styles.avatarText}>{contact.initials}</Text></View>
@@ -174,10 +176,11 @@ export default function ContactsScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#D8E1EB' }, content: { width: '100%', maxWidth: 760, alignSelf: 'center', padding: 20, paddingBottom: 125 },
-  search: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#D9D1E7', borderRadius: radius.md, backgroundColor: '#FFFDFB', paddingHorizontal: 15, height: 54, marginTop: 18, shadowColor: colors.navy, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 2 }, input: { flex: 1, marginLeft: 10, color: colors.ink, fontSize: 14 },
+  search: { flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#D9D1E7', borderRadius: radius.md, backgroundColor: '#FFFDFB', paddingHorizontal: 15, height: 54, marginTop: 18, shadowColor: colors.navy, shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 5 }, elevation: 2 }, input: { flex: 1, marginLeft: 10, color: colors.ink, fontSize: 14 }, clearSearch: { width: 34, height: 40, alignItems: 'center', justifyContent: 'center' },
   contextHelp: { marginTop: 22 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 26, marginBottom: 11 }, sectionTitle: { color: colors.ink, fontSize: 17, fontWeight: '800' }, add: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 26, marginBottom: 11 }, sectionTitle: { color: colors.ink, fontSize: 17, fontWeight: '800' }, contactCount: { color: colors.muted, fontSize: 10, fontWeight: '700', marginTop: 3 }, add: { width: 42, height: 42, borderRadius: 15, backgroundColor: colors.brandSoft, borderWidth: 1, borderColor: colors.brandIce, alignItems: 'center', justifyContent: 'center' },
   card: { backgroundColor: '#EEF5FF', borderRadius: radius.md, borderWidth: 1.5, borderColor: '#C7D9F1', paddingHorizontal: 15, shadowColor: colors.navy, shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 2 }, contact: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }, divider: { borderTopWidth: 1, borderTopColor: '#D8E4F4' },
+  emptyState: { alignItems: 'center', paddingHorizontal: 24, paddingVertical: 30 }, emptyIcon: { width: 52, height: 52, borderRadius: 18, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center' }, emptyTitle: { color: colors.ink, fontSize: 15, fontWeight: '800', marginTop: 13 }, emptyText: { color: colors.muted, fontSize: 11, lineHeight: 17, textAlign: 'center', marginTop: 6 }, emptyButton: { minHeight: 40, paddingHorizontal: 16, borderRadius: 14, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center', marginTop: 16 }, emptyButtonText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
   avatar: { width: 46, height: 46, borderRadius: 17, alignItems: 'center', justifyContent: 'center' }, avatarText: { color: colors.ink, fontSize: 13, fontWeight: '800' }, contactCopy: { flex: 1, marginLeft: 12 }, nameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 }, name: { color: colors.ink, fontSize: 15, fontWeight: '700' }, handle: { color: colors.muted, fontSize: 12, marginTop: 3 },
   backdrop: { flex: 1, backgroundColor: 'rgba(5,16,35,0.38)' }, sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 22, paddingBottom: 30 }, handleBar: { width: 42, height: 5, borderRadius: 3, backgroundColor: '#D4DBE6', alignSelf: 'center', marginBottom: 18 },
   favorite: { position: 'absolute', right: 0, top: 0, width: 44, height: 44, borderRadius: 16, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' }, largeAvatar: { width: 74, height: 74, borderRadius: 26, alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }, largeInitials: { color: colors.ink, fontSize: 21, fontWeight: '800' }, sheetTitle: { color: colors.ink, fontSize: 22, fontWeight: '800', textAlign: 'center', marginTop: 13 }, sheetHandle: { color: colors.muted, fontSize: 13, textAlign: 'center', marginTop: 4 },
