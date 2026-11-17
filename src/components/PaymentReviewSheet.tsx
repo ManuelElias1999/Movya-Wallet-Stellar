@@ -34,7 +34,7 @@ export function PaymentReviewSheet({ review, onClose, onSuccess }: { review: Pay
     if (expired) { setError('Esta revisión expiró. Vuelve al envío para generar una nueva.'); return; }
     lock.current = true; setBusy(true); setError('');
     try {
-      const receipt = await submitPayment(review, wallet.sign);
+      const receipt = await submitPayment(review, wallet.sign, wallet.signerPublicKey ?? undefined);
       sent.current = true;
       await wallet.refresh(); onSuccess(receipt);
     } catch (failure) {

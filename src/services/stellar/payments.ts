@@ -5,7 +5,9 @@ export const USDC_ISSUER = 'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLL
 export type PaymentAsset = 'XLM' | 'USDC';
 export type LocalSigner = (xdr: string) => Promise<string>;
 export type Balance = { asset_type: string; asset_code?: string; asset_issuer?: string; balance: string; limit?: string; is_authorized?: boolean; selling_liabilities?: string; buying_liabilities?: string };
-export type TestnetAccount = { account_id: string; sequence: string; balances: Balance[]; subentry_count: number; num_sponsoring?: number; num_sponsored?: number };
+export type AccountSigner = { key: string; weight: number; type: string };
+export type AccountThresholds = { low_threshold: number; med_threshold: number; high_threshold: number };
+export type TestnetAccount = { account_id: string; sequence: string; balances: Balance[]; subentry_count: number; num_sponsoring?: number; num_sponsored?: number; signers?: AccountSigner[]; thresholds?: AccountThresholds };
 export type PaymentReview = Readonly<{ source: string; destination: string; amount: string; asset: PaymentAsset; issuer?: string; fee: string; xdr: string; hash: string; expiresAt: number }>;
 export type PaymentReceipt = { hash: string; explorerUrl: string };
 
@@ -147,12 +149,14 @@ async function broadcast(xdr: string, hash: string): Promise<PaymentReceipt> {
 // Shared Testnet transport and exact reserve/fee calculations for reviewed swaps.
 export { request as horizonRequest, costs as accountCosts, available as availableBalance, broadcast as broadcastTransaction };
 
-export async function submitPayment(review: PaymentReview, sign: LocalSigner) {
+// signerPublicKey: the key that signs for the account. It equals the account
+// address until the signing key is rotated (see signers.ts).
+export async function submitPayment(review: PaymentReview, sign: LocalSigner, signerPublicKey = review.source) {
   assertTestnet();
   validateReview(review);
   const signedXdr = await sign(review.xdr);
   const signed = new Transaction(signedXdr, Networks.TESTNET);
-  if (transactionHash(signed) !== review.hash || signed.signatures.length !== 1 || !Keypair.fromPublicKey(review.source).verify(signed.hash(), signed.signatures[0].signature)) throw new Error('La firma no corresponde a la operación revisada.');
+  if (transactionHash(signed) !== review.hash || signed.signatures.length !== 1 || !Keypair.fromPublicKey(signerPublicKey).verify(signed.hash(), signed.signatures[0].signature)) throw new Error('La firma no corresponde a la operación revisada.');
   return broadcast(signedXdr, review.hash);
 }
 
@@ -172,7 +176,7 @@ export async function fundTestnetAccount(publicKey: string) {
   if (!response.ok) throw new Error('No se pudo solicitar XLM de prueba. Actualiza el balance y vuelve a intentar si la cuenta sigue sin activar.');
 }
 
-export async function enableUSDC(publicKey: string, sign: LocalSigner) {
+export async function enableUSDC(publicKey: string, sign: LocalSigner, signerPublicKey = publicKey) {
   const account = await readTestnetAccount(publicKey);
   if (assetBalance(account, 'USDC')) return;
   const { fee, reserve, baseReserve } = await costs(account);
@@ -180,6 +184,6 @@ export async function enableUSDC(publicKey: string, sign: LocalSigner) {
   const tx = new TransactionBuilder(new Account(account.account_id, account.sequence), { fee: fee.toString(), networkPassphrase: Networks.TESTNET })
     .addOperation(Operation.changeTrust({ asset: new Asset('USDC', USDC_ISSUER) })).setTimeout(180).build();
   const signed = new Transaction(await sign(tx.toXDR()), Networks.TESTNET);
-  if (transactionHash(signed) !== transactionHash(tx) || signed.signatures.length !== 1 || !Keypair.fromPublicKey(publicKey).verify(signed.hash(), signed.signatures[0].signature)) throw new Error('La firma no corresponde a la operación.');
+  if (transactionHash(signed) !== transactionHash(tx) || signed.signatures.length !== 1 || !Keypair.fromPublicKey(signerPublicKey).verify(signed.hash(), signed.signatures[0].signature)) throw new Error('La firma no corresponde a la operación.');
   return broadcast(signed.toXDR(), transactionHash(tx));
 }

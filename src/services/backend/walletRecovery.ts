@@ -1,5 +1,6 @@
 import { Keypair } from '@stellar/stellar-sdk/base';
-import { decryptRecovery, encryptRecovery, encryptWallet, fingerprintBackup, type WalletBackup } from './vault';
+import { decryptRecovery, encryptRecovery, encryptRecoveryV3, encryptWallet, fingerprintBackup, type WalletBackup } from './vault';
+import type { AccountKeys } from './accountKeys';
 import { createRecoveryWallet, type RecoveryMaterial } from '../stellar/recovery';
 import { assertAccessActive } from './accessOperation';
 
@@ -14,7 +15,7 @@ type WalletStorage = {
 export type RecoveryProgress = 'reading' | 'creating' | 'encrypting' | 'registering' | 'decrypting' | 'local' | 'saving';
 // allowLocalCache is only supplied by the native account flow after Supabase
 // verifies credentials; portable callers still always verify the backup password.
-export async function recoverWallet(storage: WalletStorage, userId: string, password: string, linkExisting: boolean, options: { signal?: AbortSignal; onProgress?: (stage: RecoveryProgress) => void; allowLocalCache?: boolean } = {}) {
+export async function recoverWallet(storage: WalletStorage, userId: string, password: string, linkExisting: boolean, options: { signal?: AbortSignal; onProgress?: (stage: RecoveryProgress) => void; allowLocalCache?: boolean; keys?: AccountKeys } = {}) {
   const progress = (stage: RecoveryProgress) => { assertAccessActive(options.signal); options.onProgress?.(stage); };
   progress('reading');
   // Independent network and protected-storage reads can happen together.
@@ -28,7 +29,9 @@ export async function recoverWallet(storage: WalletStorage, userId: string, pass
     const material = legacy ?? createRecoveryWallet();
     const pair = Keypair.fromSecret(material.secret);
     progress('encrypting');
-    const backup = material.mnemonic ? await encryptRecovery(material, password, userId) : await encryptWallet(material.secret, password, userId);
+    // Accounts that sign in with v3 keys get a v3 backup from the start.
+    const backup = options.keys ? encryptRecoveryV3(material, options.keys, userId)
+      : material.mnemonic ? await encryptRecovery(material, password, userId) : await encryptWallet(material.secret, password, userId);
     created = { material, publicKey: pair.publicKey(), backup };
     progress('registering');
     // The server returns the winner if two devices create simultaneously.
@@ -37,7 +40,7 @@ export async function recoverWallet(storage: WalletStorage, userId: string, pass
   assertAccessActive(options.signal);
   if (!record || record.owner_id !== userId) throw new Error('La wallet no corresponde a esta cuenta.');
   const fingerprint = fingerprintBackup(record.backup, userId, record.public_key);
-  if (local && Keypair.fromSecret(local.secret).publicKey() !== record.public_key) throw new Error('La wallet local no coincide con tu respaldo.');
+  if (local && (local.accountId ?? Keypair.fromSecret(local.secret).publicKey()) !== record.public_key) throw new Error('La wallet local no coincide con tu respaldo.');
   // Reuse our own material only when the immutable RPC returns exactly the
   // backup we just encrypted. A concurrent registration winner must be decrypted.
   const ownBackup = created && record.public_key === created.publicKey
@@ -46,9 +49,9 @@ export async function recoverWallet(storage: WalletStorage, userId: string, pass
   if (ownBackup && created) material = created.material;
   else if (options.allowLocalCache && local?.backupFingerprint === fingerprint) {
     progress('local');
-    material = { secret: local.secret, ...(local.mnemonic ? { mnemonic: local.mnemonic } : {}) };
+    material = { secret: local.secret, ...(local.mnemonic ? { mnemonic: local.mnemonic } : {}), ...(local.accountId ? { accountId: local.accountId } : {}) };
   }
-  else { progress('decrypting'); material = await decryptRecovery(record.backup, password, userId, record.public_key); }
+  else { progress('decrypting'); material = await decryptRecovery(record.backup, { password, keys: options.keys }, userId, record.public_key); }
   assertAccessActive(options.signal);
   progress('saving');
   await storage.writeLocal({ ...material, oualiAddress: local?.oualiAddress ?? '', backupAcknowledged: local?.backupAcknowledged ?? false, backupFingerprint: fingerprint }, userId);

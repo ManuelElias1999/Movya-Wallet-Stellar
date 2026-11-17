@@ -26,7 +26,12 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Movya usa Face ID para confirmar que eres tú antes de firmar o mostrar tu respaldo."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

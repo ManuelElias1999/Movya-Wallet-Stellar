@@ -29,7 +29,7 @@ export function TestnetFundingButtons() {
         const current = await readTestnetAccount(wallet.publicKey);
         if (!assetBalance(current, 'USDC')) {
           setMessage('Habilitando tu wallet para recibir USDC de prueba…');
-          await enableUSDC(wallet.publicKey, wallet.sign);
+          await enableUSDC(wallet.publicKey, wallet.sign, wallet.signerPublicKey ?? wallet.publicKey);
         }
         await Clipboard.setStringAsync(wallet.publicKey);
         await Linking.openURL('https://faucet.circle.com/');

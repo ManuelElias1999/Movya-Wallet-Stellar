@@ -1,10 +1,12 @@
 import { generateMnemonic, mnemonicToSeedSync, validateMnemonic } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english.js';
-import { Keypair } from '@stellar/stellar-sdk/base';
+import { Keypair, StrKey } from '@stellar/stellar-sdk/base';
 import { HDKey } from 'micro-key-producer/slip10.js';
 
 export const STELLAR_RECOVERY_PATH = "m/44'/148'/0'";
-export type RecoveryMaterial = { secret: string; mnemonic?: string };
+// accountId is present only after a key rotation, when the signing key no
+// longer equals the Stellar account that holds the funds (see signers.ts).
+export type RecoveryMaterial = { secret: string; mnemonic?: string; accountId?: string };
 
 export function walletFromMnemonic(input: string): RecoveryMaterial & { mnemonic: string } {
   const mnemonic = input.trim().toLowerCase().split(/\s+/).join(' ');
@@ -20,8 +22,10 @@ export function walletFromMnemonic(input: string): RecoveryMaterial & { mnemonic
 export function createRecoveryWallet() {
   return walletFromMnemonic(generateMnemonic(wordlist, 128));
 }
+// Returns the Stellar account the material controls.
 export function validateRecoveryMaterial(material: RecoveryMaterial) {
-  const publicKey = Keypair.fromSecret(material.secret).publicKey();
+  const signer = Keypair.fromSecret(material.secret).publicKey();
   if (material.mnemonic && walletFromMnemonic(material.mnemonic).secret !== material.secret) throw new Error('La frase de recuperación no corresponde a esta wallet.');
-  return publicKey;
+  if (material.accountId !== undefined && !StrKey.isValidEd25519PublicKey(material.accountId)) throw new Error('La cuenta del respaldo no es válida.');
+  return material.accountId ?? signer;
 }

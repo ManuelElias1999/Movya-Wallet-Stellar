@@ -1,29 +1,47 @@
 import { Buffer } from 'buffer';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import { Keypair } from '@stellar/stellar-sdk/base';
 
-export type StoredWallet = { secret: string; mnemonic?: string; backupAcknowledged?: boolean; backupFingerprint?: string; oualiAddress: string };
+import { createWalletStore, type KeyValue } from './walletStore';
+export type { StoredWallet, WalletMeta } from './walletStore';
+import type { StoredWallet } from './walletStore';
+
 const memory = new Map<string, string>();
-const walletKey = (userId?: string) => userId ? `movya.testnet.wallet.user.${userId}` : 'movya.testnet.wallet.v1';
-export async function readWallet(userId?: string): Promise<StoredWallet | null> {
-  const key = walletKey(userId);
-  const raw = Platform.OS === 'web' ? memory.get(key) : await SecureStore.getItemAsync(key);
-  return raw ? JSON.parse(raw) as StoredWallet : null;
-}
-export async function writeWallet(wallet: StoredWallet, userId?: string) {
-  const key = walletKey(userId);
-  if (Platform.OS === 'web') memory.set(key, JSON.stringify(wallet));
-  else await SecureStore.setItemAsync(key, JSON.stringify(wallet), { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY });
-}
-export async function removeWallet(userId: string) {
-  const key = walletKey(userId);
-  if (Platform.OS === 'web') memory.delete(key);
-  else await SecureStore.deleteItemAsync(key);
-}
+const plain = { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY };
+const guarded = {
+  keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  requireAuthentication: true,
+  authenticationPrompt: 'Confirma que eres tú para usar tu wallet Movya',
+};
+const keyValue: KeyValue = {
+  get: async (key, protectedItem) => Platform.OS === 'web' ? memory.get(key) ?? null : SecureStore.getItemAsync(key, protectedItem ? guarded : plain),
+  set: async (key, value, protectedItem) => {
+    if (Platform.OS === 'web') memory.set(key, value);
+    else await SecureStore.setItemAsync(key, value, protectedItem ? guarded : plain);
+  },
+  remove: async key => { if (Platform.OS === 'web') memory.delete(key); else await SecureStore.deleteItemAsync(key); },
+  // Biometric protection needs enrolled biometrics; otherwise the app lock and
+  // password re-entry are the protection (see AuthContext).
+  canProtect: () => {
+    if (Platform.OS === 'web') return false;
+    try { return SecureStore.canUseBiometricAuthentication(); } catch { return false; }
+  },
+};
+const store = createWalletStore(keyValue, secret => Keypair.fromSecret(secret).publicKey());
+
+// Reads the key: shows the biometric prompt when the wallet is protected.
+export const readWallet = (userId?: string) => store.readFull(userId);
+// No prompt: account, signer public key and flags only.
+export const readWalletMeta = (userId?: string) => store.readMeta(userId);
+export const writeWallet = (wallet: StoredWallet, userId?: string) => store.write(wallet, userId);
+export const updateWalletMeta = store.updateMeta;
+export const removeWallet = (userId: string) => store.remove(userId);
+export function biometricProtectionAvailable() { return keyValue.canProtect(); }
 export async function clearWalletOnLogout(userId: string) {
-  // Native keys stay in the per-user Keychain. Auth guards disable every
-  // wallet read/sign/reveal after logout; the next login verifies credentials.
-  // Web keys have no protected persistence and must leave memory on logout.
+  // Native keys stay in the per-user Keychain behind biometrics. Auth guards
+  // disable every wallet read/sign/reveal after logout; the next login
+  // verifies credentials. Web keys have no protected persistence.
   if (Platform.OS === 'web') await removeWallet(userId);
 }
 
