@@ -3,7 +3,7 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex, hexToBytes, randomBytes } from '@noble/hashes/utils.js';
 import { Buffer } from 'buffer';
 import { validateRecoveryMaterial, type RecoveryMaterial } from '../stellar/recovery';
-import { deriveAccountKeys, type AccountKeys } from './accountKeys';
+import { deriveAccountKeys, wipeKeys, type AccountKeys } from './accountKeys';
 import { deriveBackupKey } from './passwordKey';
 
 // v1: secret only, key = PBKDF2(password). v2: secret + words, same key.
@@ -81,7 +81,7 @@ export async function decryptRecovery(backup: WalletBackup, credential: BackupCr
   finally {
     // Only wipe keys derived here; caller-provided keys stay usable.
     if (backup.version !== 3) key?.fill(0);
-    derived?.backupKey.fill(0);
+    wipeKeys(derived);
     plaintext?.fill(0); passwordBytes.fill(0);
   }
 }

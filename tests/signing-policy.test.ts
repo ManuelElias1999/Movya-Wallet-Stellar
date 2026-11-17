@@ -62,3 +62,21 @@ test('recovery setup is accepted only for the exact signer and thresholds the pe
   assert.throws(() => classifyTransaction(setup({ masterWeight: 2 }), withRecovery), /umbrales/);
   assert.throws(() => classifyTransaction(setup({ homeDomain: 'evil.example' }), withRecovery), /no permitidas/);
 });
+
+test('emergency transfer: everything must go to the new wallet created on this device', () => {
+  const NEW = 'G' + 'N'.repeat(55);
+  const sweep = { ...policy, sweepTo: NEW };
+  const ops = [
+    { type: 'createAccount', destination: NEW, startingBalance: '3' },
+    { type: 'changeTrust', line: USDC, source: NEW },
+    { type: 'payment', destination: NEW, asset: USDC, amount: '10' },
+    { type: 'changeTrust', line: USDC, limit: '0' },
+    { type: 'accountMerge', destination: NEW },
+  ];
+  assert.equal(classifyTransaction(tx(ops), sweep), 'sweep');
+  assert.throws(() => classifyTransaction(tx(ops), policy), /no ofrece|otra cuenta/);
+  assert.throws(() => classifyTransaction(tx([...ops.slice(0, 4), { type: 'accountMerge', destination: FRIEND }]), sweep), /no permitida/);
+  assert.throws(() => classifyTransaction(tx([{ type: 'payment', destination: NEW, asset: XLM, amount: '1' }]), sweep), /no crea/);
+  assert.throws(() => classifyTransaction(tx([ops[0], { type: 'setOptions', signer: { ed25519PublicKey: FRIEND, weight: 1 } }]), sweep), /no permitida/);
+  assert.throws(() => classifyTransaction(tx([ops[0], { type: 'changeTrust', line: USDC, source: FRIEND }]), sweep), /no permitida/);
+});

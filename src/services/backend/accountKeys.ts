@@ -15,10 +15,15 @@ import { deriveBackupKey } from './passwordKey';
 // minimum do that.
 export const V3_LOGIN_LABEL = 'movya/v3/login';
 export const V3_BACKUP_LABEL = 'movya/v3/backup';
+// Contacts get their own key so the contact backup can change often without
+// touching the wallet backup.
+export const V3_CONTACTS_LABEL = 'movya/v3/contacts';
 const V3_LOGIN_INFO = Uint8Array.from(Buffer.from(V3_LOGIN_LABEL, 'utf8'));
 const V3_BACKUP_INFO = Uint8Array.from(Buffer.from(V3_BACKUP_LABEL, 'utf8'));
-export type AccountKeys = { salt: string; loginSecret: string; backupKey: Uint8Array };
+const V3_CONTACTS_INFO = Uint8Array.from(Buffer.from(V3_CONTACTS_LABEL, 'utf8'));
+export type AccountKeys = { salt: string; loginSecret: string; backupKey: Uint8Array; contactsKey: Uint8Array };
 
+export function wipeKeys(keys?: AccountKeys) { keys?.backupKey.fill(0); keys?.contactsKey.fill(0); }
 export function newKdfSalt() { return bytesToHex(randomBytes(16)); }
 export function assertKdfSalt(salt: string) {
   if (!/^[a-f0-9]{32}$/.test(salt)) throw new Error('Parámetros de acceso inválidos.');
@@ -39,6 +44,7 @@ export async function deriveAccountKeys(password: string, salt: string): Promise
     const loginBytes: Uint8Array = hkdf(sha256, derived, saltBytes, V3_LOGIN_INFO, 32);
     login = loginBytes;
     const backupKey = hkdf(sha256, derived, saltBytes, V3_BACKUP_INFO, 32);
-    return { salt, loginSecret: loginSecretFromBytes(loginBytes), backupKey };
+    const contactsKey = hkdf(sha256, derived, saltBytes, V3_CONTACTS_INFO, 32);
+    return { salt, loginSecret: loginSecretFromBytes(loginBytes), backupKey, contactsKey };
   } finally { master?.fill(0); login?.fill(0); passwordBytes.fill(0); }
 }

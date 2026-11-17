@@ -2,6 +2,8 @@ import { requireBackend } from './client';
 import { validateAddress } from '../stellar/payments';
 import { createContactPins } from './contactPins';
 import { contactPinStore } from './contactPinStore';
+import { contactVaultFor } from './contactBackup';
+import type { ContactMap } from './contactVault';
 
 export type Contact = { id: string; name: string; email?: string; address?: string; favorite: boolean; handle: string; initials: string; color: string };
 type Row = { id: string; name: string; email: string | null; address: string; favorite: boolean };
@@ -33,17 +35,20 @@ export async function addContact(input: { name: string; identifier: string; type
   // Pin the address resolved here, not whatever the server echoes back. A
   // different echo is caught as a change before the first payment.
   await pins.pin(contact, address);
+  void syncContactBackup().catch(() => undefined);
   return contact;
 }
 export async function updateContact(id: string, patch: { name?: string; favorite?: boolean }) {
   const result = await requireBackend().from('contacts').update(patch).eq('id', id).select('id,name,email,address,favorite').single();
   if (result.error) throw result.error;
+  void syncContactBackup().catch(() => undefined);
   return presentContact(result.data as Row);
 }
 export async function deleteContact(id: string) {
   const result = await requireBackend().from('contacts').delete().eq('id', id).select('id').single();
   if (result.error) throw result.error;
   await pins.unpin(id).catch(() => undefined);
+  void syncContactBackup().catch(() => undefined);
 }
 
 const pins = createContactPins({
@@ -74,5 +79,38 @@ export async function acceptContactAddress(contact: Contact, address: string) {
     if (next.address !== address) throw new Error('No pudimos guardar la dirección aprobada. Vuelve a intentarlo.');
   }
   await pins.pin(next, address);
+  void syncContactBackup().catch(() => undefined);
   return next;
+}
+
+const currentOwner = async () => (await requireBackend().auth.getSession()).data.session?.user.id ?? null;
+// Saves the verified addresses (not the server's copy of them) in the
+// encrypted contact backup.
+export async function syncContactBackup() {
+  const owner = await currentOwner();
+  const vault = owner ? await contactVaultFor(owner) : null;
+  if (!owner || !vault) return;
+  const entries: ContactMap = {};
+  for (const contact of await listContacts()) {
+    const pin = await contactPinStore.read(owner, contact.id);
+    if (pin) entries[contact.id] = { name: contact.name, address: pin.address, ...(contact.email ? { email: contact.email } : {}), ...(pin.verifiedAt ? { verifiedAt: pin.verifiedAt } : {}) };
+  }
+  await vault.save(entries);
+}
+// On a new device: contacts verified elsewhere are restored from the
+// encrypted backup instead of being trusted from the contact rows.
+export async function restorePinsFromBackup(contacts: Contact[]) {
+  const owner = await currentOwner();
+  const vault = owner ? await contactVaultFor(owner) : null;
+  if (!owner || !vault) return 0;
+  const backup = await vault.load();
+  let restored = 0;
+  for (const contact of contacts) {
+    const entry = backup[contact.id];
+    if (!entry || await contactPinStore.read(owner, contact.id)) continue;
+    validateAddress(entry.address);
+    await contactPinStore.write(owner, contact.id, { address: entry.address, ...(entry.email ? { email: entry.email } : {}), ...(entry.verifiedAt ? { verifiedAt: entry.verifiedAt } : {}) });
+    restored++;
+  }
+  return restored;
 }

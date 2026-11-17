@@ -38,6 +38,23 @@ export const writeWallet = (wallet: StoredWallet, userId?: string) => store.writ
 export const updateWalletMeta = store.updateMeta;
 export const removeWallet = (userId: string) => store.remove(userId);
 export function biometricProtectionAvailable() { return keyValue.canProtect(); }
+
+// The new wallet of an emergency transfer, kept behind biometrics until the
+// account points to it, so an interruption never loses its key.
+export type PendingSweep = { secret: string; mnemonic: string; from: string };
+const sweepKey = (owner: string) => `movya.sweep.pending.${owner.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+export async function writePendingSweep(owner: string, pending: PendingSweep) {
+  await keyValue.set(sweepKey(owner), JSON.stringify(pending), keyValue.canProtect());
+  await keyValue.set(`${sweepKey(owner)}.protected`, keyValue.canProtect() ? '1' : '0', false);
+}
+export async function readPendingSweep(owner: string): Promise<PendingSweep | null> {
+  const protectedItem = (await keyValue.get(`${sweepKey(owner)}.protected`, false)) === '1';
+  const raw = await keyValue.get(sweepKey(owner), protectedItem);
+  return raw ? JSON.parse(raw) as PendingSweep : null;
+}
+export async function clearPendingSweep(owner: string) {
+  await keyValue.remove(sweepKey(owner)); await keyValue.remove(`${sweepKey(owner)}.protected`);
+}
 export async function clearWalletOnLogout(userId: string) {
   // Native keys stay in the per-user Keychain behind biometrics. Auth guards
   // disable every wallet read/sign/reveal after logout; the next login

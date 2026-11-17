@@ -59,3 +59,22 @@ test('rotation adds the new device key and disables the old master key', () => {
   // The device key itself may never sign a rotation.
   assert.throws(() => classifyTransaction(decode(tx), { ...policy, recoverySigner: kit.publicKey() }));
 });
+
+test('a real emergency transfer is accepted only towards the new wallet', async () => {
+  const { buildSweep } = await import('../src/services/stellar/sweep');
+  const fresh = Keypair.random();
+  const account: TestnetAccount = { account_id: me.publicKey(), sequence: '1', subentry_count: 1,
+    balances: [{ asset_type: 'native', balance: '100' }, { asset_type: 'credit_alphanum4', asset_code: 'USDC', asset_issuer: USDC_ISSUER, balance: '12', limit: '1000', is_authorized: true }],
+    signers: [{ key: me.publicKey(), weight: 1, type: 'ed25519_public_key' }], thresholds: { low_threshold: 0, med_threshold: 0, high_threshold: 0 } };
+  const { tx, merge } = buildSweep(account, fresh.publicKey(), { fee: 100n, reserve: 15_000_000n, baseReserve: 5_000_000n }, me.publicKey());
+  assert.equal(merge, true);
+  const decoded = decode(new Transaction(tx.toXDR(), Networks.TESTNET));
+  assert.equal(classifyTransaction(decoded, { ...policy, sweepTo: fresh.publicKey() }), 'sweep');
+  assert.throws(() => classifyTransaction(decoded, { ...policy, sweepTo: friend.publicKey() }));
+  // With a recovery kit the device cannot merge: XLM is paid instead, reserve stays.
+  const guarded = { ...account, signers: [...account.signers!, { key: kit.publicKey(), weight: 2, type: 'ed25519_public_key' }], thresholds: { low_threshold: 1, med_threshold: 1, high_threshold: 2 } };
+  const partial = buildSweep(guarded, fresh.publicKey(), { fee: 100n, reserve: 20_000_000n, baseReserve: 5_000_000n }, me.publicKey());
+  assert.equal(partial.merge, false);
+  const ops = (decode(partial.tx) as unknown as { operations: { type: string }[] }).operations.map(op => op.type);
+  assert.deepEqual(ops, ['createAccount', 'changeTrust', 'payment', 'changeTrust', 'payment']);
+});

@@ -1,11 +1,23 @@
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
+import { useContacts } from '@/context/ContactsContext';
+import { RecipientRiskNotice } from '@/components/RecipientRiskNotice';
+import { assessRecipient } from '@/services/security/recipientRisk';
 import { Pressable, Text } from '@/i18n/primitives';
 import type { ChatPaymentState, createChatPaymentFlow } from '@/services/chatPayment';
 import { colors } from '@/theme/tokens';
 
 export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentState; flow: ReturnType<typeof createChatPaymentFlow>; onCancel?: () => void }) {
-  if (state.phase === 'idle') return null;
+  const { contacts } = useContacts();
   const { review, request, receipt } = state;
+  const [acknowledged, setAcknowledged] = useState(false);
+  useEffect(() => setAcknowledged(false), [review?.hash]);
+  const risk = useMemo(() => review ? assessRecipient({ destination: review.destination, amount: review.amount, asset: review.asset, known: contacts.filter(c => c.address).map(c => ({ address: c.address!, label: c.name })) }) : null, [review, contacts]);
+  if (state.phase === 'idle') return null;
+  const confirm = () => {
+    if (risk?.needsExtraConfirmation && !acknowledged) { setAcknowledged(true); return; }
+    void flow.confirm();
+  };
   const busy = state.phase === 'preparing' || state.phase === 'submitting';
   const cancel = () => { if (flow.cancel()) onCancel?.(); };
   return <View style={styles.card} accessibilityLiveRegion="polite">
@@ -20,7 +32,8 @@ export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentS
     </> : null}
     {review ? <>
       <Text style={styles.label}>Destinatario</Text><Text translate={false} style={styles.copy}>{state.recipient}</Text>
-      <Text style={styles.label}>Dirección destinataria</Text><Text translate={false} selectable style={styles.address}>{review.destination}</Text>
+      <Text style={styles.label}>Dirección destinataria completa</Text><Text translate={false} selectable style={styles.address}>{review.destination}</Text>
+      {risk ? <RecipientRiskNotice risk={risk} destination={review.destination} /> : null}
       <Text style={styles.label}>De tu wallet</Text><Text translate={false} selectable style={styles.address}>{review.source}</Text>
       <Text style={styles.label}>Red</Text><Text style={styles.copy}>Stellar · Testnet</Text>
       {review.issuer ? <><Text style={styles.label}>Emisor de USDC</Text><Text translate={false} selectable style={styles.address}>{review.issuer}</Text></> : null}
@@ -30,7 +43,7 @@ export function ChatPaymentCard({ state, flow, onCancel }: { state: ChatPaymentS
       <Text style={styles.copy}>Al confirmar, Movya firma y envía esta operación desde tu dispositivo. La revisión expira en 3 minutos.</Text>
       <View style={styles.actions}>
         <Pressable accessibilityRole="button" onPress={cancel} style={[styles.secondary, styles.flex]}><Text>No</Text></Pressable>
-        <Pressable accessibilityRole="button" onPress={() => void flow.confirm()} style={[styles.primary, styles.flex]}><Text style={styles.primaryText}>Sí, confirmar</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={confirm} style={[styles.primary, styles.flex]}><Text style={styles.primaryText}>{risk?.needsExtraConfirmation && !acknowledged ? 'Revisé la dirección' : 'Sí, confirmar'}</Text></Pressable>
       </View>
     </> : null}
     {busy ? <View style={styles.progress}><ActivityIndicator color={colors.brand} /><Text style={styles.copy}>{state.phase === 'preparing' ? 'Verificando…' : 'Enviando o verificando la transacción…'}</Text></View> : null}

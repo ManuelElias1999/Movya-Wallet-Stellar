@@ -12,10 +12,12 @@ export type TransactionLike = {
   source: string; fee: string; operations: OperationLike[]; signatures: unknown[];
   timeBounds?: { minTime: string; maxTime: string }; memo?: { type: string };
 };
-export type SigningKind = 'payment' | 'swap' | 'trustline' | 'recovery-setup';
+export type SigningKind = 'payment' | 'swap' | 'trustline' | 'recovery-setup' | 'sweep';
 export type SigningPolicy = {
   account: string; usdcIssuer: string; treasury: string;
   now?: number; recoverySigner?: string;
+  // Emergency transfer: everything may go to this brand-new wallet only.
+  sweepTo?: string;
 };
 
 export const MAX_SIGNED_FEE_STROOPS = 1_000_000n; // 0.1 XLM: far above Testnet fees, far below a drain.
@@ -42,8 +44,9 @@ export function classifyTransaction(tx: TransactionLike, policy: SigningPolicy):
   if (!/^\d+$/.test(tx.fee) || BigInt(tx.fee) > MAX_SIGNED_FEE_STROOPS) refuse('la comisión de red es demasiado alta');
   const maxTime = Number(tx.timeBounds?.maxTime ?? 0);
   if (!tx.timeBounds || !maxTime || maxTime > now + MAX_SIGNED_LIFETIME_SECONDS) refuse('no tiene una expiración corta');
-  if (tx.operations.some(operation => operation.source !== undefined && operation.source !== policy.account)) refuse('una operación usa otra cuenta');
   const ops = tx.operations;
+  if (policy.sweepTo) return classifySweep(ops, policy, policy.sweepTo);
+  if (ops.some(operation => operation.source !== undefined && operation.source !== policy.account)) refuse('una operación usa otra cuenta');
 
   if (ops.length === 1 && ops[0].type === 'payment') {
     const op = ops[0];
@@ -75,4 +78,27 @@ export function classifyTransaction(tx: TransactionLike, policy: SigningPolicy):
     return 'recovery-setup';
   }
   return refuse('Movya no ofrece este tipo de transacción');
+}
+
+// Emergency transfer to a new wallet created on this device: create it, move
+// USDC (adding its trustline, signed by the new key) and XLM, remove the old
+// trustline and, when allowed, merge the old account into the new one.
+// Every destination must be the new wallet.
+function classifySweep(ops: OperationLike[], policy: SigningPolicy, sweepTo: string): SigningKind {
+  if (sweepTo === policy.account) refuse('el destino no es una wallet nueva');
+  if (ops[0]?.type !== 'createAccount' || ops[0].destination !== sweepTo || ops[0].source !== undefined) refuse('la transferencia no crea la wallet nueva');
+  for (const op of ops) {
+    const own = op.source === undefined || op.source === policy.account;
+    if (op.type === 'createAccount' && own && op.destination === sweepTo) continue;
+    if (op.type === 'payment' && own && op.destination === sweepTo && supported(op.asset, policy.usdcIssuer)) continue;
+    if (op.type === 'changeTrust') {
+      const line = op.line as AssetLike | undefined;
+      const usdc = Boolean(line && !native(line) && line.code === 'USDC' && line.issuer === policy.usdcIssuer);
+      if (usdc && op.source === sweepTo) continue;            // new wallet opens its USDC line
+      if (usdc && own && (op.limit === '0' || op.limit === '0.0000000')) continue; // old line closed
+    }
+    if (op.type === 'accountMerge' && own && op.destination === sweepTo) continue;
+    refuse('la transferencia incluye una operación no permitida');
+  }
+  return 'sweep';
 }

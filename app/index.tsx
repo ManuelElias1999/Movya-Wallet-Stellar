@@ -15,6 +15,8 @@ import { WalletForge } from '@/components/WalletForge';
 import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
 import { PasswordInput } from '@/components/PasswordInput';
 import { colors } from '@/theme/tokens';
+import { checkPasswordStrength } from '@/services/security/passwordStrength';
+import { isMfaRequired } from '@/services/backend/mfa';
 
 type AuthMode = 'login' | 'register';
 
@@ -30,15 +32,18 @@ export default function WelcomeScreen() {
   const [name, setName] = useState('');
   const [identity, setIdentity] = useState(auth.user?.email ?? '');
   const [password, setPassword] = useState('');
+  const [confirmation, setConfirmation] = useState('');
+  const [mfaCode, setMfaCode] = useState(''); const [needsMfa, setNeedsMfa] = useState(false);
+  const [pin, setPin] = useState('');
   const passwordVisibility = usePasswordVisibility(password, busy);
   const changeAuthMode = (next: AuthMode) => {
     if (next === authMode || busy || lock.current) return;
     Keyboard.dismiss();
-    setIdentity(''); setPassword(''); setName(''); setCode(''); setPendingEmail(''); setMessage('');
+    setIdentity(''); setPassword(''); setConfirmation(''); setName(''); setCode(''); setPendingEmail(''); setMessage('');
     passwordVisibility.hide();
     setAuthMode(next);
   };
-  const canContinue = auth.configured && !busy && (!pendingEmail || /^\d{6,10}$/.test(code.trim())) && password.length >= (authMode === 'register' ? 12 : 1) && (pendingEmail || (/^\S+@\S+\.\S+$/.test(identity.trim()) && (authMode === 'login' || name.trim().length > 1)));
+  const canContinue = auth.configured && !busy && (!pendingEmail || /^\d{6,10}$/.test(code.trim())) && password.length >= (authMode === 'register' ? 12 : 1) && (authMode !== 'register' || pendingEmail || confirmation.length > 0) && (pendingEmail || (/^\S+@\S+\.\S+$/.test(identity.trim()) && (authMode === 'login' || name.trim().length > 1))) && (!needsMfa || /^\d{6}$/.test(mfaCode));
 
   const continueToApp = async () => {
     if (!canContinue || lock.current) return;
@@ -46,17 +51,18 @@ export default function WelcomeScreen() {
     try {
       if (pendingEmail) await auth.verifyEmail(pendingEmail, code, password);
       else if (authMode === 'register') {
-        const ready = await auth.register(identity, password, name);
+        const ready = await auth.register(identity, password, name, confirmation);
         if (!ready) {
           setPendingEmail(identity.trim().toLowerCase()); setAuthMode('login');
           setMessage('Te enviamos un código. Escríbelo aquí para confirmar tu correo y crear tu wallet. Si tu correo incluye un enlace, también puedes abrirlo y luego ingresar.');
           return;
         }
-      } else await auth.login(identity, password);
+      } else await auth.login(identity, password, needsMfa ? mfaCode : undefined);
       // Protected routes open the backup step for a new account, or the
       // dashboard directly for every returning account.
-      setPassword('');
-    } catch (e) { setMessage(e && typeof e === 'object' && 'message' in e && typeof e.message === 'string' ? e.message : 'No se pudo completar el acceso. Inténtalo nuevamente.'); }
+      setPassword(''); setConfirmation(''); setMfaCode(''); setNeedsMfa(false);
+    } catch (e) {
+      if (isMfaRequired(e)) setNeedsMfa(true); setMessage(e && typeof e === 'object' && 'message' in e && typeof e.message === 'string' ? e.message : 'No se pudo completar el acceso. Inténtalo nuevamente.'); }
     finally { lock.current = false; setBusy(false); }
   };
 
@@ -124,6 +130,15 @@ export default function WelcomeScreen() {
                 <PasswordVisibilityButton visible={passwordVisibility.visible} onPress={passwordVisibility.toggle} disabled={busy} />
               </View>
 
+              {needsMfa && authMode === 'login' ? <View key="mfa" style={styles.field}>
+                <Ionicons color={colors.brand} name="shield-checkmark-outline" size={19} />
+                <TextInput editable={!busy} value={mfaCode} onChangeText={setMfaCode} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={6} placeholder="Código de tu app de autenticación" placeholderTextColor="#71809B" style={styles.input} />
+              </View> : null}
+              {authMode === 'register' && !pendingEmail ? <View key="confirm" style={styles.field}>
+                <Ionicons color={colors.brand} name="lock-closed-outline" size={19} />
+                <PasswordInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} editable={!busy} autoCapitalize="none" autoCorrect={false} onChangeText={setConfirmation} placeholder="Repite tu contraseña" placeholderTextColor="#71809B" secureTextEntry={!passwordVisibility.visible} style={styles.input} value={confirmation} />
+              </View> : null}
+              {authMode === 'register' && !pendingEmail && password.length > 0 ? <Text style={styles.terms}>{checkPasswordStrength(password, { email: identity, name }).problems[0] ?? 'Contraseña adecuada.'}</Text> : null}
               <Text style={styles.terms}>Tu contraseña también permite recuperar tu wallet. Consérvala en un lugar seguro. {authMode === 'register' ? 'Usa al menos 12 caracteres.' : ''}</Text>
               {!auth.configured ? <Text style={styles.terms}>El acceso por correo se activará pronto. Puedes continuar probando tu wallet actual.</Text> : null}
               {message || auth.error ? <Text accessibilityLiveRegion="polite" style={[styles.description, { marginTop: 12 }]}>{message || auth.error}</Text> : null}
@@ -140,6 +155,15 @@ export default function WelcomeScreen() {
                 </LinearGradient>
               </PressableScale>
               {busy && auth.accessStage ? <PressableScale onPress={auth.cancelAccess} style={styles.demoButton}><Text style={styles.demoText}>Cancelar y volver a intentar</Text></PressableScale> : null}
+              {auth.user && auth.locked && auth.pinAvailable && !busy ? <>
+                <View style={[styles.field, { marginTop: 12 }]}>
+                  <Ionicons color={colors.brand} name="keypad-outline" size={19} />
+                  <TextInput value={pin} onChangeText={value => setPin(value.replace(/\D/g, ''))} secureTextEntry keyboardType="number-pad" maxLength={6} placeholder="PIN de Movya" placeholderTextColor="#71809B" style={styles.input} />
+                </View>
+                <PressableScale disabled={pin.length !== 6} onPress={() => { setBusy(true); setMessage(''); void auth.unlockWithPin(pin).catch(e => setMessage(e.message)).finally(() => { setPin(''); setBusy(false); }); }} style={styles.demoButton}>
+                  <Ionicons color={colors.brand} name="keypad-outline" size={18} /><Text style={styles.demoText}>Desbloquear con PIN</Text>
+                </PressableScale>
+              </> : null}
               {auth.user && auth.locked && auth.deviceUnlockAvailable && !busy ? <PressableScale onPress={() => { setBusy(true); setMessage(''); void auth.unlockWithDevice().catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}>
                 <Ionicons color={colors.brand} name="finger-print-outline" size={18} /><Text style={styles.demoText}>Desbloquear con Face ID o huella</Text>
               </PressableScale> : null}

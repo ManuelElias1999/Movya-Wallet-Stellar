@@ -1,5 +1,6 @@
 import { Keypair, Networks, Transaction } from '@stellar/stellar-sdk/base';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Platform } from 'react-native';
 import { useAuth } from './AuthContext';
 import { readWallet, readWalletMeta, updateWalletMeta, writeWallet, type WalletMeta } from '@/services/backend/storage';
 import { createRecoveryWallet } from '@/services/stellar/recovery';
@@ -14,11 +15,15 @@ type WalletContext = {
   publicKey: string | null; signerPublicKey: string | null; biometric: boolean; oualiAddress: string; account: TestnetAccount | null;
   loading: boolean; error: string | null; initialized: boolean;
   create: () => Promise<void>; refresh: () => Promise<void>;
+  // Re-reads the local wallet after it changed (restore, rotation, emergency transfer).
+  reload: () => Promise<void>;
   saveOuali: (address: string) => Promise<void>;
   // Signs only transaction shapes Movya offers (see signingPolicy.ts), only
   // while this device key is active on-chain, and only after biometrics.
   sign: (xdr: string) => Promise<string>;
   signRecoverySetup: (xdr: string, recoveryPublicKey: string) => Promise<string>;
+  // Emergency transfer: only towards the new wallet created on this device.
+  signSweep: (xdr: string, newPublicKey: string) => Promise<string>;
 };
 const Context = createContext<WalletContext | null>(null);
 
@@ -86,14 +91,16 @@ export function TestnetWalletProvider({ children }: { children: ReactNode }) {
     setMeta(await updateWalletMeta({ oualiAddress: clean }, userId));
   };
 
-  const signWith = async (xdr: string, recoverySigner?: string) => {
+  const signWith = async (xdr: string, extra: { recoverySigner?: string; sweepTo?: string } = {}) => {
     assertTestnet();
+    // The web build has no protected key storage; it can be made view-only.
+    if (Platform.OS === 'web' && process.env.EXPO_PUBLIC_WEB_SIGNING === 'off') throw new Error('En la versión web solo puedes consultar. Usa la app para enviar.');
     const scope = currentScope.current;
     if (!scope) throw new Error('Ingresa para abrir tu wallet antes de confirmar.');
     const stored = await readMeta();
     if (!stored) throw new Error('Crea una wallet de Testnet antes de confirmar.');
     const transaction = new Transaction(xdr, Networks.TESTNET);
-    classifyTransaction(transaction as unknown as TransactionLike, { account: stored.accountId, usdcIssuer: USDC_ISSUER, treasury: MOVYA_TREASURY, recoverySigner });
+    classifyTransaction(transaction as unknown as TransactionLike, { account: stored.accountId, usdcIssuer: USDC_ISSUER, treasury: MOVYA_TREASURY, ...extra });
     // A key rotated out from another device must stop here, before biometrics.
     assertDeviceCanSign(await readTestnetAccount(stored.accountId), stored.signerPublicKey);
     if (scope !== currentScope.current) throw new Error('La sesión cambió. Revisa el envío nuevamente.');
@@ -109,7 +116,9 @@ export function TestnetWalletProvider({ children }: { children: ReactNode }) {
   return <Context.Provider value={{
     publicKey, signerPublicKey: meta?.signerPublicKey ?? null, biometric: meta?.protection === 'biometric',
     oualiAddress: meta?.oualiAddress ?? '', account, loading, error, initialized, create, refresh, saveOuali,
-    sign: xdr => signWith(xdr), signRecoverySetup: (xdr, recoveryPublicKey) => signWith(xdr, recoveryPublicKey),
+    reload: async () => { setMeta(await readMeta()); },
+    sign: xdr => signWith(xdr), signRecoverySetup: (xdr, recoverySigner) => signWith(xdr, { recoverySigner }),
+    signSweep: (xdr, sweepTo) => signWith(xdr, { sweepTo }),
   }}>{children}</Context.Provider>;
 }
 
