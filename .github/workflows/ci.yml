@@ -2,7 +2,7 @@ name: Validate Movya
 
 on:
   push:
-    branches: [main]
+    branches: [main, security]
   pull_request:
 
 permissions:

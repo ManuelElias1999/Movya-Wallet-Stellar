@@ -3,6 +3,8 @@ import { accountCosts, assertTestnet, assetBalance, availableBalance, broadcastT
 import { assertRecoveryCanRotate, recoveryState, signersToRevoke } from './signers';
 import { DEVICE_SIGNER_WEIGHT, RECOVERY_SIGNER_WEIGHT, THRESHOLDS } from './signingPolicy';
 
+export type PreparedRecoverySetup = { xdr: string; hash: string };
+
 async function assertCanAffordSigner(account: TestnetAccount) {
   const { fee, reserve, baseReserve } = await accountCosts(account);
   // A new signer adds one base reserve to the account minimum.
@@ -12,7 +14,7 @@ async function assertCanAffordSigner(account: TestnetAccount) {
 
 // Adds the recovery-kit key (weight 2) and sets thresholds 1/1/2. Signed by
 // the device key once, while it is still the only signer.
-export async function prepareRecoverySetup(accountId: string, devicePublicKey: string, recoveryPublicKey: string) {
+export async function prepareRecoverySetup(accountId: string, devicePublicKey: string, recoveryPublicKey: string): Promise<PreparedRecoverySetup> {
   assertTestnet(); validateAddress(accountId); validateAddress(recoveryPublicKey);
   if (recoveryPublicKey === devicePublicKey) throw new Error('El kit de recuperación debe ser una clave distinta.');
   const account = await readTestnetAccount(accountId);
@@ -29,7 +31,7 @@ export async function prepareRecoverySetup(accountId: string, devicePublicKey: s
   return { xdr: tx.toXDR(), hash: transactionHash(tx) };
 }
 
-export async function submitRecoverySetup(prepared: { xdr: string; hash: string }, sign: LocalSigner, devicePublicKey: string) {
+export async function submitRecoverySetup(prepared: PreparedRecoverySetup, sign: LocalSigner, devicePublicKey: string) {
   const signed = new Transaction(await sign(prepared.xdr), Networks.TESTNET);
   if (transactionHash(signed) !== prepared.hash || signed.signatures.length !== 1 || !Keypair.fromPublicKey(devicePublicKey).verify(signed.hash(), signed.signatures[0].signature)) throw new Error('La firma no corresponde a la operación revisada.');
   return broadcastTransaction(signed.toXDR(), prepared.hash);

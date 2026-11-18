@@ -8,7 +8,7 @@ import { clearPendingSweep, readPendingSweep, readWallet, updateWalletMeta, writ
 import { decryptRecovery, encryptRecoveryV3, fingerprintBackup, type WalletBackup } from './vault';
 import { recoverWallet, type RecoveryProgress, type WalletRecord } from './walletRecovery';
 import { createRecoveryWallet, validateRecoveryMaterial, walletFromMnemonic, type RecoveryMaterial } from '../stellar/recovery';
-import { readTestnetAccount } from '../stellar/payments';
+import { checkSubmission, readTestnetAccount, SubmissionFailedError } from '../stellar/payments';
 import { recoveryState, signerWeight } from '../stellar/signers';
 import { rotateDeviceKey } from '../stellar/signerTransactions';
 
@@ -276,7 +276,20 @@ async function finishPendingSweep(userId: string, password: string, current: Sto
   const to = Keypair.fromSecret(pending.secret).publicKey();
   const funded = await readTestnetAccount(to).then(() => true, () => false);
   const row = await readBackupRow(userId);
-  if (!funded || !row) return current;                      // transfer never happened: keep waiting
+  if (!row) return current;
+  if (!funded) {
+    // Before the transaction expires, or while Horizon is unreachable, keep
+    // the key. Once the exact hash is definitely absent/failed, it is safe to
+    // discard this attempt and let the person start again.
+    if (!pending.hash || !pending.createdAt || Date.now() - pending.createdAt < 10 * 60_000) return current;
+    try {
+      const receipt = await checkSubmission(pending.hash);
+      if (!receipt) await clearPendingSweep(userId);
+    } catch (error) {
+      if (error instanceof SubmissionFailedError) await clearPendingSweep(userId);
+    }
+    return current;
+  }
   if (row.public_key === to) { await clearPendingSweep(userId); return current; }
   if (row.public_key !== pending.from) return current;
   return moveAccountToNewWallet(userId, password, { secret: pending.secret, mnemonic: pending.mnemonic }, pending.from);

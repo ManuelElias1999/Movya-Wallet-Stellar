@@ -11,7 +11,7 @@ export function useSwapFlow() {
   const [flow] = useState(() => createSwapFlow({
     source: () => latest.current.publicKey,
     prepare: prepareSwap,
-    submit: review => submitSwap(review, latest.current.sign, latest.current.signerPublicKey ?? undefined),
+    submit: review => submitSwap(review, () => latest.current.signSwap(review), latest.current.signerPublicKey ?? undefined),
     check: checkSubmission,
     refresh: () => latest.current.refresh(),
   }));

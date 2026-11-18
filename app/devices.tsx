@@ -15,13 +15,15 @@ const when = (iso: string) => new Date(iso).toLocaleString();
 
 export default function DevicesScreen() {
   const auth = useAuth(); const router = useRouter();
+  const owner = auth.user?.id;
   const [devices, setDevices] = useState<DeviceRow[] | null>(null);
   const [current, setCurrent] = useState('');
   const [busy, setBusy] = useState(false); const [message, setMessage] = useState('');
   const load = useCallback(async () => {
-    try { const [list, id] = await Promise.all([listDevices(), currentDeviceId()]); setDevices(list); setCurrent(id); }
+    if (!owner) return;
+    try { const [list, id] = await Promise.all([listDevices(), currentDeviceId(owner)]); setDevices(list); setCurrent(id); }
     catch (e) { setMessage(e instanceof Error ? e.message : 'No se pudieron cargar tus dispositivos.'); }
-  }, []);
+  }, [owner]);
   useEffect(() => { void load(); void auth.acknowledgeDevices(); }, [load]);
   const run = (action: () => Promise<unknown>, done: string) => {
     if (busy) return;
@@ -30,13 +32,13 @@ export default function DevicesScreen() {
       .catch(e => setMessage(e instanceof Error ? e.message : 'No se pudo completar la acción.'))
       .finally(() => setBusy(false));
   };
-  const confirmRevoke = (device: DeviceRow) => Alert.alert('Cerrar sesión en este dispositivo', `${device.label}: cerraremos su sesión y, cuando se conecte, borrará la wallet guardada allí.`, [
+  const confirmRevoke = (device: DeviceRow) => Alert.alert('Desactivar este dispositivo', `${device.label}: Movya bloqueará la firma cuando vuelva a conectarse. Para invalidar una clave robada, usa también el kit de recuperación.`, [
     { text: 'Cancelar', style: 'cancel' },
-    { text: 'Cerrar sesión', style: 'destructive', onPress: () => run(() => revokeDevice(device.id), 'Dispositivo desactivado.') },
+    { text: 'Desactivar', style: 'destructive', onPress: () => run(() => revokeDevice(device.id), 'Dispositivo desactivado.') },
   ]);
   const confirmRevokeAll = () => Alert.alert('Cerrar todas las demás sesiones', 'Todos los demás dispositivos tendrán que volver a ingresar y borrarán la wallet guardada al conectarse.', [
     { text: 'Cancelar', style: 'cancel' },
-    { text: 'Cerrar las demás', style: 'destructive', onPress: () => run(() => revokeOtherDevices(), 'Cerramos las sesiones de los demás dispositivos.') },
+    { text: 'Desactivar las demás', style: 'destructive', onPress: () => owner && run(() => revokeOtherDevices(owner), 'Desactivamos los demás dispositivos y cerramos sus sesiones de Supabase.') },
   ]);
   const others = devices?.filter(device => device.id !== current && !device.revoked_at) ?? [];
 
@@ -53,9 +55,9 @@ export default function DevicesScreen() {
             {device.revoked_at ? <Text style={styles.hint}>Desactivado</Text> : null}
             <Text style={styles.hint}>{`Último acceso: ${when(device.last_seen_at)} · Registrado: ${when(device.created_at)}`}</Text>
           </View>
-          {device.id !== current && !device.revoked_at ? <PressableScale disabled={busy} onPress={() => confirmRevoke(device)} style={[styles.secondary, { marginTop: 0 }]}><Text style={styles.secondaryText}>Cerrar sesión</Text></PressableScale> : null}
+          {device.id !== current && !device.revoked_at ? <PressableScale disabled={busy} onPress={() => confirmRevoke(device)} style={[styles.secondary, { marginTop: 0 }]}><Text style={styles.secondaryText}>Desactivar</Text></PressableScale> : null}
         </View>)}
-        {others.length ? <PressableScale disabled={busy} onPress={confirmRevokeAll} style={[styles.button, styles.danger, busy && styles.disabled]}><Text style={styles.buttonText}>Cerrar todas las demás sesiones</Text></PressableScale> : null}
+        {others.length ? <PressableScale disabled={busy} onPress={confirmRevokeAll} style={[styles.button, styles.danger, busy && styles.disabled]}><Text style={styles.buttonText}>Desactivar todos los demás</Text></PressableScale> : null}
         <PressableScale disabled={busy} onPress={() => router.push('/restore-words')} style={styles.secondary}><Text style={styles.secondaryText}>Reportar dispositivo perdido</Text></PressableScale>
         {message ? <Text accessibilityLiveRegion="polite" style={styles.notice}>{message}</Text> : null}
       </View>

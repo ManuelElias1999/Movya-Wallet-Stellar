@@ -8,7 +8,7 @@ export class DeviceRevokedError extends Error {
   constructor() { super('Este dispositivo fue desactivado desde otro dispositivo. Por seguridad cerramos la sesión y borramos la wallet de este teléfono.'); this.name = 'DeviceRevokedError'; }
 }
 
-const ID_KEY = 'movya.device.id';
+const ID_KEY = (owner: string) => `movya.device.id.${owner.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 const SEEN_KEY = (owner: string) => `movya.devices.seen.${owner.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 const memory = new Map<string, string>();
 const options = { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY };
@@ -21,13 +21,14 @@ function uuid() {
   const h = bytesToHex(b);
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
-export async function currentDeviceId() {
-  const existing = await get(ID_KEY);
+export async function currentDeviceId(owner: string) {
+  const key = ID_KEY(owner);
+  const existing = await get(key);
   if (existing && /^[0-9a-f-]{36}$/.test(existing)) return existing;
-  const id = uuid(); await set(ID_KEY, id); return id;
+  const id = uuid(); await set(key, id); return id;
 }
 // A revoked id is never reused: the next sign-in registers a new device.
-export async function forgetDeviceId() { await remove(ID_KEY); }
+export async function forgetDeviceId(owner: string) { await remove(ID_KEY(owner)); }
 export function deviceLabel() {
   const version = String(Platform.Version ?? '');
   return Platform.OS === 'ios' ? `iPhone o iPad · iOS ${version}` : Platform.OS === 'android' ? `Android ${version}` : 'Navegador web';
@@ -35,8 +36,8 @@ export function deviceLabel() {
 export function devicePlatform(): DeviceRow['platform'] { return Platform.OS === 'ios' || Platform.OS === 'android' ? Platform.OS : 'web'; }
 
 // Registers or refreshes this device; throws if it was revoked elsewhere.
-export async function touchDevice() {
-  const result = await requireBackend().rpc('touch_device', { device_id: await currentDeviceId(), device_label: deviceLabel(), device_platform: devicePlatform() });
+export async function touchDevice(owner: string) {
+  const result = await requireBackend().rpc('touch_device', { device_id: await currentDeviceId(owner), device_label: deviceLabel(), device_platform: devicePlatform() });
   if (result.error) throw result.error;
   const row = result.data as DeviceRow;
   if (row.revoked_at) throw new DeviceRevokedError();
@@ -52,9 +53,9 @@ export async function revokeDevice(id: string) {
   if (result.error) throw result.error;
 }
 // Marks every other device revoked and ends their Supabase sessions.
-export async function revokeOtherDevices() {
+export async function revokeOtherDevices(owner: string) {
   const db = requireBackend();
-  const result = await db.rpc('revoke_other_devices', { current_device: await currentDeviceId() });
+  const result = await db.rpc('revoke_other_devices', { current_device: await currentDeviceId(owner) });
   if (result.error) throw result.error;
   const signOut = await db.auth.signOut({ scope: 'others' });
   if (signOut.error) throw signOut.error;

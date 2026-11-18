@@ -14,6 +14,9 @@ export type PaymentReceipt = { hash: string; explorerUrl: string };
 export class SubmissionUnknownError extends Error {
   constructor(public readonly hash: string) { super('La red no confirmó el resultado. Verifica el estado antes de hacer otro envío.'); }
 }
+export class SubmissionFailedError extends Error {
+  constructor(public readonly hash: string) { super('La transacción falló en Stellar.'); this.name = 'SubmissionFailedError'; }
+}
 
 export function assertTestnet() {
   if ((process.env.EXPO_PUBLIC_STELLAR_NETWORK ?? 'testnet') !== 'testnet' ||
@@ -164,7 +167,7 @@ export async function checkSubmission(hash: string): Promise<PaymentReceipt | nu
   if (!/^[a-f0-9]{64}$/.test(hash)) throw new Error('Identificador de transacción inválido.');
   try {
     const result = await request<{ successful: boolean; hash: string }>(`/transactions/${hash}`);
-    if (!result.successful) throw new Error('La transacción falló en Stellar.');
+    if (!result.successful) throw new SubmissionFailedError(hash);
     if (result.hash !== hash) throw new Error('La respuesta no corresponde a esta transacción.');
     return receipt(result.hash);
   } catch (error) { if ((error as { status?: number }).status === 404) return null; throw error; }

@@ -7,7 +7,6 @@
     "icon": "./assets/movya-logo.png",
     "userInterfaceStyle": "light",
     "scheme": "movya",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.movya.wallet.stellar"
@@ -17,8 +16,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/movya-logo.png",
         "backgroundColor": "#E8F1FF"
-      },
-      "edgeToEdgeEnabled": true
+      }
     },
     "web": {
       "bundler": "metro",
@@ -31,7 +29,9 @@
         {
           "faceIDPermission": "Movya usa Face ID para confirmar que eres tú antes de firmar o mostrar tu respaldo."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-splash-screen"
     ],
     "experiments": {
       "typedRoutes": true

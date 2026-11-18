@@ -107,7 +107,7 @@ When rotation is impossible or the account configuration looks damaged, "Mover t
 ## 14. Web
 
 - Production builds ship a Content Security Policy: scripts only from the app's origin, network only to Supabase, Horizon Testnet, Friendbot and the leaked-password API, no plugins, no form posts.
-- `EXPO_PUBLIC_WEB_SIGNING=off` makes the web build view-only.
+- Web signing is off by default. Set `EXPO_PUBLIC_WEB_SIGNING=on` only for an explicitly reviewed deployment.
 - Keys on web live only in memory; sessions in `localStorage`.
 
 ## Backup format versions
@@ -127,8 +127,9 @@ All versions use AES-256-GCM with a random 96-bit nonce and AAD `movya:testnet:v
 - Auth → Sessions: set a time-box / inactivity timeout and short JWT expiry.
 - Auth → Secure password change: enabled (Movya changes the password right after sign-in).
 - Auth → Multi-factor: enable TOTP.
-- Run `supabase/migrations/20261019010000_devices_contacts_mfa.sql`.
 - Run `supabase/migrations/20261019000000_security_hardening.sql`.
+- Run `supabase/migrations/20261019010000_devices_contacts_mfa.sql`.
+- Run `supabase/migrations/20261019205037_bind_device_sessions.sql`.
 
 ## Network provider
 
