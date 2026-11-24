@@ -34,16 +34,30 @@ export default function WelcomeScreen() {
   const [password, setPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [mfaCode, setMfaCode] = useState(''); const [needsMfa, setNeedsMfa] = useState(false);
-  const [pin, setPin] = useState('');
+  const [pin, setPin] = useState(''); const [showPinUnlock, setShowPinUnlock] = useState(false); const pinInput = useRef<TextInput>(null);
   const passwordVisibility = usePasswordVisibility(password, busy);
+  const confirmationVisibility = usePasswordVisibility(confirmation, busy);
   const changeAuthMode = (next: AuthMode) => {
     if (next === authMode || busy || lock.current) return;
     Keyboard.dismiss();
     setIdentity(''); setPassword(''); setConfirmation(''); setName(''); setCode(''); setPendingEmail(''); setMessage('');
-    passwordVisibility.hide();
+    passwordVisibility.hide(); confirmationVisibility.hide(); setShowPinUnlock(false); setPin('');
     setAuthMode(next);
   };
-  const canContinue = auth.configured && !busy && (!pendingEmail || /^\d{6,10}$/.test(code.trim())) && password.length >= (authMode === 'register' ? MIN_PASSWORD_LENGTH : 1) && (authMode !== 'register' || pendingEmail || confirmation.length > 0) && (pendingEmail || (/^\S+@\S+\.\S+$/.test(identity.trim()) && (authMode === 'login' || name.trim().length > 1))) && (!needsMfa || /^\d{6}$/.test(mfaCode));
+  const passwordCheck = checkPasswordStrength(password, { email: identity, name });
+  const registrationPasswordReady = authMode !== 'register' || Boolean(pendingEmail) || (passwordCheck.ok && password === confirmation);
+  const canContinue = auth.configured && !busy && (!pendingEmail || /^\d{6,10}$/.test(code.trim())) && password.length >= (authMode === 'register' ? MIN_PASSWORD_LENGTH : 1) && registrationPasswordReady && (pendingEmail || (/^\S+@\S+\.\S+$/.test(identity.trim()) && (authMode === 'login' || name.trim().length > 1))) && (!needsMfa || /^\d{6}$/.test(mfaCode));
+  const submitPin = async (candidate: string) => {
+    if (candidate.length !== 6 || lock.current) return;
+    lock.current = true; setBusy(true); setMessage('');
+    try { await auth.unlockWithPin(candidate); setShowPinUnlock(false); }
+    catch (e) { setMessage(e instanceof Error ? e.message : 'No pudimos verificar el PIN.'); setPin(''); setTimeout(() => pinInput.current?.focus(), 50); }
+    finally { lock.current = false; setBusy(false); }
+  };
+  const changePin = (value: string) => {
+    const clean = value.replace(/\D/g, '').slice(0, 6); setPin(clean);
+    if (clean.length === 6) void submitPin(clean);
+  };
 
   const continueToApp = async () => {
     if (!canContinue || lock.current) return;
@@ -113,6 +127,8 @@ export default function WelcomeScreen() {
                   onSubmitEditing={Keyboard.dismiss}
                   editable={!busy}
                   autoCapitalize="none"
+                  autoComplete="email"
+                  textContentType="username"
                   keyboardType="email-address"
                   onChangeText={setIdentity}
                   placeholder="tu@correo.com"
@@ -126,7 +142,7 @@ export default function WelcomeScreen() {
               {pendingEmail ? <View style={styles.field}><Ionicons color={colors.brand} name="key-outline" size={19} /><TextInput editable={!busy} value={code} onChangeText={setCode} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={10} placeholder="Código del correo" placeholderTextColor="#71809B" style={styles.input} /></View> : null}
               <View key={`password-${authMode}`} style={styles.field}>
                 <Ionicons color={colors.brand} name="lock-closed-outline" size={19} />
-                <PasswordInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} editable={!busy} autoCapitalize="none" autoCorrect={false} onChangeText={setPassword} placeholder="Contraseña" placeholderTextColor="#71809B" secureTextEntry={!passwordVisibility.visible} style={styles.input} value={password} />
+                <PasswordInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} editable={!busy} autoCapitalize="none" autoCorrect={false} autoComplete={authMode === 'register' ? 'new-password' : 'current-password'} textContentType={authMode === 'register' ? 'newPassword' : 'password'} onChangeText={setPassword} placeholder="Contraseña" placeholderTextColor="#71809B" secureTextEntry={!passwordVisibility.visible} style={styles.input} value={password} />
                 <PasswordVisibilityButton visible={passwordVisibility.visible} onPress={passwordVisibility.toggle} disabled={busy} />
               </View>
 
@@ -136,9 +152,19 @@ export default function WelcomeScreen() {
               </View> : null}
               {authMode === 'register' && !pendingEmail ? <View key="confirm" style={styles.field}>
                 <Ionicons color={colors.brand} name="lock-closed-outline" size={19} />
-                <PasswordInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} editable={!busy} autoCapitalize="none" autoCorrect={false} onChangeText={setConfirmation} placeholder="Repite tu contraseña" placeholderTextColor="#71809B" secureTextEntry={!passwordVisibility.visible} style={styles.input} value={confirmation} />
+                <PasswordInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} editable={!busy} autoCapitalize="none" autoCorrect={false} autoComplete="new-password" textContentType="newPassword" onChangeText={setConfirmation} placeholder="Repite tu contraseña" placeholderTextColor="#71809B" secureTextEntry={!confirmationVisibility.visible} style={styles.input} value={confirmation} />
+                <PasswordVisibilityButton visible={confirmationVisibility.visible} onPress={confirmationVisibility.toggle} disabled={busy} />
               </View> : null}
-              {authMode === 'register' && !pendingEmail && password.length > 0 ? <Text style={styles.terms}>{checkPasswordStrength(password, { email: identity, name }).problems[0] ?? 'Contraseña adecuada.'}</Text> : null}
+              {authMode === 'register' && !pendingEmail ? <View style={styles.passwordChecklist}>
+                {[
+                  [password.length >= MIN_PASSWORD_LENGTH, `Mínimo ${MIN_PASSWORD_LENGTH} caracteres`],
+                  [/[A-Z]/.test(password), 'Una letra mayúscula'],
+                  [/[a-z]/.test(password), 'Una letra minúscula'],
+                  [/[0-9]/.test(password), 'Un número'],
+                  [/[^A-Za-z0-9\s]/.test(password), 'Un carácter especial'],
+                  [confirmation.length > 0 && password === confirmation, 'Las dos contraseñas coinciden'],
+                ].map(([ok, label]) => <View key={String(label)} style={styles.requirement}><Ionicons name={ok ? 'checkmark-circle' : 'ellipse-outline'} size={14} color={ok ? '#14845F' : '#8294AA'} /><Text style={[styles.requirementText, ok && styles.requirementMet]}>{String(label)}</Text></View>)}
+              </View> : null}
               <Text style={styles.terms}>Tu contraseña también permite recuperar tu wallet. Consérvala en un lugar seguro. {authMode === 'register' ? 'Usa al menos 10 caracteres, una mayúscula, una minúscula, un número y un carácter especial.' : ''}</Text>
               {!auth.configured ? <Text style={styles.terms}>El acceso por correo se activará pronto. Puedes continuar probando tu wallet actual.</Text> : null}
               {message || auth.error ? <Text accessibilityLiveRegion="polite" style={[styles.description, { marginTop: 12 }]}>{message || auth.error}</Text> : null}
@@ -156,13 +182,15 @@ export default function WelcomeScreen() {
               </PressableScale>
               {busy && auth.accessStage ? <PressableScale onPress={auth.cancelAccess} style={styles.demoButton}><Text style={styles.demoText}>Cancelar y volver a intentar</Text></PressableScale> : null}
               {auth.user && auth.locked && auth.pinAvailable && !busy ? <>
-                <View style={[styles.field, { marginTop: 12 }]}>
-                  <Ionicons color={colors.brand} name="keypad-outline" size={19} />
-                  <TextInput value={pin} onChangeText={value => setPin(value.replace(/\D/g, ''))} secureTextEntry keyboardType="number-pad" maxLength={6} placeholder="PIN de Movya" placeholderTextColor="#71809B" style={styles.input} />
-                </View>
-                <PressableScale disabled={pin.length !== 6} onPress={() => { setBusy(true); setMessage(''); void auth.unlockWithPin(pin).catch(e => setMessage(e.message)).finally(() => { setPin(''); setBusy(false); }); }} style={styles.demoButton}>
+                <PressableScale onPress={() => { setShowPinUnlock(true); setPin(''); setTimeout(() => pinInput.current?.focus(), 50); }} style={styles.demoButton}>
                   <Ionicons color={colors.brand} name="keypad-outline" size={18} /><Text style={styles.demoText}>Desbloquear con PIN</Text>
                 </PressableScale>
+                {showPinUnlock ? <View style={styles.pinPanel}>
+                  <Text style={styles.pinTitle}>Escribe tu PIN</Text>
+                  <PressableScale onPress={() => pinInput.current?.focus()} style={styles.pinDots}>{[0, 1, 2, 3, 4, 5].map(index => <View key={index} style={[styles.pinDot, index < pin.length && styles.pinDotFilled]} />)}</PressableScale>
+                  <TextInput ref={pinInput} value={pin} onChangeText={changePin} autoFocus secureTextEntry keyboardType="number-pad" textContentType="oneTimeCode" maxLength={6} style={styles.hiddenPinInput} />
+                  <PressableScale onPress={() => { setShowPinUnlock(false); setPin(''); Keyboard.dismiss(); }} style={styles.pinCancel}><Text style={styles.demoText}>Cancelar</Text></PressableScale>
+                </View> : null}
               </> : null}
               {auth.user && auth.locked && auth.deviceUnlockAvailable && !busy ? <PressableScale onPress={() => { setBusy(true); setMessage(''); void auth.unlockWithDevice().catch(e => setMessage(e.message)).finally(() => setBusy(false)); }} style={styles.demoButton}>
                 <Ionicons color={colors.brand} name="finger-print-outline" size={18} /><Text style={styles.demoText}>Desbloquear con Face ID o huella</Text>
@@ -201,6 +229,8 @@ const styles = StyleSheet.create({
   cardHeading: { marginVertical: 20 }, title: { color: colors.ink, fontSize: 21, fontWeight: '900', letterSpacing: -0.35 }, description: { color: '#52708D', fontSize: 12, lineHeight: 17, marginTop: 5 },
   identityTabs: { flexDirection: 'row', gap: 9, marginBottom: 10 }, identityTab: { flex: 1, height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(111,145,183,0.24)', backgroundColor: 'rgba(233,242,251,0.62)' }, identityTabActive: { borderColor: '#8BB9FA', backgroundColor: 'rgba(231,241,255,0.94)' }, identityText: { color: colors.muted, fontSize: 12, fontWeight: '700' }, identityTextActive: { color: colors.brand },
   field: { height: 56, flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10, paddingHorizontal: 14, borderRadius: 17, borderWidth: 1, borderColor: 'rgba(151,181,216,0.6)', backgroundColor: 'rgba(255,255,255,0.78)', shadowColor: colors.navy, shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } }, input: { flex: 1, color: colors.ink, fontSize: 14 }, forgot: { alignSelf: 'flex-end', color: colors.brand, fontSize: 11, fontWeight: '800', marginTop: 2 }, terms: { color: '#607995', fontSize: 9, lineHeight: 14, marginTop: 2 },
+  passwordChecklist: { marginTop: 4, padding: 12, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.55)', gap: 7 }, requirement: { flexDirection: 'row', alignItems: 'center', gap: 7 }, requirementText: { color: '#71809B', fontSize: 10, fontWeight: '700' }, requirementMet: { color: '#14845F' },
   primaryButton: { height: 56, borderRadius: 18, overflow: 'hidden', marginTop: 18, shadowColor: colors.brandDark, shadowOpacity: 0.25, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 5 }, primaryButtonDisabled: { shadowOpacity: 0.06 }, primaryGradient: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9 }, primaryText: { color: '#FFFFFF', fontSize: 14, fontWeight: '900' }, demoButton: { height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, marginTop: 8 }, demoText: { color: colors.brand, fontSize: 12, fontWeight: '800' },
+  pinPanel: { marginTop: 8, padding: 16, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.76)', borderWidth: 1, borderColor: 'rgba(151,181,216,0.6)', alignItems: 'center' }, pinTitle: { color: colors.ink, fontSize: 14, fontWeight: '900' }, pinDots: { flexDirection: 'row', justifyContent: 'center', gap: 13, paddingHorizontal: 16, paddingVertical: 18 }, pinDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 1.5, borderColor: '#8EA2BA', backgroundColor: 'transparent' }, pinDotFilled: { borderColor: colors.brand, backgroundColor: colors.brand }, hiddenPinInput: { position: 'absolute', width: 1, height: 1, opacity: 0 }, pinCancel: { minHeight: 36, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center' },
   stellarFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 22 }, powered: { color: colors.navy, fontSize: 11, fontWeight: '800' }, stellarLogo: { width: 76, height: 22, resizeMode: 'contain' }, networkText: { color: '#365E87', fontSize: 9, textAlign: 'center', marginTop: 4, marginBottom: 4 },
 });

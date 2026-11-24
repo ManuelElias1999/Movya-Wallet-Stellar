@@ -1,4 +1,4 @@
-import { Alert, Text, TextInput } from '@/i18n/primitives';
+import { Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
@@ -9,15 +9,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PageHeader } from '@/components/PageHeader';
 import { PressableScale } from '@/components/PressableScale';
 import { useAuth } from '@/context/AuthContext';
+import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import type { RecoveryMaterial } from '@/services/stellar/recovery';
 import { colors } from '@/theme/tokens';
 import { createSensitiveClipboard } from '@/services/sensitiveClipboard';
 import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
 
 const copySensitive = createSensitiveClipboard(Clipboard);
+const challengePositions = () => {
+  const available = [...Array(12).keys()]; const selected: number[] = [];
+  while (selected.length < 3) selected.push(available.splice(Math.floor(Math.random() * available.length), 1)[0]);
+  return selected.sort((a, b) => a - b);
+};
 
 export default function WalletBackupScreen() {
-  const auth = useAuth(); const router = useRouter(); const lock = useRef(false); const generation = useRef(0);
+  const auth = useAuth(); const wallet = useTestnetWallet(); const router = useRouter(); const lock = useRef(false); const generation = useRef(0);
   const captureOwner = useRef<string | null>(null);
   const [password, setPassword] = useState(''); const [busy, setBusy] = useState(false);
   const passwordVisibility = usePasswordVisibility(password, busy);
@@ -25,8 +31,13 @@ export default function WalletBackupScreen() {
   const [material, setMaterial] = useState<RecoveryMaterial | null>(null);
   const [mode, setMode] = useState<'phrase' | 'key'>('phrase'); const [message, setMessage] = useState('');
   const [captureReady, setCaptureReady] = useState(Platform.OS === 'web');
-  const [checked, setChecked] = useState(false); const [viewed, setViewed] = useState(false); const [done, setDone] = useState(false);
-  const hide = useCallback(() => { generation.current++; setMaterial(null); setPassword(''); setChecked(false); }, []);
+  const [step, setStep] = useState<'reveal' | 'confirm' | 'protection'>('reveal');
+  const expectedWords = useRef<string[]>([]); const [positions, setPositions] = useState<number[]>([]);
+  const [answers, setAnswers] = useState<Record<number, string>>({}); const [done, setDone] = useState(false);
+  const hide = useCallback(() => {
+    generation.current++; expectedWords.current = []; setMaterial(null); setPassword('');
+    setPositions([]); setAnswers({}); setStep('reveal');
+  }, []);
 
   useFocusEffect(useCallback(() => {
     let active = true; const key = `movya-backup-${++generation.current}`;
@@ -69,31 +80,39 @@ export default function WalletBackupScreen() {
   const reveal = async (requested: 'phrase' | 'key') => {
     if (!password || !captureReady || lock.current) return;
     Keyboard.dismiss();
-    lock.current = true; setBusy(true); setMaterial(null); setMessage(''); setChecked(false);
+    lock.current = true; setBusy(true); setMaterial(null); setMessage('');
     const current = generation.current;
     try {
       const result = await auth.readRecovery(password);
       if (current !== generation.current) return;
-      setMode(requested === 'phrase' && result.mnemonic ? 'phrase' : 'key'); setMaterial(result); setViewed(true);
+      setMode(requested === 'phrase' && result.mnemonic ? 'phrase' : 'key'); setMaterial(result);
       if (!result.mnemonic) setMessage('Tu wallet anterior se creó sin una frase de 12 palabras. Guarda su clave privada para conservar esta misma dirección y saldo.');
     } catch (e) { if (current === generation.current) setMessage(e instanceof Error ? e.message : 'No se pudo abrir el respaldo.'); }
     finally { setPassword(''); lock.current = false; setBusy(false); }
   };
-  const finish = async () => {
+  const beginConfirmation = () => {
+    if (!material) return;
+    if (!material.mnemonic || mode !== 'phrase') {
+      expectedWords.current = []; setMaterial(null); setStep('protection'); return;
+    }
+    expectedWords.current = material.mnemonic.trim().split(/\s+/);
+    setPositions(challengePositions()); setAnswers({}); setMaterial(null); setPassword(''); setMessage(''); setStep('confirm');
+  };
+  const confirmWords = () => {
+    if (!positions.length || positions.some(position => (answers[position] ?? '').trim().toLowerCase() !== expectedWords.current[position])) {
+      setMessage('Alguna palabra no coincide. Revisa el orden de tu respaldo e inténtalo nuevamente.'); return;
+    }
+    expectedWords.current = []; setAnswers({}); setMessage('Respaldo confirmado correctamente.'); setStep('protection');
+  };
+  const finish = async (borrowedDevice: boolean) => {
     if (lock.current) return;
-    lock.current = true; setBusy(true); setMessage(''); hide();
-    try { await auth.acknowledgeBackup(); setDone(true); }
+    lock.current = true; setBusy(true); setMessage('');
+    try {
+      if (borrowedDevice) { await auth.disableDeviceBiometrics(); await wallet.reload(); }
+      await auth.acknowledgeBackup(); setDone(true);
+    }
     catch (e) { setMessage(e instanceof Error ? e.message : 'No se pudo continuar.'); }
     finally { lock.current = false; setBusy(false); }
-  };
-  const acknowledge = () => {
-    if (!viewed) {
-      const warning = 'Primero ingresa tu contraseña y toca «Ver frase de recuperación» o «Ver clave privada». Después de guardar tu respaldo podrás marcar esta casilla.';
-      setMessage(warning);
-      Alert.alert('Primero verifica tu contraseña', warning, [{ text: 'Entendido', onPress: () => passwordInput.current?.focus() }]);
-      return;
-    }
-    setMessage(''); setChecked(value => !value);
   };
   const copy = async () => {
     if (!material || !captureReady || lock.current) return;
@@ -113,13 +132,17 @@ export default function WalletBackupScreen() {
       <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <View style={styles.icon}><Ionicons name="shield-checkmark-outline" size={30} color={colors.brand} /></View>
-          <Text style={styles.title}>Tu wallet también es tuya fuera de Movya</Text>
-          <Text style={styles.copy}>Las 12 palabras permiten recuperar tu wallet en un servicio compatible. Guárdalas en su orden original, en un lugar privado.</Text>
-          <Text style={styles.notice}>Quien tenga tus palabras o tu clave privada puede controlar la wallet. No las compartas ni las envíes por chat. Movya no te las pedirá por correo.</Text>
-          {!auth.user ? <>
+          <Text style={styles.title}>{step === 'confirm' ? 'Confirma tus 12 palabras' : step === 'protection' ? 'Protege Movya en este dispositivo' : 'Tu wallet también es tuya fuera de Movya'}</Text>
+          <Text style={styles.copy}>{step === 'confirm'
+            ? 'Escribe las palabras solicitadas para comprobar que guardaste el respaldo en el orden correcto.'
+            : step === 'protection'
+              ? 'Activa la biometría solamente si este teléfono es tuyo. Face ID y Touch ID pertenecen al dispositivo, no a tu cuenta de Movya.'
+              : 'Las 12 palabras permiten recuperar tu wallet en un servicio compatible. Guárdalas en su orden original, en un lugar privado.'}</Text>
+          {step === 'reveal' ? <Text style={styles.notice}>Quien tenga tus palabras o tu clave privada puede controlar la wallet. No las compartas ni las envíes por chat. Movya no te las pedirá por correo.</Text> : null}
+          {step === 'reveal' && !auth.user ? <>
             <Text style={styles.copy}>Ingresa con tu correo para consultar el respaldo de tu cuenta.</Text>
             <PressableScale onPress={() => router.replace('/')} style={styles.button}><Text style={styles.buttonText}>Crear cuenta o ingresar</Text></PressableScale>
-          </> : <>
+          </> : step === 'reveal' ? <>
             <Text style={styles.label}>Confirma tu contraseña para mostrar el respaldo</Text>
             <View style={styles.passwordField}>
               <TextInput ref={passwordInput} value={password} onChangeText={setPassword} returnKeyType="done" onSubmitEditing={Keyboard.dismiss} placeholder="Tu contraseña de Movya" placeholderTextColor={colors.muted} secureTextEntry={!passwordVisibility.visible} autoCapitalize="none" autoCorrect={false} editable={!busy} style={styles.input} />
@@ -127,21 +150,29 @@ export default function WalletBackupScreen() {
             </View>
             <PressableScale disabled={busy || !password || !captureReady} onPress={() => void reveal('phrase')} style={[styles.button, (busy || !password || !captureReady) && styles.disabled]}><Ionicons name="key-outline" size={20} color="white" /><Text style={styles.buttonText}>Ver frase de recuperación</Text></PressableScale>
             <PressableScale disabled={busy || !password || !captureReady} onPress={() => void reveal('key')} style={[styles.button, (busy || !password || !captureReady) && styles.disabled]}><Ionicons name="lock-closed-outline" size={20} color="white" /><Text style={styles.buttonText}>Ver clave privada · opción avanzada</Text></PressableScale>
+          </> : step === 'confirm' ? <>
+            {positions.map(position => <View key={position}>
+              <Text style={styles.label}>{`Palabra ${position + 1}`}</Text>
+              <View style={styles.passwordField}><TextInput value={answers[position] ?? ''} onChangeText={value => setAnswers(current => ({ ...current, [position]: value }))} autoCapitalize="none" autoCorrect={false} editable={!busy} placeholder={`Escribe la palabra ${position + 1}`} placeholderTextColor={colors.muted} style={styles.input} /></View>
+            </View>)}
+            <PressableScale disabled={busy || positions.some(position => !(answers[position] ?? '').trim())} onPress={confirmWords} style={[styles.button, (busy || positions.some(position => !(answers[position] ?? '').trim())) && styles.disabled]}><Text style={styles.buttonText}>Confirmar respaldo</Text></PressableScale>
+            <PressableScale disabled={busy} onPress={hide} style={styles.secondary}><Text style={styles.secondaryText}>Volver a ver mis palabras</Text></PressableScale>
+          </> : <>
+            <Text style={styles.notice}>Si es un teléfono prestado, no guardaremos aquí la clave que firma tus operaciones. Podrás consultar el dashboard, pero no enviar ni hacer swaps desde este dispositivo.</Text>
+            {wallet.biometric ? <PressableScale disabled={busy} onPress={() => void finish(false)} style={[styles.button, busy && styles.disabled]}><Ionicons name="finger-print-outline" size={20} color="white" /><Text style={styles.buttonText}>Activar Face ID o huella</Text></PressableScale> : null}
+            <PressableScale disabled={busy} onPress={() => void finish(true)} style={styles.secondary}><Ionicons name="phone-portrait-outline" size={19} color={colors.brand} /><Text style={styles.secondaryText}>{wallet.biometric ? 'Este teléfono no es mío · solo consulta' : 'Continuar en modo consulta'}</Text></PressableScale>
           </>}
           {busy ? <ActivityIndicator color={colors.brand} style={{ marginTop: 16 }} /> : null}
           {message ? <Text accessibilityLiveRegion="polite" style={styles.notice}>{message}</Text> : null}
-          {material ? <View style={styles.recovery}>
+          {step === 'reveal' && material ? <View style={styles.recovery}>
             <Text style={styles.title}>{mode === 'phrase' ? 'Tus 12 palabras' : 'Tu clave privada Stellar'}</Text>
             {mode === 'phrase' && material.mnemonic ? <View style={styles.words}>{material.mnemonic.split(' ').map((word, i) => <View key={i} style={styles.word}><Text style={styles.number}>{i + 1}</Text><Text translate={false} style={styles.wordText}>{word}</Text></View>)}</View> : <Text translate={false} selectable style={styles.secret}>{material.secret}</Text>}
             <PressableScale disabled={busy} onPress={() => void copy()} style={styles.button}><Ionicons name="copy-outline" size={19} color="white" /><Text style={styles.buttonText}>{mode === 'phrase' ? 'Copiar las 12 palabras' : 'Copiar clave privada'}</Text></PressableScale>
             <Text style={styles.copy}>Se ocultará en un minuto, al salir o al poner la app en segundo plano.</Text>
+            {auth.needsBackup ? <PressableScale disabled={busy} onPress={beginConfirmation} style={styles.button}><Ionicons name="checkmark-circle-outline" size={20} color="white" /><Text style={styles.buttonText}>Ya las guardé · comprobar respaldo</Text></PressableScale> : null}
             <PressableScale onPress={hide} style={styles.secondary}><Text style={styles.secondaryText}>Ocultar ahora</Text></PressableScale>
           </View> : null}
-          {auth.needsBackup ? <>
-            <PressableScale disabled={busy} accessibilityRole="checkbox" accessibilityState={{ checked }} accessibilityLabel="Ya guardé mi respaldo en un lugar seguro" onPress={acknowledge} style={styles.checkbox}><Ionicons name={checked ? 'checkbox' : 'square-outline'} size={23} color={colors.brand} /><Text style={[styles.copy, { flex: 1, marginTop: 0 }]}>Ya guardé mi respaldo en un lugar seguro</Text></PressableScale>
-            <PressableScale disabled={busy || !checked || !viewed} onPress={() => void finish()} style={[styles.button, (!checked || !viewed || busy) && styles.disabled]}><Text style={styles.buttonText}>Continuar a Movya</Text></PressableScale>
-            <PressableScale disabled={busy} onPress={() => void finish()} style={styles.secondary}><Text style={styles.secondaryText}>Lo haré más tarde desde Seguridad</Text></PressableScale>
-          </> : <PressableScale onPress={() => { hide(); router.replace('/security'); }} style={styles.secondary}><Text style={styles.secondaryText}>Volver a Seguridad</Text></PressableScale>}
+          {!auth.needsBackup && step === 'reveal' ? <PressableScale onPress={() => { hide(); router.replace('/security'); }} style={styles.secondary}><Text style={styles.secondaryText}>Volver a Seguridad</Text></PressableScale> : null}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -155,5 +186,5 @@ const styles = StyleSheet.create({
   button: { minHeight: 52, padding: 12, borderRadius: 16, backgroundColor: colors.brand, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14 }, buttonText: { color: 'white', fontSize: 14, fontWeight: '800' },
   secondary: { minHeight: 48, padding: 12, borderRadius: 16, backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginTop: 12 }, secondaryText: { color: colors.brandDark, fontSize: 13, fontWeight: '700' }, disabled: { opacity: 0.45 },
   recovery: { marginTop: 22, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 20 }, words: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16 }, word: { width: '47%', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 9, padding: 10, backgroundColor: '#EFF5FC', borderRadius: 12 }, number: { fontSize: 11, color: colors.muted, width: 18 }, wordText: { fontSize: 14, color: colors.ink, fontWeight: '700' },
-  secret: { fontSize: 14, lineHeight: 24, color: colors.ink, padding: 14, backgroundColor: '#EFF5FC', borderRadius: 12, marginTop: 16 }, checkbox: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 16 },
+  secret: { fontSize: 14, lineHeight: 24, color: colors.ink, padding: 14, backgroundColor: '#EFF5FC', borderRadius: 12, marginTop: 16 },
 });

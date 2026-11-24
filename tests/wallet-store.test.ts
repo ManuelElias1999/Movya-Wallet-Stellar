@@ -87,3 +87,18 @@ test('a rotated signer keeps the original account id; metadata updates never tou
   await wallets.remove('u1');
   assert.equal(await wallets.readMeta('u1'), null);
 });
+
+test('view-only mode removes the signing key but preserves public wallet metadata', async () => {
+  const { store, items, prompts } = kv();
+  const wallets = createWalletStore(store, signerOf);
+  await wallets.write({ secret: SECRET, mnemonic: 'words', oualiAddress: 'GOUALI', backupAcknowledged: true }, 'u1');
+  const meta = await wallets.disableSigning('u1');
+  assert.deepEqual(meta, {
+    accountId: signerOf(SECRET), signerPublicKey: signerOf(SECRET), oualiAddress: 'GOUALI',
+    hasMnemonic: true, protection: 'none', backupAcknowledged: true,
+  });
+  assert.equal(items.has('movya.testnet.wallet.user.u1.secret'), false);
+  assert.equal((await wallets.readMeta('u1'))?.accountId, signerOf(SECRET));
+  assert.equal(await wallets.readFull('u1'), null);
+  assert.deepEqual(prompts, []);
+});

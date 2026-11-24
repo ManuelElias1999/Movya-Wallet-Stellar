@@ -128,6 +128,23 @@ test('verified native login reuses the exact saved backup while other devices st
   await assert.rejects(recoverWallet(storage, 'owner', 'wrong-password', false), /No se pudo abrir/);
 });
 
+test('password login skips the protected local key and preserves unprotected metadata', async () => {
+  const pair = Keypair.random(); const password = 'test-password-long-enough';
+  const backup = await encryptWallet(pair.secret(), password, 'owner');
+  let protectedReads = 0; let saved: StoredWallet | null = null;
+  await recoverWallet({
+    getBackup: async () => ({ owner_id: 'owner', public_key: pair.publicKey(), backup }),
+    register: async () => { throw new Error('Must not register'); },
+    readLocal: async () => { protectedReads++; throw new Error('Biometric prompt should not open'); },
+    readMeta: async () => ({ accountId: pair.publicKey(), oualiAddress: 'saved-contact', backupAcknowledged: true, backupFingerprint: 'old' }),
+    writeLocal: async value => { saved = value; },
+  }, 'owner', password, false, { allowLocalCache: false });
+  assert.equal(protectedReads, 0);
+  assert.equal((saved as StoredWallet | null)?.secret, pair.secret());
+  assert.equal((saved as StoredWallet | null)?.oualiAddress, 'saved-contact');
+  assert.equal((saved as StoredWallet | null)?.backupAcknowledged, true);
+});
+
 test('a native cache cannot bypass a changed backup, owner or local address', async () => {
   const pair = Keypair.random(); const password = 'test-password-long-enough';
   const backup = await encryptWallet(pair.secret(), password, 'owner');
