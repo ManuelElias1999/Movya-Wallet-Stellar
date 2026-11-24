@@ -72,6 +72,13 @@ export function createWalletStore(kv: KeyValue, signerOf: (secret: string) => st
   return {
     readMeta,
     write,
+    // Updating an existing Face ID-protected Keychain item can show a prompt
+    // on iOS. Password login has already decrypted and authenticated the
+    // server backup, so replace the item instead of opening the old one.
+    async replaceAfterPassword(wallet: StoredWallet, userId?: string) {
+      await kv.remove(secretKey(userId));
+      return write(wallet, userId);
+    },
     // Reading the secret shows the system biometric prompt when protected.
     async readFull(userId?: string): Promise<StoredWallet | null> {
       const meta = await readMeta(userId);
