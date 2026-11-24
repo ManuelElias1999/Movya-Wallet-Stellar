@@ -7,6 +7,16 @@ export type DeviceRow = { id: string; label: string; platform: 'ios' | 'android'
 export class DeviceRevokedError extends Error {
   constructor() { super('Este dispositivo fue desactivado desde otro dispositivo. Por seguridad cerramos la sesión y borramos la wallet de este teléfono.'); this.name = 'DeviceRevokedError'; }
 }
+export class DeviceVerificationUnavailableError extends Error {
+  constructor() { super('Necesitas conexión a internet para abrir o firmar con Movya, porque debemos comprobar que este dispositivo no fue revocado. Tus fondos siguen seguros.'); this.name = 'DeviceVerificationUnavailableError'; }
+}
+
+function checkedFailure(failure: unknown): Error {
+  const message = failure instanceof Error ? failure.message : String((failure as { message?: unknown })?.message ?? failure ?? '');
+  return /fetch|network|offline|timeout|timed out|abort|conexi[oó]n|no respondi[oó]/i.test(message)
+    ? new DeviceVerificationUnavailableError()
+    : failure instanceof Error ? failure : new Error(message || 'No pudimos verificar este dispositivo.');
+}
 
 const ID_KEY = (owner: string) => `movya.device.id.${owner.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 const SEEN_KEY = (owner: string) => `movya.devices.seen.${owner.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
@@ -37,16 +47,20 @@ export function devicePlatform(): DeviceRow['platform'] { return Platform.OS ===
 
 // Registers or refreshes this device; throws if it was revoked elsewhere.
 export async function touchDevice(owner: string) {
-  const result = await requireBackend().rpc('touch_device', { device_id: await currentDeviceId(owner), device_label: deviceLabel(), device_platform: devicePlatform() });
-  if (result.error) throw result.error;
-  const row = result.data as DeviceRow;
-  if (row.revoked_at) throw new DeviceRevokedError();
-  return row;
+  try {
+    const result = await requireBackend().rpc('touch_device', { device_id: await currentDeviceId(owner), device_label: deviceLabel(), device_platform: devicePlatform() });
+    if (result.error) throw result.error;
+    const row = result.data as DeviceRow;
+    if (row.revoked_at) throw new DeviceRevokedError();
+    return row;
+  } catch (failure) { throw checkedFailure(failure); }
 }
 export async function listDevices() {
-  const result = await requireBackend().from('devices').select('id,label,platform,created_at,last_seen_at,revoked_at').order('last_seen_at', { ascending: false });
-  if (result.error) throw result.error;
-  return result.data as DeviceRow[];
+  try {
+    const result = await requireBackend().from('devices').select('id,label,platform,created_at,last_seen_at,revoked_at').order('last_seen_at', { ascending: false });
+    if (result.error) throw result.error;
+    return result.data as DeviceRow[];
+  } catch (failure) { throw checkedFailure(failure); }
 }
 export async function revokeDevice(id: string) {
   const result = await requireBackend().rpc('revoke_device', { device_id: id });

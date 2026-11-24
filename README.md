@@ -46,7 +46,7 @@ This repository contains the Expo wallet application. The marketing website is a
 | Accounts | Email/password registration, login and session restoration with Supabase | Requires a configured Supabase project; email delivery depends on its Auth settings |
 | Languages | Spanish/English UI, accessible labels, alerts, basic chat intents and persisted preference | User content and recovery material are never translated; unknown provider errors remain as returned |
 | Personal wallet | Automatically generated wallet for each new account | Stellar Testnet only; funding activates the account on the network |
-| Recovery | 12-word phrase for new wallets, encrypted backup, restoration of the same wallet on another device | Original account password required; no in-app phrase import or password-change/reset recovery flow |
+| Recovery | 12-word wallet phrase import, encrypted v3 backup, recovery kit and emergency move to a new wallet | Email reset alone cannot recover wallet keys; recovery-kit rotation still requires account access |
 | Payments | Review, local signing and submission of XLM and verified-issuer USDC transfers | Recipient must be active; USDC requires compatible, authorized trustlines and sufficient capacity |
 | Receive | QR code, public address, copy and native share | For receiving tokens on Stellar Testnet |
 | Contacts | Add by public address or registered email; search, rename, favorite and delete | Email lookup requires an exact verified account; no public directory |
@@ -175,13 +175,14 @@ See [native wallet creation](docs/NATIVE_WALLET_CREATION.md) for device setup an
 - **Testnet only.** Signing and submission reject mainnet and custom Horizon endpoints. Do not use production keys or funds.
 - **Local signing.** Native wallet material is stored in account-scoped SecureStore. On web, private keys remain in memory rather than browser storage. Web authentication tokens are stored separately by the auth client.
 - **Encrypted backups.** Fresh salts and nonces are used, and authenticated data binds each backup to its owner, public address, version and network. Database access is restricted by RLS; client wallet registration preserves an existing backup on retries.
-- **Authentication trust.** The account password also derives the backup encryption key. Supabase Auth receives that password over HTTPS. This prototype trusts the authentication provider; it is not a provider-independent recovery design.
-- **Password reset is not wallet recovery.** Resetting the Supabase password alone cannot decrypt the existing backup. In-app password change/reset and import of saved words/private keys are not implemented. A separately saved phrase or key can recover the address in a compatible external Stellar wallet.
+- **Separated authentication and encryption.** New and migrated v3 accounts derive separate login and backup keys after a slow password KDF. Supabase receives the derived login secret, never the backup key. Legacy accounts migrate in two phases after a successful sign-in so an interruption does not lock the user out.
+- **Password reset is not wallet recovery.** Resetting the Supabase password restores account access but cannot decrypt the existing backup. Movya can restore the wallet with its 12 words and encrypt it again with the current password; the separately saved recovery kit can rotate device signers after account access is restored.
+- **Biometric signing and device revocation.** Native secrets are protected by device biometrics, each signing entry point accepts only its exact reviewed transaction kind, and the device must be checked online before unlock/signing. Devices without biometrics are view-only. Validate these controls in a development build, not Expo Go.
 - **Protected disclosure.** Viewing words or a private key requires password verification. Secrets are hidden on leaving the screen, backgrounding or after a minute. Native screen-capture protection is requested; web cannot block operating-system screenshots. Clipboard cleanup is best effort.
 - **Explicit payment review.** The destination, asset issuer, amount, reserves, liabilities, trustline capacity and fee are checked before signing. Submission verifies the signed transaction against the reviewed hash and signature.
-- **Uncertain submissions.** A network timeout leads to a status check rather than automatic resubmission. Durable recovery of pending transfers after app restarts remains pending.
+- **Uncertain submissions.** A network timeout leads to a status check rather than automatic resubmission. Emergency wallet moves keep the pending wallet and transaction hash so the next sign-in can resolve an interrupted submission safely.
 
-The project has not completed an independent security audit. Production recovery, rate limiting, abuse protection, sponsorship and a mainnet release process remain future work. For issue reports, include reproduction steps and sanitized logs only; never include wallet secrets or personal account credentials.
+The project has not completed an independent security audit. Provider-independent recovery, operational monitoring, sponsorship and a mainnet release process remain future work. For issue reports, include reproduction steps and sanitized logs only; never include wallet secrets or personal account credentials.
 
 ## Validation
 
@@ -189,9 +190,10 @@ The project has not completed an independent security audit. Production recovery
 npm run typecheck
 npm test
 npx expo export --platform ios --platform web
+npm run verify:web-csp
 ~~~
 
-CI runs the service/security tests, TypeScript checks and iOS/web exports. Coverage includes PostgreSQL migrations and RLS, contacts, immutable wallet registration, recovery ownership, encryption, cancellation, clipboard handling, payment validation, signatures and ambiguous network results.
+CI runs the service/security tests, TypeScript checks, iOS/web exports and a CSP hash verification. Coverage includes PostgreSQL migrations and RLS, pinned contacts, encrypted backup migration, device/session revocation, recovery ownership, encryption, cancellation, clipboard handling, exact signer types, signatures and ambiguous network results.
 
 A separate macOS job compiles the Swift/CommonCrypto helper and Kotlin/JCA helper against independent ASCII, Unicode/emoji and embedded-NUL PBKDF2 vectors. These checks do not constitute a complete iOS/Android application build or physical-device testing.
 
@@ -229,11 +231,11 @@ docs/                        Setup, testing, UX and migration notes
 ## Next milestones
 
 1. Complete physical-device QA and measure first-account creation with native acceleration.
-2. Expand the assistant beyond fixed text patterns and add durable recovery of pending payments across app restarts.
+2. Expand the assistant beyond fixed text patterns while keeping destination resolution and signing outside the model.
 3. Expand swap asset coverage and refine liquidity/error handling through physical-device testing.
 4. Implement actual voice recording and transcription.
-5. Design production recovery and safer authentication options, including password lifecycle handling.
-6. Add fee/reserve sponsorship, email-lookup abuse protection and operational monitoring.
+5. Add a recovery path that can rotate keys without relying on an active Supabase login, and test the complete password lifecycle.
+6. Add fee/reserve sponsorship and operational monitoring.
 7. Continue usability testing with people new to Web3, then complete security review and mainnet readiness work.
 
 These are planned milestones, not shipped features or dated delivery commitments.

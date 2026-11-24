@@ -1,6 +1,6 @@
 // Movya PIN: a complementary unlock for the app, never the key that encrypts
-// the wallet. Signing still requires biometrics (or the password on devices
-// without them). Attempts are limited with growing waits, and after 10 wrong
+// the wallet. Signing still requires biometrics; devices without them remain
+// view-only. Attempts are limited with growing waits, and after 10 wrong
 // PINs it is erased and the password is required. On a compromised phone an
 // attacker could reset local counters; that is why the PIN alone never opens
 // the key.

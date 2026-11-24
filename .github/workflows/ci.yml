@@ -24,6 +24,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npx expo export --platform ios --platform web
+      - run: npm run verify:web-csp
 
   native-vectors:
     runs-on: macos-14

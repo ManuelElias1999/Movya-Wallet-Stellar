@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { classifyTransaction, type TransactionLike } from '../src/services/stellar/signingPolicy';
+import { assertTransactionKind, classifyTransaction, type SigningKind, type SigningPolicy, type TransactionLike } from '../src/services/stellar/signingPolicy';
 
 const ME = 'G' + 'A'.repeat(55), FRIEND = 'G' + 'B'.repeat(55), TREASURY = 'G' + 'T'.repeat(55), RECOVERY = 'G' + 'R'.repeat(55), ISSUER = 'G' + 'I'.repeat(55);
 const XLM = { code: 'XLM' }, USDC = { code: 'USDC', issuer: ISSUER }, FAKE = { code: 'USDC', issuer: 'G' + 'Z'.repeat(55) };
@@ -16,6 +16,29 @@ test('allows exactly the transaction shapes Movya offers', () => {
     { type: 'pathPaymentStrictSend', destination: ME, sendAsset: XLM, destAsset: USDC, sendAmount: '49.75', destMin: '1', path: [] },
   ]), policy), 'swap');
   assert.equal(classifyTransaction(tx([{ type: 'changeTrust', line: USDC, limit: '922337203685.4775807' }]), policy), 'trustline');
+});
+
+test('each signer entry point rejects every other allowed transaction kind', () => {
+  const NEW = 'G' + 'N'.repeat(55);
+  const cases: { kind: SigningKind; value: TransactionLike; rules: SigningPolicy }[] = [
+    { kind: 'payment', value: tx([{ type: 'payment', destination: FRIEND, asset: USDC, amount: '1' }]), rules: policy },
+    { kind: 'swap', value: tx([
+      { type: 'payment', destination: TREASURY, asset: XLM, amount: '0.25' },
+      { type: 'pathPaymentStrictSend', destination: ME, sendAsset: XLM, destAsset: USDC, sendAmount: '49.75', destMin: '1', path: [] },
+    ]), rules: policy },
+    { kind: 'trustline', value: tx([{ type: 'changeTrust', line: USDC, limit: '922337203685.4775807' }]), rules: policy },
+    { kind: 'recovery-setup', value: tx([{ type: 'setOptions', signer: { ed25519PublicKey: RECOVERY, weight: 2 }, masterWeight: 1, lowThreshold: 1, medThreshold: 1, highThreshold: 2 }]), rules: { ...policy, recoverySigner: RECOVERY } },
+    { kind: 'sweep', value: tx([
+      { type: 'createAccount', destination: NEW, startingBalance: '3' },
+      { type: 'payment', destination: NEW, asset: XLM, amount: '1' },
+    ]), rules: { ...policy, sweepTo: NEW } },
+  ];
+  for (const item of cases) {
+    assert.equal(assertTransactionKind(item.value, item.rules, item.kind), item.kind);
+    for (const wrong of cases.map(candidate => candidate.kind).filter(kind => kind !== item.kind)) {
+      assert.throws(() => assertTransactionKind(item.value, item.rules, wrong), new RegExp(`se esperaba ${wrong}`));
+    }
+  }
 });
 
 test('refuses dangerous operations even when they come from the wallet itself', () => {

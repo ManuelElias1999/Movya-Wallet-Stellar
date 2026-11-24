@@ -14,6 +14,9 @@
 - Abrir los formularios de agregar y editar contacto. Se pueden desplazar con el teclado abierto y cerrar con su tecla Listo. No aparecen botones externos de Ocultar teclado.
 - En teclados numéricos que no ofrecen Listo, deslizar el formulario para ocultar el teclado. Revisar que confirmar y cerrar continúan accesibles.
 - Cerrar y volver a abrir sesión; no debe repetirse la guía. Probar también restauración en otro dispositivo y el acceso a claves con contraseña.
+- Probar biometría únicamente en un development build instalado en un iPhone/Android real. Expo Go sirve para revisar la interfaz, pero no para validar `requireAuthentication`: firma, revelado de claves, rotación y transferencia de emergencia deben solicitar Face ID/Touch ID/huella.
+- Desactivar la conexión antes de desbloquear o firmar: Movya debe detenerse y explicar que necesita internet para comprobar que el dispositivo no fue revocado. Al reconectar, debe permitir reintentar sin perder datos.
+- En un equipo sin biometría registrada, la wallet debe quedar solo para consulta y Seguridad debe explicarlo; ningún flujo de firma puede ofrecer el PIN o la contraseña como reemplazo silencioso.
 
 ## Creación y respaldo
 
