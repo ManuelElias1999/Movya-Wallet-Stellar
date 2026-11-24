@@ -11,6 +11,7 @@ import { useSensitiveScreen } from '@/components/useSensitiveScreen';
 import { useAuth } from '@/context/AuthContext';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { isMfaRequired } from '@/services/backend/mfa';
+import { MIN_PASSWORD_LENGTH } from '@/services/security/passwordStrength';
 import { colors } from '@/theme/tokens';
 
 // One screen for both cases:
@@ -28,7 +29,7 @@ export default function RestoreWordsScreen() {
   const hide = useCallback(() => { if (!working.current) { setWords(''); setPassword(''); } }, []);
   const screen = useSensitiveScreen('restore-words', hide);
   const count = words.trim() ? words.trim().split(/\s+/).length : 0;
-  const canRestore = !busy && count === 12 && password.length >= 12 && screen.ready;
+  const canRestore = !busy && count === 12 && password.length >= MIN_PASSWORD_LENGTH && screen.ready;
 
   const restore = async () => {
     if (!canRestore) return;
@@ -67,7 +68,7 @@ export default function RestoreWordsScreen() {
             <TextInput value={password} onChangeText={setPassword} secureTextEntry={!visibility.visible} placeholder="Contraseña" placeholderTextColor={colors.muted} autoCapitalize="none" autoCorrect={false} editable={!busy} style={styles.input} />
             <PasswordVisibilityButton visible={visibility.visible} onPress={visibility.toggle} disabled={busy} />
           </View>
-          <Text style={styles.hint}>Tu wallet se volverá a cifrar con esta contraseña. Usa al menos 12 caracteres y evita contraseñas comunes, predecibles o filtradas.</Text>
+          <Text style={styles.hint}>Tu wallet se volverá a cifrar con esta contraseña. Usa al menos 10 caracteres, una mayúscula, una minúscula, un número y un carácter especial.</Text>
           {needsCode ? <>
             <Text style={styles.label}>Código de verificación en dos pasos</Text>
             <View style={styles.field}><TextInput value={mfaCode} onChangeText={setMfaCode} keyboardType="number-pad" textContentType="oneTimeCode" maxLength={6} placeholder="123456" placeholderTextColor={colors.muted} editable={!busy} style={styles.input} /></View>

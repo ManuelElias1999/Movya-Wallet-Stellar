@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { PressableScale } from '@/components/PressableScale';
 import { secureStyles as styles } from '@/components/secureStyles';
 import { useAuth } from '@/context/AuthContext';
+import { MIN_PASSWORD_LENGTH } from '@/services/security/passwordStrength';
 import { colors } from '@/theme/tokens';
 
 export default function PinScreen() {
@@ -25,7 +26,7 @@ export default function PinScreen() {
     finally { setBusy(false); }
   };
   const remove = async () => { setBusy(true); try { await auth.removePin(); setMessage('PIN eliminado.'); } finally { setBusy(false); } };
-  const ready = password.length >= 12 && pin.length === 6 && repeat.length === 6 && !busy;
+  const ready = password.length >= MIN_PASSWORD_LENGTH && pin.length === 6 && repeat.length === 6 && !busy;
 
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
     <PageHeader backTo="/security" title="PIN de Movya" subtitle="Desbloqueo rápido de la app" />

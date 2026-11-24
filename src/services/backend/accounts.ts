@@ -8,6 +8,7 @@ import { clearPendingSweep, readPendingSweep, readWallet, updateWalletMeta, writ
 import { decryptRecovery, encryptRecoveryV3, fingerprintBackup, type WalletBackup } from './vault';
 import { recoverWallet, type RecoveryProgress, type WalletRecord } from './walletRecovery';
 import { createRecoveryWallet, validateRecoveryMaterial, walletFromMnemonic, type RecoveryMaterial } from '../stellar/recovery';
+import { MIN_PASSWORD_LENGTH } from '../security/passwordStrength';
 import { checkSubmission, readTestnetAccount, SubmissionFailedError } from '../stellar/payments';
 import { recoveryState, signerWeight } from '../stellar/signers';
 import { rotateDeviceKey } from '../stellar/signerTransactions';
@@ -178,7 +179,7 @@ export async function unlockUserWallet(userId: string, password: string, options
 // ---------------------------------------------------------------------------
 export type WordsRestoreResult = { kind: 'restored' | 'rotated'; wallet: StoredWallet };
 export async function restoreWithWords(userId: string, password: string, words: string): Promise<WordsRestoreResult> {
-  if (password.length < 12) throw new Error('Usa tu contraseña actual de al menos 12 caracteres.');
+  if (password.length < MIN_PASSWORD_LENGTH) throw new Error(`Usa tu contraseña actual de al menos ${MIN_PASSWORD_LENGTH} caracteres.`);
   const row = await readBackupRow(userId);
   if (!row) throw new Error('Tu cuenta todavía no tiene una wallet para restaurar.');
   const fromWords = walletFromMnemonic(words);

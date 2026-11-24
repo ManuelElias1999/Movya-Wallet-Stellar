@@ -15,7 +15,7 @@ import { WalletForge } from '@/components/WalletForge';
 import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
 import { PasswordInput } from '@/components/PasswordInput';
 import { colors } from '@/theme/tokens';
-import { checkPasswordStrength } from '@/services/security/passwordStrength';
+import { checkPasswordStrength, MIN_PASSWORD_LENGTH } from '@/services/security/passwordStrength';
 import { isMfaRequired } from '@/services/backend/mfa';
 
 type AuthMode = 'login' | 'register';
@@ -43,7 +43,7 @@ export default function WelcomeScreen() {
     passwordVisibility.hide();
     setAuthMode(next);
   };
-  const canContinue = auth.configured && !busy && (!pendingEmail || /^\d{6,10}$/.test(code.trim())) && password.length >= (authMode === 'register' ? 12 : 1) && (authMode !== 'register' || pendingEmail || confirmation.length > 0) && (pendingEmail || (/^\S+@\S+\.\S+$/.test(identity.trim()) && (authMode === 'login' || name.trim().length > 1))) && (!needsMfa || /^\d{6}$/.test(mfaCode));
+  const canContinue = auth.configured && !busy && (!pendingEmail || /^\d{6,10}$/.test(code.trim())) && password.length >= (authMode === 'register' ? MIN_PASSWORD_LENGTH : 1) && (authMode !== 'register' || pendingEmail || confirmation.length > 0) && (pendingEmail || (/^\S+@\S+\.\S+$/.test(identity.trim()) && (authMode === 'login' || name.trim().length > 1))) && (!needsMfa || /^\d{6}$/.test(mfaCode));
 
   const continueToApp = async () => {
     if (!canContinue || lock.current) return;
@@ -139,7 +139,7 @@ export default function WelcomeScreen() {
                 <PasswordInput returnKeyType="done" submitBehavior="blurAndSubmit" onSubmitEditing={Keyboard.dismiss} editable={!busy} autoCapitalize="none" autoCorrect={false} onChangeText={setConfirmation} placeholder="Repite tu contraseña" placeholderTextColor="#71809B" secureTextEntry={!passwordVisibility.visible} style={styles.input} value={confirmation} />
               </View> : null}
               {authMode === 'register' && !pendingEmail && password.length > 0 ? <Text style={styles.terms}>{checkPasswordStrength(password, { email: identity, name }).problems[0] ?? 'Contraseña adecuada.'}</Text> : null}
-              <Text style={styles.terms}>Tu contraseña también permite recuperar tu wallet. Consérvala en un lugar seguro. {authMode === 'register' ? 'Usa al menos 12 caracteres.' : ''}</Text>
+              <Text style={styles.terms}>Tu contraseña también permite recuperar tu wallet. Consérvala en un lugar seguro. {authMode === 'register' ? 'Usa al menos 10 caracteres, una mayúscula, una minúscula, un número y un carácter especial.' : ''}</Text>
               {!auth.configured ? <Text style={styles.terms}>El acceso por correo se activará pronto. Puedes continuar probando tu wallet actual.</Text> : null}
               {message || auth.error ? <Text accessibilityLiveRegion="polite" style={[styles.description, { marginTop: 12 }]}>{message || auth.error}</Text> : null}
 

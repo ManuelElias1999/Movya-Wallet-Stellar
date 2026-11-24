@@ -53,7 +53,12 @@ export default function WalletBackupScreen() {
     };
   }, [hide]));
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', state => { if (state !== 'active') hide(); });
+    // iOS reports `inactive` while the Face ID sheet is visible. Clearing the
+    // material there invalidates the in-flight reveal and sends the person
+    // back to the password field after a successful biometric check. The
+    // app-switcher preview is already protected above; erase secrets when the
+    // app actually reaches the background.
+    const subscription = AppState.addEventListener('change', state => { if (state === 'background') hide(); });
     const visibility = () => { if (typeof document !== 'undefined' && document.visibilityState !== 'visible') hide(); };
     if (Platform.OS === 'web' && typeof document !== 'undefined') document.addEventListener('visibilitychange', visibility);
     return () => { subscription.remove(); if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', visibility); };
