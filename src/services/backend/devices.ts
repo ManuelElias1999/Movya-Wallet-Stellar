@@ -2,6 +2,7 @@ import { bytesToHex, randomBytes } from '@noble/hashes/utils.js';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { requireBackend } from './client';
+import { isNetworkFailure } from './networkFailure';
 
 export type DeviceRow = { id: string; label: string; platform: 'ios' | 'android' | 'web'; created_at: string; last_seen_at: string; revoked_at: string | null };
 export class DeviceRevokedError extends Error {
@@ -11,9 +12,9 @@ export class DeviceVerificationUnavailableError extends Error {
   constructor() { super('Necesitas conexión a internet para abrir o firmar con Movya, porque debemos comprobar que este dispositivo no fue revocado. Tus fondos siguen seguros.'); this.name = 'DeviceVerificationUnavailableError'; }
 }
 
-function checkedFailure(failure: unknown): Error {
+function checkedFailure(failure: unknown, status?: number): Error {
   const message = failure instanceof Error ? failure.message : String((failure as { message?: unknown })?.message ?? failure ?? '');
-  return /fetch|network|offline|timeout|timed out|abort|conexi[oó]n|no respondi[oó]/i.test(message)
+  return isNetworkFailure(failure, status)
     ? new DeviceVerificationUnavailableError()
     : failure instanceof Error ? failure : new Error(message || 'No pudimos verificar este dispositivo.');
 }
@@ -49,7 +50,7 @@ export function devicePlatform(): DeviceRow['platform'] { return Platform.OS ===
 export async function touchDevice(owner: string) {
   try {
     const result = await requireBackend().rpc('touch_device', { device_id: await currentDeviceId(owner), device_label: deviceLabel(), device_platform: devicePlatform() });
-    if (result.error) throw result.error;
+    if (result.error) throw checkedFailure(result.error, result.status);
     const row = result.data as DeviceRow;
     if (row.revoked_at) throw new DeviceRevokedError();
     return row;
@@ -58,7 +59,7 @@ export async function touchDevice(owner: string) {
 export async function listDevices() {
   try {
     const result = await requireBackend().from('devices').select('id,label,platform,created_at,last_seen_at,revoked_at').order('last_seen_at', { ascending: false });
-    if (result.error) throw result.error;
+    if (result.error) throw checkedFailure(result.error, result.status);
     return result.data as DeviceRow[];
   } catch (failure) { throw checkedFailure(failure); }
 }
