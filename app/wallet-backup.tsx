@@ -1,6 +1,7 @@
 import { Text, TextInput } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
+import * as Clipboard from 'expo-clipboard';
 import * as ScreenCapture from 'expo-screen-capture';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, AppState, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
@@ -12,6 +13,9 @@ import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import type { RecoveryMaterial } from '@/services/stellar/recovery';
 import { colors } from '@/theme/tokens';
 import { PasswordVisibilityButton, usePasswordVisibility } from '@/components/PasswordVisibility';
+import { createSensitiveClipboard } from '@/services/sensitiveClipboard';
+
+const copySensitive = createSensitiveClipboard(Clipboard);
 
 const challengePositions = () => {
   const available = [...Array(12).keys()]; const selected: number[] = [];
@@ -94,6 +98,17 @@ export default function WalletBackupScreen() {
     expectedWords.current = material.mnemonic.trim().split(/\s+/);
     setPositions(challengePositions()); setAnswers({}); setMaterial(null); setPassword(''); setMessage(''); setStep('confirm');
   };
+  const copy = async () => {
+    if (!material || lock.current) return;
+    const current = generation.current;
+    const value = mode === 'phrase' && material.mnemonic ? material.mnemonic : material.secret;
+    try {
+      await copySensitive(value, () => generation.current === current);
+      if (generation.current === current) setMessage('Respaldo copiado. Se borrará del portapapeles en un minuto.');
+    } catch (failure) {
+      if (generation.current === current) setMessage(failure instanceof Error ? failure.message : 'No pudimos copiar el respaldo.');
+    }
+  };
   const confirmWords = () => {
     if (!positions.length || positions.some(position => (answers[position] ?? '').trim().toLowerCase() !== expectedWords.current[position])) {
       setMessage('Alguna palabra no coincide. Revisa el orden de tu respaldo e inténtalo nuevamente.'); return;
@@ -150,6 +165,7 @@ export default function WalletBackupScreen() {
           {step === 'reveal' && material ? <View style={styles.recovery}>
             <Text style={styles.title}>{mode === 'phrase' ? 'Tus 12 palabras' : 'Tu clave privada Stellar'}</Text>
             {mode === 'phrase' && material.mnemonic ? <View style={styles.words}>{material.mnemonic.split(' ').map((word, i) => <View key={i} style={styles.word}><Text style={styles.number}>{i + 1}</Text><Text translate={false} style={styles.wordText}>{word}</Text></View>)}</View> : <Text translate={false} selectable style={styles.secret}>{material.secret}</Text>}
+            <PressableScale disabled={busy} onPress={() => void copy()} style={styles.secondary}><Ionicons name="copy-outline" size={19} color={colors.brand} /><Text style={styles.secondaryText}>Copiar</Text></PressableScale>
             {auth.needsBackup ? <PressableScale disabled={busy} onPress={beginConfirmation} style={styles.button}><Text style={styles.buttonText}>Siguiente</Text><Ionicons name="arrow-forward" size={20} color="white" /></PressableScale> : <Text style={styles.copy}>Se ocultará en un minuto o al salir de la app.</Text>}
           </View> : null}
           {!auth.needsBackup && step === 'reveal' ? <PressableScale onPress={() => { hide(); router.replace('/security'); }} style={styles.secondary}><Text style={styles.secondaryText}>Volver a Seguridad</Text></PressableScale> : null}
