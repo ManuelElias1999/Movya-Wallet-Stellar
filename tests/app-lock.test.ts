@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { idleLockDue, lockDecision, LOCK_AFTER_BACKGROUND_MS, LOCK_AFTER_IDLE_MS } from '../src/services/security/appLock';
 
-test('returning after five minutes away expires the local session; the biometric sheet itself does not', () => {
+test('returning after five minutes away expires visible access; the biometric sheet itself does not', () => {
   const left = lockDecision({ state: 'background', now: 1_000, backgroundAt: null });
   assert.deepEqual(left, { expire: false, backgroundAt: 1_000 });
   assert.equal(lockDecision({ state: 'active', now: 1_000 + LOCK_AFTER_BACKGROUND_MS, backgroundAt: 1_000 }).expire, true);
