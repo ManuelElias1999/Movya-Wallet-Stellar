@@ -8,12 +8,13 @@ import { Platform, StyleSheet, View } from 'react-native';
 import { PressableScale } from '@/components/PressableScale';
 import { colors } from '@/theme/tokens';
 
-type PageHeaderProps = { title: string; subtitle?: string; backTo?: '/(tabs)' | '/settings' | '/security' };
+type PageHeaderProps = { title: string; subtitle?: string; backTo?: '/(tabs)' | '/settings' | '/security'; onBack?: () => void };
 
-export function PageHeader({ title, subtitle, backTo }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, backTo, onBack }: PageHeaderProps) {
   const router = useRouter();
   const back = () => {
-    if (backTo) router.replace(backTo);
+    if (onBack) onBack();
+    else if (backTo) router.replace(backTo);
     else if (router.canGoBack()) router.back();
     else router.replace('/(tabs)');
   };

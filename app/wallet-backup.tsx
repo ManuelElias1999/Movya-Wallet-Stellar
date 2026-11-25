@@ -96,7 +96,10 @@ export default function WalletBackupScreen() {
       expectedWords.current = []; setMaterial(null); setStep('protection'); return;
     }
     expectedWords.current = material.mnemonic.trim().split(/\s+/);
-    setPositions(challengePositions()); setAnswers({}); setMaterial(null); setPassword(''); setMessage(''); setStep('confirm');
+    setPositions(challengePositions()); setAnswers({}); setPassword(''); setMessage(''); setStep('confirm');
+  };
+  const returnToWords = () => {
+    expectedWords.current = []; setPositions([]); setAnswers({}); setMessage(''); setStep('reveal');
   };
   const copy = async () => {
     if (!material || lock.current) return;
@@ -113,7 +116,7 @@ export default function WalletBackupScreen() {
     if (!positions.length || positions.some(position => (answers[position] ?? '').trim().toLowerCase() !== expectedWords.current[position])) {
       setMessage('Alguna palabra no coincide. Revisa el orden de tu respaldo e inténtalo nuevamente.'); return;
     }
-    expectedWords.current = []; setAnswers({}); setMessage('Respaldo confirmado correctamente.'); setStep('protection');
+    expectedWords.current = []; setAnswers({}); setMaterial(null); setMessage('Respaldo confirmado correctamente.'); setStep('protection');
   };
   const finish = async (borrowedDevice: boolean) => {
     if (lock.current) return;
@@ -126,7 +129,7 @@ export default function WalletBackupScreen() {
     finally { lock.current = false; setBusy(false); }
   };
   return <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
-    <PageHeader backTo={auth.needsBackup ? undefined : '/security'} title={auth.needsBackup ? 'Respalda tu wallet' : 'Respaldo y claves'} subtitle="Stellar Testnet · tu cuenta de pruebas" />
+    <PageHeader backTo={auth.needsBackup ? undefined : '/security'} onBack={step === 'confirm' ? returnToWords : undefined} title={auth.needsBackup ? 'Respalda tu wallet' : 'Respaldo y claves'} subtitle="Stellar Testnet · tu cuenta de pruebas" />
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={styles.content}>
         <View style={styles.card}>
@@ -155,6 +158,7 @@ export default function WalletBackupScreen() {
               ? <View key={position} style={[styles.word, styles.wordRequested]}><Text style={styles.number}>{position + 1}</Text><TextInput value={answers[position] ?? ''} onChangeText={value => setAnswers(current => ({ ...current, [position]: value }))} autoCapitalize="none" autoCorrect={false} editable={!busy} placeholder="Escribe aquí" placeholderTextColor={colors.muted} style={styles.wordInput} /></View>
               : <View key={position} style={styles.word}><Text style={styles.number}>{position + 1}</Text><Text translate={false} style={styles.wordText}>{word}</Text></View>)}</View>
             <PressableScale disabled={busy || positions.some(position => !(answers[position] ?? '').trim())} onPress={confirmWords} style={[styles.button, (busy || positions.some(position => !(answers[position] ?? '').trim())) && styles.disabled]}><Text style={styles.buttonText}>Confirmar respaldo</Text></PressableScale>
+            <PressableScale disabled={busy} onPress={returnToWords} style={styles.secondary}><Ionicons name="arrow-back" size={19} color={colors.brand} /><Text style={styles.secondaryText}>Volver a mis 12 palabras</Text></PressableScale>
           </> : <>
             <Text style={styles.notice}>Si es un teléfono prestado, no guardaremos aquí la clave que firma tus operaciones. Podrás consultar el dashboard, pero no enviar ni hacer swaps desde este dispositivo.</Text>
             {wallet.biometric ? <PressableScale disabled={busy} onPress={() => void finish(false)} style={[styles.button, busy && styles.disabled]}><Ionicons name="finger-print-outline" size={20} color="white" /><Text style={styles.buttonText}>Activar Face ID o huella</Text></PressableScale> : null}

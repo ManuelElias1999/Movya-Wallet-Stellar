@@ -1,4 +1,4 @@
-import { Text } from '@/i18n/primitives';
+import { Alert, Text } from '@/i18n/primitives';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -28,6 +28,13 @@ export default function SettingsScreen() {
   const auth = useAuth();
   const displayName = getDisplayName(auth.user?.user_metadata);
   const [notifications, setNotifications] = useState(true);
+  const [signingOut, setSigningOut] = useState(false);
+  const signOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try { await auth.logout(); router.replace('/'); }
+    catch (failure) { Alert.alert('No pudimos cerrar sesión', failure instanceof Error ? failure.message : 'Inténtalo nuevamente.'); setSigningOut(false); }
+  };
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <InternalScreenBackground />
@@ -65,7 +72,10 @@ export default function SettingsScreen() {
             <Text style={styles.rowSubtitle}>{language === 'es' ? 'Español (Bolivia)' : 'Inglés (Estados Unidos)'}</Text>
           </View>
         </View>
-        {auth.user ? <PressableScale onPress={auth.lockNow} style={[styles.card, styles.row, { marginTop: 24 }]}><Ionicons name="lock-closed-outline" size={20} color={colors.brand} /><View style={styles.rowCopy}><Text style={styles.rowTitle}>Bloquear Movya</Text><Text style={styles.rowSubtitle}>Se bloqueará esta cuenta sin cerrar la app</Text></View></PressableScale> : <PressableScale onPress={() => router.replace('/')} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>Crear cuenta o ingresar con correo</Text></PressableScale>}
+        {auth.user ? <>
+          <PressableScale onPress={auth.lockNow} style={[styles.card, styles.row, { marginTop: 24 }]}><Ionicons name="lock-closed-outline" size={20} color={colors.brand} /><View style={styles.rowCopy}><Text style={styles.rowTitle}>Bloquear Movya</Text><Text style={styles.rowSubtitle}>Se bloqueará esta cuenta sin cerrar la sesión</Text></View></PressableScale>
+          <PressableScale disabled={signingOut} onPress={() => void signOut()} style={[styles.card, styles.row, { marginTop: 12 }]}><Ionicons name="log-out-outline" size={20} color="#B84252" /><View style={styles.rowCopy}><Text style={styles.dangerTitle}>{signingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}</Text><Text style={styles.rowSubtitle}>Volverás al inicio para ingresar o crear otra cuenta</Text></View></PressableScale>
+        </> : <PressableScale onPress={() => router.replace('/')} style={[styles.card, styles.row, { marginTop: 24 }]}><Text style={styles.rowTitle}>Crear cuenta o ingresar con correo</Text></PressableScale>}
       </ScrollView>
     </SafeAreaView>
   );
@@ -77,4 +87,5 @@ const styles = StyleSheet.create({
   avatar: { width: 54, height: 54, borderRadius: 27, overflow: 'hidden', backgroundColor: colors.brandSoft, alignItems: 'center', justifyContent: 'center', marginRight: 13 }, name: { color: colors.ink, fontSize: 17, fontWeight: '800' }, email: { color: colors.muted, fontSize: 11, marginTop: 4 },
   sectionTitle: { color: colors.ink, fontSize: 16, fontWeight: '800', marginTop: 26, marginBottom: 10 }, card: { backgroundColor: 'rgba(255,255,255,0.86)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.94)', borderRadius: radius.md, paddingHorizontal: 14, shadowColor: colors.navy, shadowOpacity: 0.12, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 4 },
   row: { minHeight: 70, flexDirection: 'row', alignItems: 'center' }, divider: { borderTopWidth: 1, borderTopColor: colors.border }, rowIcon: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' }, rowCopy: { flex: 1, marginLeft: 11 }, rowTitle: { color: colors.ink, fontSize: 14, fontWeight: '700' }, rowSubtitle: { color: colors.muted, fontSize: 10, marginTop: 3 },
+  dangerTitle: { color: '#B84252', fontSize: 14, fontWeight: '800' },
 });

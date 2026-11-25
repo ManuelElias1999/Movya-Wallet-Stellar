@@ -8,13 +8,14 @@ import { rememberContactsKey } from '@/services/backend/contactBackup';
 import { currentDeviceId, forgetDeviceId, listDevices, markDevicesReviewed, newDevicesSinceLastReview, revokeOtherDevices, touchDevice, type DeviceRow } from '@/services/backend/devices';
 import { assertPasswordNotLeaked } from '@/services/backend/passwordPolicy';
 import { assertStrongPassword } from '@/services/security/passwordStrength';
-import { readWallet, readWalletMeta, clearWalletOnLogout, disableLocalSigning, removeWallet, updateWalletMeta } from '@/services/backend/storage';
+import { readWallet, readWalletMeta, clearWalletOnLogout, disableLocalSigning, removeWallet, updateWalletMeta, type StoredWallet } from '@/services/backend/storage';
 import { revealRecovery } from '@/services/backend/revealRecovery';
 import type { RecoveryMaterial } from '@/services/stellar/recovery';
 import { assertAccessActive, withAccessDeadline } from '@/services/backend/accessOperation';
 import type { RecoveryProgress } from '@/services/backend/walletRecovery';
-import { accessSteps } from '@/services/backend/accessFlow';
+import { accountAccessSteps } from '@/services/backend/accessFlow';
 import { idleLockDue, lockDecision } from '@/services/security/appLock';
+import { createUnlockedWalletSession } from '@/services/security/unlockedWallet';
 
 type Auth = {
   configured: boolean; initialized: boolean; user: User | null; ready: boolean; error: string; needsBackup: boolean;
@@ -33,6 +34,7 @@ type Auth = {
   resendEmail: (email: string) => Promise<void>;
   unlock: (password: string, mfaCode?: string) => Promise<void>;
   logout: () => Promise<void>;
+  readUnlockedWallet: () => StoredWallet | null;
   readRecovery: (password: string) => Promise<RecoveryMaterial>;
   acknowledgeBackup: () => Promise<void>;
 };
@@ -55,6 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const operation = useRef(false);
   const revision = useRef(0);
   const sessionOwner = useRef<string | null>(null);
+  const backupOwner = useRef<string | null>(null);
+  const [unlockedWallet] = useState(() => createUnlockedWalletSession<StoredWallet>());
   const backgroundAt = useRef<number | null>(null);
   const lastActive = useRef(Date.now());
   const readyRef = useRef(false);
@@ -65,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let active = true;
     const subscription = supabase.auth.onAuthStateChange((_event, next) => {
       if (!active) return;
-      if (sessionOwner.current !== (next?.user.id ?? null)) { revision.current++; setReady(false); }
+      if (sessionOwner.current !== (next?.user.id ?? null)) { revision.current++; unlockedWallet.clear(); setReady(false); }
       sessionOwner.current = next?.user.id ?? null;
       setSession(next);
       if (!next) { setReady(false); setLocked(false); }
@@ -92,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ---- automatic lock --------------------------------------------------
   const lockNow = useCallback(() => {
     if (!readyRef.current || operation.current) return;
+    unlockedWallet.clear();
     setLocked(true);
   }, []);
   const touch = useCallback(() => {
@@ -100,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const endLocalSession = useCallback(async () => {
     const owner = sessionOwner.current;
     accessController.current?.abort(new Error('Tu sesión terminó después de 5 minutos fuera de Movya.'));
+    unlockedWallet.clear(); backupOwner.current = null;
     revision.current++;
     setReady(false); setLocked(false); setNeedsRestore(false); setNeedsBackup(false); setNeedsOnboarding(false);
     setDeviceUnlockAvailable(false); setNewDevices([]); setSession(null); sessionOwner.current = null;
@@ -141,13 +147,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const cancelAccess = () => accessController.current?.abort(new Error('Se canceló el acceso. Tu cuenta se conserva; vuelve a ingresar con la misma contraseña.'));
   useEffect(() => () => { accessController.current?.abort(); }, []);
 
-  const opened = (backupAcknowledged: boolean, newAccount: boolean, protection: boolean) => {
-    const steps = accessSteps(newAccount, backupAcknowledged);
+  const opened = (owner: string, backupAcknowledged: boolean, newAccount: boolean, protection: boolean) => {
     // An unconfirmed backup remains pending across a lock, app restart or
-    // password login. Face ID must reopen the unfinished words flow, not skip
-    // straight to the dashboard.
-    setNeedsBackup(current => current || !backupAcknowledged || steps.needsBackup);
-    setNeedsOnboarding(current => current || steps.needsOnboarding);
+    // password login, but it must never leak from one account into another.
+    const previousOwner = backupOwner.current;
+    setNeedsBackup(current => {
+      const next = accountAccessSteps({ previousOwner, owner, currentNeedsBackup: current, currentNeedsOnboarding: false, newAccount, backupAcknowledged });
+      return next.needsBackup;
+    });
+    setNeedsOnboarding(current => {
+      const next = accountAccessSteps({ previousOwner, owner, currentNeedsBackup: false, currentNeedsOnboarding: current, newAccount, backupAcknowledged });
+      return next.needsOnboarding;
+    });
+    backupOwner.current = owner;
     lastActive.current = Date.now();
     setLocked(false); setNeedsRestore(false); setDeviceUnlockAvailable(protection);
     setReady(true);
@@ -165,6 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if ((failure as { name?: string })?.name !== 'DeviceRevokedError') throw failure;
       await removeWallet(owner).catch(() => undefined);
       await forgetDeviceId(owner).catch(() => undefined);
+      unlockedWallet.clear(); backupOwner.current = null;
       revision.current++; setReady(false); setLocked(false); setSession(null); sessionOwner.current = null;
       await requireBackend().auth.signOut({ scope: 'local' }).catch(() => undefined);
       throw failure;
@@ -201,7 +214,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (current !== revision.current) throw new Error('La sesión cambió. Vuelve a ingresar.');
       const meta = await readWalletMeta(next.user.id);
       if (credentials.keys) await rememberContactsKey(next.user.id, credentials.keys.contactsKey).catch(() => undefined);
-      opened(Boolean(local.backupAcknowledged), newAccount, meta?.protection === 'biometric');
+      unlockedWallet.open(next.user.id, local);
+      opened(next.user.id, Boolean(local.backupAcknowledged), newAccount, meta?.protection === 'biometric');
     } catch (failure) {
       if (isDecryptFailure(failure)) {
         setNeedsRestore(true);
@@ -263,12 +277,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!wallet) throw new Error('No se confirmó tu identidad. Inténtalo de nuevo o usa tu contraseña.');
       if (current !== revision.current || sessionOwner.current !== owner) throw new Error('La sesión cambió. Vuelve a ingresar.');
       await checkDevice(owner);
-      opened(Boolean(meta.backupAcknowledged), false, true);
+      unlockedWallet.open(owner, wallet);
+      opened(owner, Boolean(meta.backupAcknowledged), false, true);
     } finally { operation.current = false; }
   };
   const disableDeviceBiometrics = async () => {
     if (!session) throw new Error('Ingresa con tu correo antes de cambiar la protección de este dispositivo.');
     await disableLocalSigning(session.user.id);
+    unlockedWallet.clear();
     setDeviceUnlockAvailable(false);
   };
   const restoreWithWords = async (password: string, words: string, mfaCode?: string) => {
@@ -290,7 +306,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await restoreWalletWithWords(signed.session.user.id, password, words);
       assertAccessActive(signal);
       const meta = await readWalletMeta(signed.session.user.id);
-      opened(Boolean(result.wallet.backupAcknowledged), false, meta?.protection === 'biometric');
+      unlockedWallet.open(signed.session.user.id, result.wallet);
+      opened(signed.session.user.id, Boolean(result.wallet.backupAcknowledged), false, meta?.protection === 'biometric');
       // A rotation creates new device words: ask the person to save them,
       // and every other device (the lost one) is signed out and revoked.
       if (result.kind === 'rotated') {
@@ -304,6 +321,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     if (operation.current) throw new Error('Espera a que termine el acceso a tu wallet.');
     await endLocalSession();
+  };
+  const readUnlockedWallet = () => {
+    return unlockedWallet.read(session?.user.id, ready && !locked);
   };
   const readRecovery = async (password: string) => {
     if (!session || !ready || operation.current) throw new Error('Abre tu wallet antes de ver el respaldo.');
@@ -335,7 +355,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setNeedsBackup(false);
     } finally { operation.current = false; }
   };
-  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, needsOnboarding, finishOnboarding: () => setNeedsOnboarding(false), accessStage, cancelAccess, locked, deviceUnlockAvailable, unlockWithDevice, lockNow, touch, needsRestore, restoreWithWords, disableDeviceBiometrics, newDevices, acknowledgeDevices, login, register, verifyEmail, resendEmail, unlock, logout, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ configured: backendConfigured, initialized, user: session?.user ?? null, ready, error, needsBackup, needsOnboarding, finishOnboarding: () => setNeedsOnboarding(false), accessStage, cancelAccess, locked, deviceUnlockAvailable, unlockWithDevice, lockNow, touch, needsRestore, restoreWithWords, disableDeviceBiometrics, newDevices, acknowledgeDevices, login, register, verifyEmail, resendEmail, unlock, logout, readUnlockedWallet, readRecovery, acknowledgeBackup }}>{children}</Context.Provider>;
 }
 export function useAuth() {
   const value = useContext(Context);
