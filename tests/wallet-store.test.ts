@@ -88,6 +88,17 @@ test('a rotated signer keeps the original account id; metadata updates never tou
   assert.equal(await wallets.readMeta('u1'), null);
 });
 
+test('quick biometric unlock can be disabled without deleting the protected signing key', async () => {
+  const { store, items, prompts } = kv();
+  const wallets = createWalletStore(store, signerOf);
+  await wallets.write({ secret: SECRET, oualiAddress: '' }, 'u1');
+  const meta = await wallets.updateMeta({ quickUnlockEnabled: false }, 'u1');
+  assert.equal(meta.quickUnlockEnabled, false);
+  assert.equal(meta.protection, 'biometric');
+  assert.equal(items.has('movya.testnet.wallet.user.u1.secret'), true);
+  assert.deepEqual(prompts, []);
+});
+
 test('view-only mode removes the signing key but preserves public wallet metadata', async () => {
   const { store, items, prompts } = kv();
   const wallets = createWalletStore(store, signerOf);

@@ -18,6 +18,7 @@ import { type PaymentAsset } from '@/services/stellar/payments';
 import { readSwapSpendable } from '@/services/stellar/swaps';
 import { swapBlocked } from '@/services/swapFlow';
 import { formatSwapRate, quoteSecondsRemaining, sanitizeSwapAmountInput, swapAmountForPercentage } from '@/services/swapPresentation';
+import { formatEnteredAmount, formatReceivedAmount } from '@/services/presentation';
 
 const tokenInfo: Record<string, { name: string; color: string }> = {
   USDC: { name: 'USD digital', color: '#2775CA' },
@@ -104,7 +105,7 @@ export default function SwapScreen() {
         </View>
 
         <View style={styles.balanceRow}>
-          <Text style={styles.balance}>Saldo disponible: {spendable?.[from] ?? '…'} {from}</Text>
+          <Text style={styles.balance}>Saldo disponible: {spendable ? formatEnteredAmount(spendable[from]) : '…'} {from}</Text>
         </View>
         <View style={styles.quickAmounts}>
           {[25, 50, 75, 100].map(percentage => (
@@ -128,7 +129,7 @@ export default function SwapScreen() {
         <Text style={styles.label}>Tú recibes</Text>
         {assetSelector(to, () => setToOpen(true))}
         <View style={styles.outputBox}>
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5} style={styles.output}>{state.review?.estimated ?? (amount ? '—' : '0.00')}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5} style={styles.output}>{state.review ? formatReceivedAmount(state.review.estimated) : amount ? '—' : '0.00'}</Text>
           <View style={[styles.amountToken, styles.outputToken]}><Text style={styles.amountTokenText}>{to}</Text></View>
         </View>
         {state.phase === 'review' && state.review ? (

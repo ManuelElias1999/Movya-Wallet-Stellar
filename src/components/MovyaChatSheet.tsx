@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/theme/tokens';
 import { MovyaLogo } from '@/components/MovyaLogo';
 import { useAuth } from '@/context/AuthContext';
-import { displayName } from '@/services/presentation';
+import { displayName, formatEnteredAmount } from '@/services/presentation';
 import { useContacts } from '@/context/ContactsContext';
 import { useTestnetWallet } from '@/context/TestnetWalletContext';
 import { assetBalance, checkSubmission, preparePayment, SubmissionUnknownError, submitPayment, validateAddress } from '@/services/stellar/payments';
@@ -68,7 +68,7 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
 
   const createMovyaReply = (message: string, id: number): TextMessage => {
     const topic = chatTopic(message);
-    if (topic === 'balance') return { id, role: 'movya', kind: 'text', text: wallet.publicKey ? wallet.account ? `En Testnet tienes ${assetBalance(wallet.account, 'USDC')?.balance ?? '0'} USDC y ${assetBalance(wallet.account, 'XLM')?.balance ?? '0'} XLM. Son tokens de prueba.` : 'Solicita XLM desde Inicio y actualiza tu saldo.' : 'Tu balance total de demostración es $1,629.24. Puedo mostrarte el detalle de cada activo si quieres.' };
+    if (topic === 'balance') return { id, role: 'movya', kind: 'text', text: wallet.publicKey ? wallet.account ? `En Testnet tienes ${formatEnteredAmount(assetBalance(wallet.account, 'USDC')?.balance ?? '0')} USDC y ${formatEnteredAmount(assetBalance(wallet.account, 'XLM')?.balance ?? '0')} XLM. Son tokens de prueba.` : 'Solicita XLM desde Inicio y actualiza tu saldo.' : 'Tu balance total de demostración es $1,629.24. Puedo mostrarte el detalle de cada activo si quieres.' };
     if (topic === 'swap') return { id, role: 'movya', kind: 'text', text: 'Claro. Dime qué activo quieres entregar, cuál quieres recibir y el monto. Después te mostraré la cotización antes de confirmar.' };
     if (topic === 'contact') return { id, role: 'movya', kind: 'text', text: 'Puedo ayudarte. Dime el nombre y luego comparte su correo de Movya o su dirección Stellar pública.' };
     if (topic === 'receive') return { id, role: 'movya', kind: 'text', text: 'Puedes recibir por Stellar usando tu QR o tu dirección pública. Puedo ayudarte a copiarla o compartirla.' };
@@ -159,7 +159,10 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     }
     const transaction = parseSendRequest(clean);
     if (transaction) { swapFlow.clear(); void flow.start(transaction); }
-    else setMessages(current => [...current, createMovyaReply(clean, id + 1)]);
+    else {
+      setMessages(current => [...current, createMovyaReply(clean, id + 1)]);
+      setSuggestionsVisible(true);
+    }
     void Haptics.selectionAsync();
   };
 
@@ -178,7 +181,10 @@ export function MovyaChatSheet({ open, onClose, initialPrompt }: MovyaChatSheetP
     if (request) {
       setMessages(current => [...current, { id, role: 'user', kind: 'text', text: t(initialPrompt) }]);
       void flow.start(request);
-    } else setMessages((current) => [...current, { id, role: 'user', kind: 'text', text: t(initialPrompt) }, createMovyaReply(initialPrompt, id + 1)]);
+    } else {
+      setMessages((current) => [...current, { id, role: 'user', kind: 'text', text: t(initialPrompt) }, createMovyaReply(initialPrompt, id + 1)]);
+      setSuggestionsVisible(true);
+    }
   }, [initialPrompt, open, t, flow, swapFlow]);
 
   useEffect(() => {

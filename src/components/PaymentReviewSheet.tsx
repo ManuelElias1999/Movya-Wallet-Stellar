@@ -16,6 +16,7 @@ import { assetBalance } from '@/services/stellar/payments';
 import { checkSubmission, SubmissionUnknownError, submitPayment, type PaymentReceipt, type PaymentReview } from '@/services/stellar/payments';
 import { paymentReviewSecondsRemaining } from '@/services/transferPresentation';
 import { colors } from '@/theme/tokens';
+import { formatEnteredAmount } from '@/services/presentation';
 
 export function PaymentReviewSheet({ review, onClose, onSuccess }: { review: PaymentReview | null; onClose: () => void; onSuccess: (receipt: PaymentReceipt) => void }) {
   const wallet = useTestnetWallet();
@@ -78,7 +79,7 @@ export function PaymentReviewSheet({ review, onClose, onSuccess }: { review: Pay
       <View style={styles.backdrop}><View style={[styles.sheet, { paddingBottom: Math.max(24, insets.bottom + 16) }]}>
         <ScrollView keyboardShouldPersistTaps="handled">
           <View style={styles.titleRow}><View><Text style={styles.eyebrow}>CONFIRMACIÓN FINAL</Text><Text style={styles.title}>Revisa tu transferencia</Text></View><View style={styles.secureIcon}><Ionicons name="shield-checkmark" size={22} color={colors.brand} /></View></View>
-          <View style={styles.amountCard}><Text style={styles.amountLabel}>ENVIARÁS</Text><Text translate={false} style={styles.amount}>{review?.amount} <Text translate={false} style={styles.asset}>{review?.asset}</Text></Text></View>
+          <View style={styles.amountCard}><Text style={styles.amountLabel}>ENVIARÁS</Text><Text translate={false} style={styles.amount}>{review ? formatEnteredAmount(review.amount) : ''} <Text translate={false} style={styles.asset}>{review?.asset}</Text></Text></View>
 
           <View style={styles.detailCard}>
             <View style={styles.detailHeading}><Ionicons name="arrow-forward-circle-outline" size={19} color={colors.brand} /><Text style={styles.detailTitle}>Destinatario</Text></View>
@@ -90,7 +91,7 @@ export function PaymentReviewSheet({ review, onClose, onSuccess }: { review: Pay
 
           <View style={styles.metadataCard}>
             <View style={styles.metadataRow}><Text style={styles.metadataLabel}>Red</Text><Text style={styles.metadataValue}>Stellar Testnet</Text></View>
-            <View style={styles.metadataRow}><Text style={styles.metadataLabel}>Comisión de red</Text><Text translate={false} style={styles.metadataValue}>{review?.fee} XLM</Text></View>
+            <View style={styles.metadataRow}><Text style={styles.metadataLabel}>Comisión de red</Text><Text translate={false} style={styles.metadataValue}>{review ? formatEnteredAmount(review.fee) : ''} XLM</Text></View>
             {review?.issuer ? <><View style={styles.divider} /><Text style={styles.label}>Emisor verificado de USDC</Text><Text translate={false} selectable style={styles.address}>{review.issuer}</Text></> : null}
           </View>
 

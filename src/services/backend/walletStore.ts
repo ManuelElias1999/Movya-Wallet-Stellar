@@ -9,7 +9,7 @@
 export type Protection = 'biometric' | 'none';
 export type WalletMeta = {
   accountId: string; signerPublicKey: string; oualiAddress: string;
-  backupAcknowledged?: boolean; backupFingerprint?: string; hasMnemonic: boolean; protection: Protection;
+  backupAcknowledged?: boolean; backupFingerprint?: string; quickUnlockEnabled?: boolean; hasMnemonic: boolean; protection: Protection;
 };
 export type WalletSecret = { secret: string; mnemonic?: string };
 export type StoredWallet = WalletSecret & {
@@ -37,6 +37,7 @@ function parseMeta(raw: string): WalletMeta | (StoredWallet & { legacy: true }) 
     hasMnemonic: value.hasMnemonic === true, protection: value.protection === 'biometric' ? 'biometric' : 'none',
     ...(typeof value.backupAcknowledged === 'boolean' ? { backupAcknowledged: value.backupAcknowledged } : {}),
     ...(typeof value.backupFingerprint === 'string' ? { backupFingerprint: value.backupFingerprint } : {}),
+    ...(typeof value.quickUnlockEnabled === 'boolean' ? { quickUnlockEnabled: value.quickUnlockEnabled } : {}),
   };
 }
 
@@ -93,7 +94,7 @@ export function createWalletStore(kv: KeyValue, signerOf: (secret: string) => st
         ...(meta.backupFingerprint ? { backupFingerprint: meta.backupFingerprint } : {}),
       };
     },
-    async updateMeta(patch: Partial<Pick<WalletMeta, 'oualiAddress' | 'backupAcknowledged' | 'backupFingerprint' | 'accountId'>>, userId?: string) {
+    async updateMeta(patch: Partial<Pick<WalletMeta, 'oualiAddress' | 'backupAcknowledged' | 'backupFingerprint' | 'quickUnlockEnabled' | 'accountId'>>, userId?: string) {
       const meta = await readMeta(userId);
       if (!meta) throw new Error('No hay una wallet guardada en este dispositivo.');
       const next = { ...meta, ...patch };

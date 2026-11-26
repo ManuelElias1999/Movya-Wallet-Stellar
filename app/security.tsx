@@ -27,6 +27,7 @@ export default function SecurityScreen() {
   const userId = auth.user?.id;
   const [discoverable, setDiscoverableState] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
+  const [biometricSaving, setBiometricSaving] = useState(false);
   useEffect(() => {
     if (!userId) return;
     let active = true;
@@ -41,13 +42,21 @@ export default function SecurityScreen() {
       .catch(e => { setDiscoverableState(!next); Alert.alert('No se pudo guardar', e instanceof Error ? e.message : 'Inténtalo de nuevo.'); })
       .finally(() => setSaving(false));
   };
+  const toggleBiometrics = (next: boolean) => {
+    if (!wallet.biometric || biometricSaving) return;
+    setBiometricSaving(true);
+    void auth.setDeviceBiometricsEnabled(next)
+      .catch(e => Alert.alert('No se pudo cambiar Face ID o huella', e instanceof Error ? e.message : 'Inténtalo de nuevo.'))
+      .finally(() => setBiometricSaving(false));
+  };
 
   return <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: '#D8E1EB' }}>
     <InternalScreenBackground />
     <PageHeader title="Seguridad" subtitle="Protege el acceso a tu wallet" backTo="/settings" />
     <ScrollView contentContainerStyle={styles.content}>
-      <Row icon="finger-print-outline" title={wallet.biometric ? 'Face ID o huella activos' : 'Biometría no disponible'}
-        subtitle={wallet.biometric ? 'Se usa para entrar o desbloquear Movya. No se pide nuevamente en cada envío o cambio.' : 'Puedes abrir Movya con tu contraseña, pero este dispositivo será solo de consulta hasta que actives Face ID o huella.'} />
+      <Row icon="finger-print-outline" title="Face ID o huella"
+        subtitle={!wallet.biometric ? 'No está disponible en este dispositivo' : auth.deviceUnlockAvailable ? 'Activo para entrar y desbloquear Movya' : 'Desactivado. Entra con correo y contraseña'}
+        right={<Switch disabled={!wallet.biometric || biometricSaving} value={wallet.biometric && auth.deviceUnlockAvailable} onValueChange={toggleBiometrics} trackColor={{ false: '#CED5E0', true: colors.brandIce }} thumbColor={auth.deviceUnlockAvailable ? colors.brand : '#FFFFFF'} />} />
       <Row icon="lock-closed-outline" title="Bloquear ahora" subtitle="Se bloquea tras 5 minutos sin usarla; después de 5 minutos fuera, se cierra la sesión" onPress={auth.lockNow} />
       <Row icon="shield-checkmark-outline" title="Verificación en dos pasos" subtitle="Código de una app de autenticación al ingresar y para cambios sensibles" onPress={() => router.push('/two-factor')} />
       <Row icon="phone-portrait-outline" title="Dispositivos y sesiones" subtitle={auth.newDevices.length ? 'Hay un inicio de sesión nuevo por revisar' : 'Dónde está abierta tu cuenta y cerrar sesiones'} onPress={() => router.push('/devices')} />
